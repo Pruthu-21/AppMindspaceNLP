@@ -81,6 +81,11 @@ Future<bool> startPlatformDownload(String url, String fileName, {Function(double
       
       if (onProgress != null) onProgress(1.0);
       return true;
+    } else if (response.statusCode == 416) {
+      // 416 means Range Not Satisfiable. The file is already fully downloaded
+      // locally (existingBytes >= remote file size).
+      if (onProgress != null) onProgress(1.0);
+      return true;
     } else if (response.statusCode == 200) {
       // Standard non-resume download
       final totalBytes = response.contentLength;

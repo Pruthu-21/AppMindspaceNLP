@@ -27,6 +27,7 @@ class AuthManager {
   static MockUser? currentUser;
   static String? token;
 
+  static String? lastLoginError;
   static String? lastGoogleError;
 
   // Google Client IDs from Google Cloud Console
@@ -48,14 +49,19 @@ class AuthManager {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/login'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: jsonEncode({
           'email': cleanedEmail,
           'password': password,
         }),
       );
 
-      if (response.statusCode == 200) {
+      debugPrint('Login Response [${response.statusCode}]: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         token = data['access_token'];
         
@@ -82,9 +88,14 @@ class AuthManager {
         RoleManager.switchRole(role);
         await SessionStorage.save(token!, userId, name, userEmail, roleStr);
         return true;
+      } else {
+        lastLoginError = jsonDecode(response.body)['message'] ?? 'Login failed (${response.statusCode})';
       }
     } catch (e) {
       debugPrint('Login API error: $e');
+      lastLoginError = e.toString().contains('XMLHttpRequest') 
+          ? 'CORS Error: The server blocked the request. Are you running on Web?' 
+          : 'Network error: $e';
     }
     return false;
   }
@@ -96,7 +107,10 @@ class AuthManager {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/register'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: jsonEncode({
           'name': name,
           'email': cleanedEmail.isEmpty ? null : cleanedEmail,
@@ -190,7 +204,10 @@ class AuthManager {
       try {
         final response = await http.post(
           Uri.parse('$_baseUrl/auth/google'),
-          headers: {'Content-Type': 'application/json'},
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
           body: jsonEncode({
             'token': idToken ?? '',
             'access_token': accessToken ?? '',

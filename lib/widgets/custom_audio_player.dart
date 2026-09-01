@@ -4,10 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import '../constants/app_colors.dart';
+import '../services/offline_access_tracker.dart';
 
 class CustomAudioPlayer extends StatefulWidget {
   final String url;
   final String fileName;
+  final String? fileId;
   final bool isMini;
   final Duration initialPosition;
   final bool autoPlay;
@@ -19,6 +21,7 @@ class CustomAudioPlayer extends StatefulWidget {
     Key? key,
     required this.url,
     required this.fileName,
+    this.fileId,
     this.isMini = false,
     this.initialPosition = Duration.zero,
     this.autoPlay = false,
@@ -38,6 +41,33 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
   bool _hasError = false;
   bool _showControls = true;
   Timer? _hideTimer;
+  Timer? _trackingTimer;
+  int _sessionRunningTime = 0;
+  bool _wasPlayingForTracking = false;
+
+  
+  void _startTrackingTimer() {
+    if (widget.fileId == null) return;
+    _trackingTimer?.cancel();
+    _trackingTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (_controller != null && mounted) {
+        _sessionRunningTime += 5;
+        final totalDuration = _controller!.value.duration.inSeconds;
+        OfflineAccessTracker.trackAccess(
+          widget.fileId!,
+          fileName: widget.fileName,
+          incrementOpen: false,
+          viewDurationIncrement: _sessionRunningTime,
+          mediaDuration: totalDuration,
+        );
+      }
+    });
+  }
+
+  void _stopTrackingTimer() {
+    _trackingTimer?.cancel();
+    _trackingTimer = null;
+  }
 
   void _startHideTimer() {
     _hideTimer?.cancel();
@@ -132,12 +162,24 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
       widget.onPlayingChanged!(_controller!.value.isPlaying);
     }
     
+    
+    final isPlaying = _controller!.value.isPlaying;
+    if (isPlaying != _wasPlayingForTracking) {
+      _wasPlayingForTracking = isPlaying;
+      if (isPlaying) {
+        _startTrackingTimer();
+      } else {
+        _stopTrackingTimer();
+      }
+    }
+    
     setState(() {});
   }
 
   @override
   void dispose() {
     _hideTimer?.cancel();
+    _stopTrackingTimer();
     _controller?.removeListener(_playerListener);
     _controller?.dispose();
     _rotationController.dispose();

@@ -7,6 +7,16 @@ import 'auth_manager.dart';
 class OfflineAccessTracker {
   static const String _storageKey = 'pending_offline_access_logs';
   static Timer? _syncTimer;
+  static final Map<String, int> _sessionTimes = {};
+
+  
+  static int getSessionTime(String fileId) => _sessionTimes[fileId] ?? 0;
+  
+  static int addSessionTime(String fileId, int incrementSeconds) {
+    final current = _sessionTimes[fileId] ?? 0;
+    _sessionTimes[fileId] = current + incrementSeconds;
+    return _sessionTimes[fileId]!;
+  }
 
   static void _startSyncTimer() {
     if (_syncTimer != null && _syncTimer!.isActive) return;
@@ -32,7 +42,13 @@ class OfflineAccessTracker {
   }
 
   /// Track a file access event. If online, send directly to server; if offline or request fails, store locally for silent sync later.
-  static Future<void> trackAccess(String fileId, {String? fileName}) async {
+  static Future<void> trackAccess(
+    String fileId, {
+    String? fileName,
+    bool incrementOpen = true,
+    int? viewDurationIncrement,
+    int? mediaDuration,
+  }) async {
     if (fileId.isEmpty) return;
 
     final token = AuthManager.token;
@@ -50,7 +66,9 @@ class OfflineAccessTracker {
           body: jsonEncode({
             'file_name': fileName,
             'accessed_at': DateTime.now().toIso8601String(),
-            'increment_open': true,
+            'increment_open': incrementOpen,
+            if (viewDurationIncrement != null) 'view_duration_increment': viewDurationIncrement,
+            if (mediaDuration != null) 'media_duration': mediaDuration,
           }),
         ).timeout(const Duration(seconds: 4));
 
@@ -63,7 +81,13 @@ class OfflineAccessTracker {
     }
 
     if (!synced) {
-      await _storeLocally(fileId, fileName: fileName);
+      await _storeLocally(
+        fileId,
+        fileName: fileName,
+        incrementOpen: incrementOpen,
+        viewDurationIncrement: viewDurationIncrement,
+        mediaDuration: mediaDuration,
+      );
     } else {
       // Trigger silent sync of any previously stored offline logs
       syncPendingLogs();
@@ -71,7 +95,13 @@ class OfflineAccessTracker {
   }
 
   /// Store un-synced file access log locally.
-  static Future<void> _storeLocally(String fileId, {String? fileName}) async {
+  static Future<void> _storeLocally(
+    String fileId, {
+    String? fileName,
+    bool incrementOpen = true,
+    int? viewDurationIncrement,
+    int? mediaDuration,
+  }) async {
     try {
       final String? existingJson = await AppStorage.read(_storageKey);
       List<dynamic> logs = [];
@@ -83,6 +113,9 @@ class OfflineAccessTracker {
         'file_id': fileId,
         'file_name': fileName ?? 'File #$fileId',
         'accessed_at': DateTime.now().toIso8601String(),
+        'increment_open': incrementOpen,
+        if (viewDurationIncrement != null) 'view_duration_increment': viewDurationIncrement,
+        if (mediaDuration != null) 'media_duration': mediaDuration,
       });
 
       await AppStorage.write(_storageKey, jsonEncode(logs));
@@ -130,7 +163,9 @@ class OfflineAccessTracker {
               'file_name': log['file_name'],
               'accessed_at': log['accessed_at'],
               'offline_synced': true,
-              'increment_open': true,
+              'increment_open': log['increment_open'] ?? true,
+              if (log['view_duration_increment'] != null) 'view_duration_increment': log['view_duration_increment'],
+              if (log['media_duration'] != null) 'media_duration': log['media_duration'],
             }),
           ).timeout(const Duration(seconds: 4));
 

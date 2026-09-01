@@ -8,6 +8,8 @@ import 'services/auth_manager.dart';
 import 'services/language_notifier.dart';
 import 'services/offline_access_tracker.dart';
 
+import 'pages/splash_page.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -44,7 +46,7 @@ class MindSpaceDriveApp extends StatelessWidget {
               theme: AppTheme.lightTheme,
               darkTheme: AppTheme.darkTheme,
               themeMode: currentThemeMode,
-              home: const AppStartupHelper(),
+              home: const SplashPage(),
             );
           },
         );

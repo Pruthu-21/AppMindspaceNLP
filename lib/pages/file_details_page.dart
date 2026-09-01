@@ -1,3 +1,4 @@
+import "dart:async";
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/mock_data.dart';
@@ -35,11 +36,14 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
   bool _isFullscreenOpen = false;
   String? _activePath;
   late DateTime _startTime;
+  Timer? _previewTimer;
+  
 
   @override
   void initState() {
     super.initState();
-    _startTime = DateTime.now();
+        _startTime = DateTime.now();
+    _startPreviewTimer();
     _isFavorite = widget.file.isFavorite;
     _isDownloaded = widget.file.isDownloaded;
     _fileName = widget.file.name;
@@ -51,8 +55,7 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
 
   @override
   void dispose() {
-    final durationSeconds = DateTime.now().difference(_startTime).inSeconds;
-    DownloadService.trackFileAccess(widget.file.id, durationSeconds: durationSeconds, incrementOpen: false);
+    _previewTimer?.cancel();
     super.dispose();
   }
 
@@ -67,6 +70,24 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
         } else {
           _activePath = widget.file.previewUrl;
         }
+      });
+    }
+  }
+
+  
+  void _startPreviewTimer() {
+    final format = widget.file.format.toLowerCase();
+    final isMedia = ['mp3', 'audio', 'wav', 'video', 'mp4', 'mov'].contains(format);
+    
+    if (!isMedia && !widget.file.isFolder) {
+      _previewTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+        final currentSessionTime = DateTime.now().difference(_startTime).inSeconds;
+        OfflineAccessTracker.trackAccess(
+          widget.file.id,
+          fileName: widget.file.name,
+          incrementOpen: false,
+          viewDurationIncrement: currentSessionTime,
+        );
       });
     }
   }
@@ -514,6 +535,7 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
           ? CustomAudioPlayer(
               url: url,
               fileName: widget.file.name,
+              fileId: widget.file.id,
               isMini: true,
               initialPosition: _mediaPosition,
               autoPlay: _mediaIsPlaying,
@@ -547,6 +569,7 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
           ? CustomVideoPlayer(
               url: url,
               fileName: widget.file.name,
+              fileId: widget.file.id,
               isMini: true,
               initialPosition: _mediaPosition,
               autoPlay: _mediaIsPlaying,
