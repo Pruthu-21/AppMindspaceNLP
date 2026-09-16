@@ -11,6 +11,9 @@ import 'auth/login_page.dart';
 import 'reviews_page.dart';
 import 'privacy_permissions_page.dart';
 import 'help_faq_page.dart';
+import 'messages_page.dart';
+import 'reminders_page.dart';
+import 'admin/admin_send_message_page.dart';
 
 // A dynamic theme state notifier to allow theme toggling in the UI
 class ThemeNotifier {
@@ -476,6 +479,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 onTap: _showLanguageSelector,
               ),
+
               ProfileTile(
                 icon: Icons.star_rate_rounded,
                 title: 'App Reviews',
@@ -510,6 +514,18 @@ class _ProfilePageState extends State<ProfilePage> {
                 },
               ),
               if (AuthManager.currentUser?.role == AppRole.admin) ...[
+                ProfileTile(
+                  icon: Icons.send_rounded,
+                  title: 'Send Broadcast Message',
+                  subtitle: 'Push messages to users',
+                  onTap: () {
+                    final token = AuthManager.token ?? '';
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => AdminSendMessagePage(adminToken: token)),
+                    );
+                  },
+                ),
                 ProfileTile(
                   icon: Icons.admin_panel_settings_rounded,
                   title: 'Admin Console Mode',

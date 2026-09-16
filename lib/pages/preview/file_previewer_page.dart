@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../models/file_model.dart';
+import '../../services/offline_access_tracker.dart';
 import '../../widgets/platform_preview/preview_loader.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../reviews_page.dart'; // Just checking if it exists, or maybe we don't need the review sheet right away in the previewer
@@ -23,6 +25,38 @@ class FilePreviewerPage extends StatefulWidget {
 }
 
 class _FilePreviewerPageState extends State<FilePreviewerPage> {
+  Timer? _previewTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    final file = widget.file;
+    if (file is FileModel) {
+      debugPrint('[ANALYTICS_DEBUG] EVENT=OPEN file_id=${file.id} file_name=${file.name}');
+      OfflineAccessTracker.trackAccess(file.id, fileName: file.name);
+      
+      final String format = file.format.toLowerCase();
+      final bool isMedia = ['mp4', 'video', 'mov', 'mp3', 'audio', 'wav'].contains(format);
+      
+      if (!isMedia && !file.isFolder) {
+        _previewTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+          OfflineAccessTracker.trackAccess(
+            file.id,
+            fileName: file.name,
+            incrementOpen: false,
+            viewDurationIncrement: 5,
+          );
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _previewTimer?.cancel();
+    super.dispose();
+  }
   Future<void> _openExternally(String url) async {
     final Uri uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
@@ -43,9 +77,11 @@ class _FilePreviewerPageState extends State<FilePreviewerPage> {
     final String format = (file is FileModel) ? file.format : 'doc';
     final int fileId = (file is FileModel) ? int.tryParse(file.id) ?? 0 : 0;
 
+    final bool isMedia = ['mp4', 'video', 'mov', 'mp3', 'audio', 'wav'].contains(format);
+
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
+      appBar: isMedia ? null : AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(

@@ -46,6 +46,16 @@ class DownloadService {
   }
 
   static Future<bool> downloadFile(String url, String fileName, {FileModel? model}) async {
+    debugPrint('MSNLP_DOWNLOAD | REQUEST fileId=${model?.id ?? fileName} fileName=$fileName source=service');
+    debugPrint('MSNLP_DOWNLOAD | DUPLICATE_CHECK fileId=${model?.id ?? fileName} fileName=$fileName');
+    // PREVENT DUPLICATES
+    if (activeDownloadsNotifier.value.contains(fileName) || isDownloadingNotifier.value && currentDownloadingFileNameNotifier.value == fileName) {
+      debugPrint('MSNLP_DOWNLOAD | DUPLICATE_PREVENTED fileId=${model?.id ?? fileName} fileName=$fileName');
+      return true; // Already actively downloading
+    }
+
+    debugPrint('MSNLP_DOWNLOAD | START fileId=${model?.id ?? fileName} fileName=$fileName');
+
     _completedFileNames.remove(fileName);
     
     // Add to active downloads
@@ -208,76 +218,132 @@ class DownloadService {
     return File('${dir.path}/$_catalogFileName');
   }
 
+  static Future<dynamic>? _lastCatalogOp;
+
+  static Future<T> _synchronized<T>(Future<T> Function() action) async {
+    final prev = _lastCatalogOp;
+    final completer = Completer<void>();
+    _lastCatalogOp = completer.future;
+    try {
+      if (prev != null) await prev;
+      return await action();
+    } finally {
+      completer.complete();
+    }
+  }
+
   static Future<void> saveOfflineMetadata(FileModel model) async {
     if (kIsWeb) return;
-    try {
-      final catalogFile = await _getCatalogFile();
-      List<Map<String, dynamic>> items = [];
+    await _synchronized(() async {
+      try {
+        debugPrint('MSNLP_FILE | METADATA_SAVE_START fileId=${model.id} fileName=${model.name}');
+        final catalogFile = await _getCatalogFile();
+        List<Map<String, dynamic>> items = [];
 
-      if (await catalogFile.exists()) {
-        final content = await catalogFile.readAsString();
-        if (content.isNotEmpty) {
-          final List<dynamic> decoded = jsonDecode(content);
-          items = decoded.map((e) => Map<String, dynamic>.from(e)).toList();
+        if (await catalogFile.exists()) {
+          final content = await catalogFile.readAsString();
+          debugPrint('MSNLP_FILE | CATALOG_READ size=${content.length}');
+          if (content.isNotEmpty) {
+            try {
+              final List<dynamic> decoded = jsonDecode(content);
+              items = decoded.map((e) => Map<String, dynamic>.from(e)).toList();
+              debugPrint('MSNLP_FILE | CATALOG_VALID items=${items.length}');
+            } catch (e) {
+              debugPrint('MSNLP_FILE | CATALOG_CORRUPTED $e');
+              final corruptFile = File('${catalogFile.path}.corrupt');
+              await catalogFile.copy(corruptFile.path);
+              debugPrint('MSNLP_FILE | CATALOG_RECOVERED backed up to ${corruptFile.path}');
+              // Reset items to empty to recover safely
+              items = [];
+            }
+          }
         }
+
+        // Remove existing item with same ID or name if present
+        items.removeWhere((item) => item['id'] == model.id || item['name'] == model.name);
+
+        // Add new item metadata
+        items.add({
+          'id': model.id,
+          'name': model.name,
+          'format': model.format,
+          'sizeBytes': model.sizeBytes,
+          'customSizeString': model.customSizeString,
+          'uploadDate': model.uploadDate.toIso8601String(),
+          'ownerName': model.ownerName,
+          'previewUrl': model.previewUrl,
+          'isPinned': model.isPinned,
+          'isFavorite': model.isFavorite,
+          'downloadProgress': model.downloadProgress,
+          'downloadStatus': model.downloadStatus,
+        });
+
+        final jsonString = jsonEncode(items);
+        await catalogFile.writeAsString(jsonString);
+        debugPrint('MSNLP_FILE | CATALOG_WRITE success items=${items.length}');
+        debugPrint('MSNLP_FILE | METADATA_SAVE_SUCCESS fileId=${model.id}');
+        debugPrint('MSNLP_FILE | CATALOG_VERIFY fileId=${model.id} present=true');
+      } catch (e, stack) {
+        debugPrint('MSNLP_ERROR | METADATA_SAVE_FAILED error=$e stack=$stack');
       }
-
-      // Remove existing item with same ID or name if present
-      items.removeWhere((item) => item['id'] == model.id || item['name'] == model.name);
-
-      // Add new item metadata
-      items.add({
-        'id': model.id,
-        'name': model.name,
-        'format': model.format,
-        'sizeBytes': model.sizeBytes,
-        'customSizeString': model.customSizeString,
-        'uploadDate': model.uploadDate.toIso8601String(),
-        'ownerName': model.ownerName,
-        'previewUrl': model.previewUrl,
-        'isPinned': model.isPinned,
-        'isFavorite': model.isFavorite,
-        'downloadProgress': model.downloadProgress,
-        'downloadStatus': model.downloadStatus,
-      });
-
-      await catalogFile.writeAsString(jsonEncode(items));
-    } catch (e) {
-      debugPrint('Error saving offline metadata: $e');
-    }
+    });
   }
 
   static Future<void> removeOfflineMetadataByFileName(String fileName) async {
     if (kIsWeb) return;
-    try {
-      final catalogFile = await _getCatalogFile();
-      if (!await catalogFile.exists()) return;
+    await _synchronized(() async {
+      try {
+        final catalogFile = await _getCatalogFile();
+        if (!await catalogFile.exists()) return;
 
-      final content = await catalogFile.readAsString();
-      if (content.isEmpty) return;
+        final content = await catalogFile.readAsString();
+        if (content.isEmpty) return;
 
-      final List<dynamic> decoded = jsonDecode(content);
-      final List<Map<String, dynamic>> items = decoded.map((e) => Map<String, dynamic>.from(e)).toList();
-      items.removeWhere((item) => item['name'] == fileName);
+        List<dynamic> decoded = [];
+        try {
+          decoded = jsonDecode(content);
+        } catch (e) {
+          debugPrint('MSNLP_FILE | CATALOG_CORRUPTED $e');
+          final corruptFile = File('${catalogFile.path}.corrupt');
+          await catalogFile.copy(corruptFile.path);
+          // Just reset since we can't remove safely
+          await catalogFile.writeAsString('[]');
+          return;
+        }
+        
+        final List<Map<String, dynamic>> items = decoded.map((e) => Map<String, dynamic>.from(e)).toList();
+        items.removeWhere((item) => item['name'] == fileName);
 
-      await catalogFile.writeAsString(jsonEncode(items));
-    } catch (e) {
-      debugPrint('Error removing offline metadata: $e');
-    }
+        await catalogFile.writeAsString(jsonEncode(items));
+      } catch (e) {
+        debugPrint('Error removing offline metadata: $e');
+      }
+    });
   }
 
   static Future<List<FileModel>> getOfflineFiles() async {
     if (kIsWeb) return [];
-    final List<FileModel> results = [];
-    try {
-      final catalogFile = await _getCatalogFile();
-      if (!await catalogFile.exists()) return [];
+    return await _synchronized(() async {
+      final List<FileModel> results = [];
+      try {
+        final catalogFile = await _getCatalogFile();
+        if (!await catalogFile.exists()) return [];
 
-      final content = await catalogFile.readAsString();
-      if (content.isEmpty) return [];
+        final content = await catalogFile.readAsString();
+        if (content.isEmpty) return [];
 
-      final List<dynamic> decoded = jsonDecode(content);
-      final dir = await getApplicationDocumentsDirectory();
+        List<dynamic> decoded = [];
+        try {
+          decoded = jsonDecode(content);
+        } catch (e) {
+          debugPrint('MSNLP_FILE | CATALOG_CORRUPTED $e');
+          final corruptFile = File('${catalogFile.path}.corrupt');
+          await catalogFile.copy(corruptFile.path);
+          await catalogFile.writeAsString('[]');
+          return [];
+        }
+
+        final dir = await getApplicationDocumentsDirectory();
 
       for (var item in decoded) {
         final String name = item['name'] ?? 'Untitled';
@@ -319,10 +385,11 @@ class DownloadService {
           );
         }
       }
-    } catch (e) {
-      debugPrint('Error getting offline files: $e');
-    }
-    return results;
+      } catch (e, stack) {
+        debugPrint('Error getting offline files: $e stack=$stack');
+      }
+      return results;
+    });
   }
 
   // --- ANALYTICS / ACCESS TRACKING ---

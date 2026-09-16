@@ -7,11 +7,22 @@ import 'pages/profile_page.dart';
 import 'services/auth_manager.dart';
 import 'services/language_notifier.dart';
 import 'services/offline_access_tracker.dart';
+import 'services/message_service.dart';
 
+import 'services/notification_service.dart';
 import 'pages/splash_page.dart';
+import 'services/firebase_stub.dart' if (dart.library.io) 'services/firebase_mobile.dart' as fb;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Firebase setup is moved to _checkSession() inside AppStartupHelper
+
+  try {
+    await NotificationService().init();
+  } catch (e) {
+    debugPrint('Error initializing NotificationService: $e');
+  }
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(
@@ -23,8 +34,12 @@ void main() async {
   );
   
   // Load saved theme and language asynchronously on app startup
-  await ThemeNotifier.loadTheme();
-  await LanguageNotifier.loadLanguage();
+  try {
+    await ThemeNotifier.loadTheme();
+    await LanguageNotifier.loadLanguage();
+  } catch (e) {
+    debugPrint('Error loading preferences: $e');
+  }
   
   runApp(const MindSpaceDriveApp());
 }
@@ -62,14 +77,42 @@ class AppStartupHelper extends StatefulWidget {
   State<AppStartupHelper> createState() => _AppStartupHelperState();
 }
 
-class _AppStartupHelperState extends State<AppStartupHelper> {
+class _AppStartupHelperState extends State<AppStartupHelper> with WidgetsBindingObserver {
   bool _isLoading = true;
   bool _isLoggedIn = false;
+  final MessageService _messageService = MessageService();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _checkSession();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    debugPrint('MSNLP_APPSTATE | LIFECYCLE state=${state.name}');
+    if (state == AppLifecycleState.paused) {
+      debugPrint('MSNLP_APPSTATE | SCREEN_OFF/BACKGROUND state=${state.name}');
+    }
+    if (!_isLoggedIn) return;
+    
+    final token = AuthManager.token;
+    if (token == null) return;
+
+    if (state == AppLifecycleState.resumed) {
+      // User came back to the app
+      _messageService.updateOnlineStatus(token, true);
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+      // User minimized or closed the app
+      _messageService.updateOnlineStatus(token, false);
+    }
   }
 
   Future<void> _checkSession() async {
@@ -83,6 +126,14 @@ class _AppStartupHelperState extends State<AppStartupHelper> {
       _isLoggedIn = loggedIn;
       _isLoading = false;
     });
+
+    if (loggedIn) {
+      final token = AuthManager.token;
+      if (token != null) {
+        _messageService.updateOnlineStatus(token, true);
+        await fb.setupFirebase(_messageService, token);
+      }
+    }
   }
 
   @override

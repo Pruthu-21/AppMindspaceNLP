@@ -402,7 +402,7 @@ class FileCard extends StatelessWidget {
                         ? null
                         : () {
                             Navigator.pop(context);
-                            onMenuSelected?.call('download');
+                            onMenuSelected?.call(isDownloaded ? 'delete_offline' : 'download');
                           },
                   ),
                   if (isActive)

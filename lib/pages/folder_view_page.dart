@@ -797,29 +797,38 @@ class _FolderViewPageState extends State<FolderViewPage> {
     );
   }
 
-  void _handleDownloadAction(FileModel file) async {
+  void _handleDeleteOfflineAction(FileModel file) async {
     if (file.isFolder) return;
-    final isCurrentlyDownloaded = file.isDownloaded;
-    if (isCurrentlyDownloaded) {
+    debugPrint('MSNLP_DOWNLOAD | ACTION action=DELETE fileId=${file.id} fileName=${file.name}');
+    debugPrint('MSNLP_FILE | DELETE_START fileId=${file.id}');
+    try {
       await DownloadService.deleteDownloadedFile(file.name);
+      debugPrint('MSNLP_FILE | PHYSICAL_DELETE path=${file.name} success=true');
+      debugPrint('MSNLP_FILE | METADATA_DELETE fileId=${file.id} success=true');
       if (mounted) {
         AppToast.showInfo(context, '"${file.name}" removed from offline storage.');
         await _fetchFolderContents();
       }
+    } catch (e, stack) {
+      debugPrint('MSNLP_FILE | PHYSICAL_DELETE path=${file.name} success=false error=$e stack=$stack');
+    }
+  }
+
+  void _handleDownloadAction(FileModel file) async {
+    debugPrint('MSNLP_DOWNLOAD | REQUEST fileId=${file.id} fileName=${file.name} source=three_dot url_available=${file.previewUrl != null}');
+    if (file.isFolder) return;
+    AppToast.showInfo(context, 'Saving "${file.name}" to local device storage...');
+    final url = file.previewUrl ?? '';
+    final ok = await DownloadService.downloadFile(url, file.name, model: file);
+    if (ok) {
+      if (mounted) {
+        AppToast.showSuccess(context, '"${file.name}" saved locally for offline access!');
+        await _fetchFolderContents();
+      }
     } else {
-      AppToast.showInfo(context, 'Saving "${file.name}" to local device storage...');
-      final url = file.previewUrl ?? '';
-      final ok = await DownloadService.downloadFile(url, file.name, model: file);
-      if (ok) {
-        if (mounted) {
-          AppToast.showSuccess(context, '"${file.name}" saved locally for offline access!');
-          await _fetchFolderContents();
-        }
-      } else {
-        if (mounted) {
-          final error = DownloadService.downloadErrorNotifier.value ?? 'Failed to download "${file.name}". Please check internet connection.';
-          AppToast.showError(context, error);
-        }
+      if (mounted) {
+        final error = DownloadService.downloadErrorNotifier.value ?? 'Failed to download "${file.name}". Please check internet connection.';
+        AppToast.showError(context, error);
       }
     }
   }
@@ -957,6 +966,8 @@ class _FolderViewPageState extends State<FolderViewPage> {
                 _showMoveDialog([item.id]);
               } else if (action == 'download') {
                 _handleDownloadAction(item);
+              } else if (action == 'delete_offline' || action == 'remove_partial') {
+                _handleDeleteOfflineAction(item);
               }
             },
             onTap: () {
@@ -1001,6 +1012,8 @@ class _FolderViewPageState extends State<FolderViewPage> {
                 _showMoveDialog([item.id]);
               } else if (action == 'download') {
                 _handleDownloadAction(item);
+              } else if (action == 'delete_offline' || action == 'remove_partial') {
+                _handleDeleteOfflineAction(item);
               }
             },
             onTap: () {

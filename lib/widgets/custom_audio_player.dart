@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../constants/app_colors.dart';
 import '../services/offline_access_tracker.dart';
 
@@ -43,23 +44,36 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
   Timer? _hideTimer;
   Timer? _trackingTimer;
   int _sessionRunningTime = 0;
+  DateTime? _lastPlayStartTime;
   bool _wasPlayingForTracking = false;
 
-  
+  void _flushRemainingTime() {
+    if (_lastPlayStartTime != null) {
+      final diffSeconds = (DateTime.now().difference(_lastPlayStartTime!).inMilliseconds / 1000).round();
+      if (diffSeconds > 0) {
+        _sessionRunningTime += diffSeconds;
+        debugPrint('[ANALYTICS_DEBUG] Audio flush: +$diffSeconds sec. Total session: $_sessionRunningTime sec');
+        _lastPlayStartTime = DateTime.now();
+        
+        if (widget.fileId != null && _controller != null && mounted) {
+          OfflineAccessTracker.trackAccess(
+            widget.fileId!,
+            fileName: widget.fileName,
+            incrementOpen: false,
+            viewDurationIncrement: _sessionRunningTime,
+            mediaDuration: _controller!.value.duration.inSeconds,
+          );
+        }
+      }
+    }
+  }
+
   void _startTrackingTimer() {
     if (widget.fileId == null) return;
     _trackingTimer?.cancel();
     _trackingTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (_controller != null && mounted) {
-        _sessionRunningTime += 5;
-        final totalDuration = _controller!.value.duration.inSeconds;
-        OfflineAccessTracker.trackAccess(
-          widget.fileId!,
-          fileName: widget.fileName,
-          incrementOpen: false,
-          viewDurationIncrement: _sessionRunningTime,
-          mediaDuration: totalDuration,
-        );
+      if (mounted) {
+        _flushRemainingTime();
       }
     });
   }
@@ -167,8 +181,13 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
     if (isPlaying != _wasPlayingForTracking) {
       _wasPlayingForTracking = isPlaying;
       if (isPlaying) {
+        _lastPlayStartTime = DateTime.now();
+        WakelockPlus.enable();
         _startTrackingTimer();
       } else {
+        _flushRemainingTime();
+        _lastPlayStartTime = null;
+        WakelockPlus.disable();
         _stopTrackingTimer();
       }
     }
@@ -178,6 +197,8 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
 
   @override
   void dispose() {
+    _flushRemainingTime();
+    WakelockPlus.disable();
     _hideTimer?.cancel();
     _stopTrackingTimer();
     _controller?.removeListener(_playerListener);

@@ -47,3 +47,11 @@ app.*.map.json
 # Build artifacts and scripts
 *.apk
 *.py
+
+# Firebase
+google-services.json
+GoogleService-Info.plist
+firebase_options.dart
+
+# Mac OS backup files
+* 2.*

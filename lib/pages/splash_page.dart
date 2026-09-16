@@ -34,11 +34,22 @@ class _SplashPageState extends State<SplashPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Changed to white background
+      backgroundColor: Colors.white, // Changed to white for GIF size adjustment
       body: Center(
         child: Image.asset(
           'assets/download.gif',
-          fit: BoxFit.contain, // Ensures the GIF fits nicely on the screen
+          fit: BoxFit.cover, // Changed to cover so it fills the whole screen
+          width: double.infinity,
+          height: double.infinity,
+          errorBuilder: (context, error, stackTrace) {
+            debugPrint('Error loading splash GIF: $error');
+            return const Center(
+              child: Text(
+                'Mindspace',
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.blue),
+              ),
+            );
+          },
         ),
       ),
     );

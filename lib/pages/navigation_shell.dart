@@ -7,7 +7,7 @@ import 'auth/login_page.dart';
 import 'home_page.dart';
 import 'recent_page.dart';
 import 'downloads_page.dart';
-import 'notifications_page.dart';
+import 'reminders_page.dart';
 import 'profile_page.dart';
 import 'admin/admin_panel_page.dart';
 
@@ -69,7 +69,7 @@ class _NavigationShellState extends State<NavigationShell> {
         const HomePage(),
         const RecentPage(),
         const DownloadsPage(),
-        const NotificationsPage(),
+        const RemindersPage(),
         const ProfilePage(),
       ];
     }
@@ -166,7 +166,7 @@ class _NavigationShellState extends State<NavigationShell> {
         _buildNavItem(0, Icons.home_rounded, LanguageNotifier.translate('home')),
         _buildNavItem(1, Icons.schedule_rounded, LanguageNotifier.translate('recent')),
         _buildNavItem(2, Icons.download_done_rounded, LanguageNotifier.translate('downloads')),
-        _buildNavItem(3, Icons.notifications_rounded, LanguageNotifier.translate('notifications')),
+        _buildNavItem(3, Icons.alarm_rounded, 'Reminders'),
         _buildNavItem(4, Icons.person_rounded, LanguageNotifier.translate('profile')),
       ];
     }

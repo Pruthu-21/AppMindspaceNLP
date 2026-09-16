@@ -31,31 +31,20 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
   late bool _isFavorite;
   late bool _isDownloaded;
   late String _fileName;
-  Duration _mediaPosition = Duration.zero;
-  bool _mediaIsPlaying = false;
-  bool _isFullscreenOpen = false;
   String? _activePath;
-  late DateTime _startTime;
-  Timer? _previewTimer;
-  
-
   @override
   void initState() {
     super.initState();
-        _startTime = DateTime.now();
-    _startPreviewTimer();
     _isFavorite = widget.file.isFavorite;
     _isDownloaded = widget.file.isDownloaded;
     _fileName = widget.file.name;
     _activePath = widget.file.previewUrl;
     _checkOfflineStatus();
     RecentService.addFileToRecent(widget.file);
-    OfflineAccessTracker.trackAccess(widget.file.id, fileName: widget.file.name);
   }
 
   @override
   void dispose() {
-    _previewTimer?.cancel();
     super.dispose();
   }
 
@@ -70,24 +59,6 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
         } else {
           _activePath = widget.file.previewUrl;
         }
-      });
-    }
-  }
-
-  
-  void _startPreviewTimer() {
-    final format = widget.file.format.toLowerCase();
-    final isMedia = ['mp3', 'audio', 'wav', 'video', 'mp4', 'mov'].contains(format);
-    
-    if (!isMedia && !widget.file.isFolder) {
-      _previewTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-        final currentSessionTime = DateTime.now().difference(_startTime).inSeconds;
-        OfflineAccessTracker.trackAccess(
-          widget.file.id,
-          fileName: widget.file.name,
-          incrementOpen: false,
-          viewDurationIncrement: currentSessionTime,
-        );
       });
     }
   }
@@ -121,6 +92,7 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
   bool _isDownloadingThis = false;
 
   void _toggleDownload() async {
+    debugPrint('MSNLP_DOWNLOAD | REQUEST fileId=${widget.file.id} fileName=$_fileName source=details_page url_available=${widget.file.previewUrl != null}');
     final previewUrl = widget.file.previewUrl;
     if (!_isDownloaded) {
       if (previewUrl != null && previewUrl.isNotEmpty) {
@@ -363,29 +335,16 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
                           const SnackBar(content: Text('Folder navigation triggered (UI only)')),
                         );
                       } else {
-                        final wasPlaying = _mediaIsPlaying;
-                        setState(() {
-                          _isFullscreenOpen = true;
-                        });
-                        final result = await Navigator.push<Map<String, dynamic>>(
+                        await Navigator.push<Map<String, dynamic>>(
                           context,
                           MaterialPageRoute(
                             builder: (context) => FilePreviewerPage(
                               file: widget.file,
-                              initialPosition: _mediaPosition,
-                              autoPlay: wasPlaying,
+                              initialPosition: Duration.zero,
+                              autoPlay: true,
                             ),
                           ),
                         );
-                        if (mounted) {
-                          setState(() {
-                            _isFullscreenOpen = false;
-                            if (result != null) {
-                              _mediaPosition = result['position'] as Duration? ?? Duration.zero;
-                              _mediaIsPlaying = result['isPlaying'] as bool? ?? false;
-                            }
-                          });
-                        }
                       }
                     },
                   ),
@@ -501,15 +460,6 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
   }
 
   Widget _buildPreviewContent(BuildContext context) {
-    if (_isFullscreenOpen) {
-      return Container(
-        color: Colors.black,
-        child: const Center(
-          child: CircularProgressIndicator(color: Colors.white70),
-        ),
-      );
-    }
-
     final theme = Theme.of(context);
     final url = _activePath;
     final hasUrl = url != null && url.isNotEmpty;
@@ -521,89 +471,55 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
     final format = widget.file.format.toLowerCase();
 
     if (format == 'pdf') {
-      return hasUrl 
-          ? buildPlatformPdf(url) 
-          : _buildPreviewIcon(Icons.picture_as_pdf_rounded, AppColors.error);
+      return _buildPreviewIcon(Icons.picture_as_pdf_rounded, AppColors.error);
     }
     if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'image'].contains(format)) {
-      return hasUrl
-          ? buildPlatformImage(url)
-          : _buildPreviewIcon(Icons.image_rounded, AppColors.info);
+      return _buildPreviewIcon(Icons.image_rounded, AppColors.info);
     }
     if (format == 'mp3' || format == 'audio' || format == 'wav') {
-      return hasUrl
-          ? CustomAudioPlayer(
-              url: url,
-              fileName: widget.file.name,
-              fileId: widget.file.id,
-              isMini: true,
-              initialPosition: _mediaPosition,
-              autoPlay: _mediaIsPlaying,
-              onPositionChanged: (pos) {
-                _mediaPosition = pos;
-              },
-              onPlayingChanged: (playing) {
-                _mediaIsPlaying = playing;
-              },
-            )
-          : const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  RotatingVinyl(size: 90),
-                  SizedBox(height: 12),
-                  Text(
-                    'Offline Audio Track',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            RotatingVinyl(size: 90),
+            SizedBox(height: 12),
+            Text(
+              'Audio Track',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 12,
               ),
-            );
+            ),
+          ],
+        ),
+      );
     }
     if (format == 'video' || format == 'mp4' || format == 'mov') {
-      return hasUrl
-          ? CustomVideoPlayer(
-              url: url,
-              fileName: widget.file.name,
-              fileId: widget.file.id,
-              isMini: true,
-              initialPosition: _mediaPosition,
-              autoPlay: _mediaIsPlaying,
-              onPositionChanged: (pos) {
-                _mediaPosition = pos;
-              },
-              onPlayingChanged: (playing) {
-                _mediaIsPlaying = playing;
-              },
-            )
-          : Stack(
-              alignment: Alignment.center,
-              children: [
-                _buildPreviewIcon(Icons.video_library_rounded, AppColors.secondary),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 16,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.play_arrow_rounded,
-                    color: AppColors.primary,
-                    size: 28,
-                  ),
+      return Stack(
+        alignment: Alignment.center,
+        children: [
+          _buildPreviewIcon(Icons.video_library_rounded, AppColors.secondary),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.9),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 16,
                 ),
               ],
-            );
+            ),
+            child: const Icon(
+              Icons.play_arrow_rounded,
+              color: AppColors.primary,
+              size: 28,
+            ),
+          ),
+        ],
+      );
     }
     if (format == 'doc') {
       return _buildPreviewIcon(Icons.description_rounded, AppColors.primary);

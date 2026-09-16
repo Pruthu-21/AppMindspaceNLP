@@ -18,7 +18,9 @@ import 'file_details_page.dart';
 import 'folder_view_page.dart';
 import 'preview/file_previewer_page.dart';
 import '../../services/recent_service.dart';
+import '../../services/message_service.dart';
 import 'package:file_picker/file_picker.dart';
+import 'messages_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -78,6 +80,9 @@ class _HomePageState extends State<HomePage> {
     _filteredMyDriveFiles = [];
     _filteredSharedWithMeFiles = [];
     _fetchSharedFiles();
+    if (AuthManager.token != null) {
+      MessageService().checkUnreadMessages(AuthManager.token!);
+    }
   }
 
   List<FileModel> _parseFileList(String responseBody) {
@@ -185,10 +190,12 @@ class _HomePageState extends State<HomePage> {
       final cleanMyDrive = myDrive.where((f) => !sharedIds.contains(f.id)).toList();
 
       Future<List<FileModel>> updateOfflineStatus(List<FileModel> list) async {
+        debugPrint('MSNLP_HOME | OFFLINE_SCAN started');
         final List<FileModel> updated = [];
         for (var file in list) {
           final isDl = await DownloadService.isFileDownloaded(file.name);
           if (isDl) {
+            debugPrint('MSNLP_HOME | FILE_DETECTED fileId=${file.id} exists=true');
             final localPath = await DownloadService.getLocalFilePath(file.name);
             updated.add(FileModel(
               id: file.id,
@@ -207,6 +214,7 @@ class _HomePageState extends State<HomePage> {
             updated.add(file);
           }
         }
+        debugPrint('MSNLP_HOME | OFFLINE_SCAN filesFound=${updated.where((f) => f.isDownloaded).length}');
         return updated;
       }
 
@@ -226,7 +234,12 @@ class _HomePageState extends State<HomePage> {
       });
 
     } catch (e) {
+      debugPrint('MSNLP_HOME | OFFLINE_SCAN started (fallback)');
       final offlineFiles = await DownloadService.getOfflineFiles();
+      debugPrint('MSNLP_HOME | OFFLINE_SCAN filesFound=${offlineFiles.length}');
+      for (var f in offlineFiles) {
+        debugPrint('MSNLP_HOME | FILE_DETECTED fileId=${f.id} exists=true');
+      }
       setState(() {
         if (offlineFiles.isNotEmpty) {
           _sharedWithMeFiles = [];
@@ -797,6 +810,35 @@ class _HomePageState extends State<HomePage> {
                               );
                             },
                           ),
+                          ValueListenableBuilder<bool>(
+                            valueListenable: DownloadService.isDownloadingNotifier,
+                            builder: (context, isDl, child) {
+                              if (isDl) return const SizedBox.shrink();
+                              return ValueListenableBuilder<bool>(
+                                valueListenable: MessageService.hasUnreadMessages,
+                                builder: (context, hasUnread, child) {
+                                  return IconButton(
+                                    icon: Badge(
+                                      isLabelVisible: hasUnread,
+                                      backgroundColor: Colors.red,
+                                      child: const Icon(Icons.notifications_rounded, size: 28),
+                                    ),
+                                    onPressed: () {
+                                      if (AuthManager.token != null) {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => MessagesPage(userToken: AuthManager.token!),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 8),
                           GestureDetector(
                             onTap: () {
                               NavigationShell.navigationNotifier.value = 4; // Navigate to Profile Tab
@@ -1629,10 +1671,14 @@ class _HomePageState extends State<HomePage> {
           _onSearchChanged(_searchQuery);
         }
       });
-    } else if (action == 'download') {
-      final isCurrentlyDownloaded = file.isDownloaded;
-      if (isCurrentlyDownloaded) {
+    } else if (action == 'delete_offline' || action == 'remove_partial') {
+      debugPrint('MSNLP_DOWNLOAD | ACTION action=DELETE fileId=${file.id} fileName=${file.name}');
+      debugPrint('MSNLP_FILE | DELETE_START fileId=${file.id}');
+      try {
         await DownloadService.deleteDownloadedFile(file.name);
+        debugPrint('MSNLP_FILE | PHYSICAL_DELETE path=${file.name} success=true');
+        debugPrint('MSNLP_FILE | METADATA_DELETE fileId=${file.id} success=true');
+        
         setState(() {
           final index = MockData.files.indexWhere((f) => f.id == file.id);
           if (index != -1) {
@@ -1654,37 +1700,41 @@ class _HomePageState extends State<HomePage> {
         if (mounted) {
           AppToast.showInfo(context, '"${file.name}" removed from offline storage.');
         }
+        debugPrint('MSNLP_HOME | OFFLINE_REFRESH filesFound=${MockData.files.length}');
+      } catch (e, stack) {
+        debugPrint('MSNLP_FILE | PHYSICAL_DELETE path=${file.name} success=false error=$e stack=$stack');
+      }
+    } else if (action == 'download') {
+      debugPrint('MSNLP_DOWNLOAD | REQUEST fileId=${file.id} fileName=${file.name} source=three_dot url_available=${file.previewUrl != null}');
+      AppToast.showInfo(context, 'Saving "${file.name}" to local device storage...');
+      final url = file.previewUrl ?? '';
+      final ok = await DownloadService.downloadFile(url, file.name, model: file);
+      if (ok) {
+        setState(() {
+          final index = MockData.files.indexWhere((f) => f.id == file.id);
+          if (index != -1) {
+            MockData.files[index] = FileModel(
+              id: file.id,
+              name: file.name,
+              format: file.format,
+              sizeBytes: file.sizeBytes,
+              uploadDate: file.uploadDate,
+              ownerName: file.ownerName,
+              isPinned: file.isPinned,
+              isFavorite: file.isFavorite,
+              isDownloaded: true,
+              previewUrl: file.previewUrl,
+            );
+            _onSearchChanged(_searchQuery);
+          }
+        });
+        if (mounted) {
+          AppToast.showSuccess(context, '"${file.name}" saved locally for offline access!');
+        }
       } else {
-        AppToast.showInfo(context, 'Saving "${file.name}" to local device storage...');
-        final url = file.previewUrl ?? '';
-        final ok = await DownloadService.downloadFile(url, file.name, model: file);
-        if (ok) {
-          setState(() {
-            final index = MockData.files.indexWhere((f) => f.id == file.id);
-            if (index != -1) {
-              MockData.files[index] = FileModel(
-                id: file.id,
-                name: file.name,
-                format: file.format,
-                sizeBytes: file.sizeBytes,
-                uploadDate: file.uploadDate,
-                ownerName: file.ownerName,
-                isPinned: file.isPinned,
-                isFavorite: file.isFavorite,
-                isDownloaded: true,
-                previewUrl: file.previewUrl,
-              );
-              _onSearchChanged(_searchQuery);
-            }
-          });
-          if (mounted) {
-            AppToast.showSuccess(context, '"${file.name}" saved locally for offline access!');
-          }
-        } else {
-          if (mounted) {
-            final error = DownloadService.downloadErrorNotifier.value ?? 'Failed to download "${file.name}". Please check internet connection.';
-            AppToast.showError(context, error);
-          }
+        if (mounted) {
+          final error = DownloadService.downloadErrorNotifier.value ?? 'Failed to download "${file.name}". Please check internet connection.';
+          AppToast.showError(context, error);
         }
       }
     }
