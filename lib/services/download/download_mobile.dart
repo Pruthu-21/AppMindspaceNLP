@@ -6,6 +6,7 @@ import 'package:background_downloader/background_downloader.dart';
 import '../download_service.dart';
 
 Future<bool> startPlatformDownload(String url, String fileName, {Function(double progress)? onProgress}) async {
+  Timer? networkTimer;
   try {
     // Configure notifications for all downloads
     FileDownloader().configureNotification(
@@ -40,7 +41,6 @@ Future<bool> startPlatformDownload(String url, String fileName, {Function(double
     double highestProgressSeen = 0.0;
     bool wasWaitingToRetry = false;
     
-    Timer? networkTimer;
     bool isNetworkLostState = false;
 
     Future<bool> checkInternet() async {

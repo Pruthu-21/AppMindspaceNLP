@@ -65,15 +65,33 @@ class AuthManager {
         final data = jsonDecode(response.body);
         token = data['access_token'];
         
-        final userData = data['user'] ?? {};
+        var userData = Map<String, dynamic>.from(data['user'] ?? {});
+        
+        // Fetch full user profile to get role and permissions
+        try {
+          final userResp = await http.get(
+            Uri.parse('$_baseUrl/user'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Accept': 'application/json'
+            },
+          ).timeout(const Duration(seconds: 10));
+          
+          if (userResp.statusCode == 200) {
+            final fullUser = jsonDecode(userResp.body);
+            final profile = fullUser['user'] ?? fullUser['data'] ?? fullUser;
+            userData.addAll(Map<String, dynamic>.from(profile));
+          }
+        } catch (e) {
+          debugPrint('Failed to fetch full user profile: $e');
+        }
+
         final String userId = userData['id']?.toString() ?? '1';
         final name = userData['name'] ?? 'User';
         final userEmail = userData['email'] ?? cleanedEmail;
 
         final roleStr = userData['role']?.toString().toLowerCase() ?? '';
-        final role = (roleStr == 'admin' || userEmail.contains('admin') || name.toLowerCase().contains('admin'))
-            ? AppRole.admin
-            : AppRole.user;
+        final role = (roleStr == 'admin') ? AppRole.admin : AppRole.user;
 
         final initials = name.trim().split(' ').map((s) => s.isNotEmpty ? s[0] : '').take(2).join().toUpperCase();
 
