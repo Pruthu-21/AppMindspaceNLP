@@ -1,4 +1,5 @@
 import java.util.Properties
+import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
@@ -11,6 +12,7 @@ plugins {
 
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
+
 if (localPropertiesFile.exists()) {
     localPropertiesFile.reader().use { reader ->
         localProperties.load(reader)
@@ -19,6 +21,14 @@ if (localPropertiesFile.exists()) {
 
 val flutterVersionCode = localProperties.getProperty("flutter.versionCode") ?: "1"
 val flutterVersionName = localProperties.getProperty("flutter.versionName") ?: "1.0.0"
+
+// Android signing configuration
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties()
+
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
 
 android {
     namespace = "com.mindspace.nlp"
@@ -45,10 +55,11 @@ android {
 
     signingConfigs {
         create("release") {
-            keyAlias = "upload"
-            keyPassword = "mindspace123"
-            storeFile = file("upload-keystore.jks")
-            storePassword = "mindspace123"
+            keyAlias = keystoreProperties["keyAlias"] as String
+            keyPassword = keystoreProperties["keyPassword"] as String
+            storeFile = file(keystoreProperties["storeFile"] as String)
+            storePassword = keystoreProperties["storePassword"] as String
+
             isV1SigningEnabled = true
             isV2SigningEnabled = true
         }
@@ -59,6 +70,7 @@ android {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
+
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
