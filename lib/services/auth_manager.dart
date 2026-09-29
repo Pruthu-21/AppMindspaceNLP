@@ -46,12 +46,14 @@ class AuthManager {
   static Future<bool> login(String email, String password) async {
     final cleanedEmail = email.trim().toLowerCase();
 
+    debugPrint('LOGIN_REQUEST_STARTED');
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/login'),
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'User-Agent': 'MindspaceNLPApp/1.0'
         },
         body: jsonEncode({
           'email': cleanedEmail,
@@ -59,7 +61,9 @@ class AuthManager {
         }),
       );
 
-      debugPrint('Login Response [${response.statusCode}]: ${response.body}');
+      final contentType = response.headers['content-type'] ?? '';
+      debugPrint('LOGIN_RESPONSE_STATUS=${response.statusCode}');
+      debugPrint('LOGIN_RESPONSE_CONTENT_TYPE=$contentType');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
@@ -107,7 +111,12 @@ class AuthManager {
         await SessionStorage.save(token!, userId, name, userEmail, roleStr);
         return true;
       } else {
-        lastLoginError = jsonDecode(response.body)['message'] ?? 'Login failed (${response.statusCode})';
+        if (contentType.contains('application/json')) {
+          lastLoginError = jsonDecode(response.body)['message'] ?? 'Login failed (${response.statusCode})';
+        } else {
+          debugPrint('LOGIN_HTTP_ERROR status=${response.statusCode} contentType=$contentType');
+          lastLoginError = 'Login failed with unexpected response (${response.statusCode})';
+        }
       }
     } catch (e) {
       debugPrint('Login API error: $e');

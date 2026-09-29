@@ -30,6 +30,8 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _handleLogin() async {
+    if (_isLoading) return;
+
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
