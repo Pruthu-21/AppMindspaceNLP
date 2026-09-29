@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
 import '../services/role_manager.dart';
 import '../services/auth_manager.dart';
@@ -54,6 +55,46 @@ class _NavigationShellState extends State<NavigationShell> {
     }
   }
 
+  /// Handles the Android back button / gesture back.
+  /// If on a non-home tab, navigates to Home first.
+  /// If on home tab, shows exit confirmation dialog.
+  void _handleBackButton(bool didPop) {
+    if (didPop) return; // System already handled the pop
+
+    if (_currentIndex != 0) {
+      // Navigate to Home tab instead of exiting
+      NavigationShell.navigationNotifier.value = 0;
+    } else {
+      // On home tab — show exit confirmation
+      _showExitConfirmation();
+    }
+  }
+
+  Future<void> _showExitConfirmation() async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => AlertDialog(
+        title: const Text('Exit MindSpaceNLP?'),
+        content: const Text('Are you sure you want to leave the app?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('EXIT'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldExit == true) {
+      SystemNavigator.pop();
+    }
+  }
+
   // Build the list of pages dynamically based on the current role
   List<Widget> _getPages(AppRole role) {
     if (role == AppRole.admin) {
@@ -90,7 +131,10 @@ class _NavigationShellState extends State<NavigationShell> {
           _currentIndex = 0;
         }
 
-        return Scaffold(
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) => _handleBackButton(didPop),
+          child: Scaffold(
           body: Stack(
             children: [
               // Screen contents
@@ -147,6 +191,7 @@ class _NavigationShellState extends State<NavigationShell> {
               ),
             ],
           ),
+        ),
         );
       },
     );
