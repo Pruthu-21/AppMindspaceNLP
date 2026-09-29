@@ -10,6 +10,10 @@
 .history
 .svn/
 .swiftpm/
+*.json
+*.jks
+*.keystore
+key.properties
 migrate_working_dir/
 
 # IntelliJ related
