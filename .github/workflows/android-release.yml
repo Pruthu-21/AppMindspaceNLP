@@ -1,6 +1,9 @@
 name: Android Internal Release
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -55,9 +58,19 @@ jobs:
       - name: Build release AAB
         run: flutter build appbundle --release
 
-      # Upload AAB as GitHub artifact
+      # Keep AAB as GitHub artifact
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v6
         with:
           name: mindspace-release-aab
           path: build/app/outputs/bundle/release/app-release.aab
+
+      # Upload AAB to Google Play Internal Testing
+      - name: Upload to Google Play Internal Testing
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
+          packageName: com.mindspace.nlp
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          tracks: internal
+          status: completed
