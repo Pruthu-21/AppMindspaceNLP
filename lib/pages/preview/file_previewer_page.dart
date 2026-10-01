@@ -26,6 +26,7 @@ class FilePreviewerPage extends StatefulWidget {
 
 class _FilePreviewerPageState extends State<FilePreviewerPage> {
   Timer? _previewTimer;
+  DateTime? _nonMediaStartTime;
 
   @override
   void initState() {
@@ -40,12 +41,14 @@ class _FilePreviewerPageState extends State<FilePreviewerPage> {
       final bool isMedia = ['mp4', 'video', 'mov', 'mp3', 'audio', 'wav'].contains(format);
       
       if (!isMedia && !file.isFolder) {
+        _nonMediaStartTime = DateTime.now();
         _previewTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+          final elapsed = DateTime.now().difference(_nonMediaStartTime!).inSeconds;
           OfflineAccessTracker.trackAccess(
             file.id,
             fileName: file.name,
             incrementOpen: false,
-            viewDurationIncrement: 5,
+            viewDurationIncrement: elapsed,
           );
         });
       }
@@ -55,6 +58,24 @@ class _FilePreviewerPageState extends State<FilePreviewerPage> {
   @override
   void dispose() {
     _previewTimer?.cancel();
+    // Final flush: send the exact elapsed time for non-media files so the
+    // last partial interval (0-4 seconds) is not silently lost.
+    final file = widget.file;
+    if (file is FileModel) {
+      final String format = file.format.toLowerCase();
+      final bool isMedia = ['mp4', 'video', 'mov', 'mp3', 'audio', 'wav'].contains(format);
+      if (!isMedia && !file.isFolder && _nonMediaStartTime != null) {
+        final elapsed = DateTime.now().difference(_nonMediaStartTime!).inSeconds;
+        if (elapsed > 0) {
+          OfflineAccessTracker.trackAccess(
+            file.id,
+            fileName: file.name,
+            incrementOpen: false,
+            viewDurationIncrement: elapsed,
+          );
+        }
+      }
+    }
     super.dispose();
   }
   Future<void> _openExternally(String url) async {

@@ -95,6 +95,9 @@ class OfflineAccessTracker {
   }
 
   /// Store un-synced file access log locally.
+  /// Duration updates CONSOLIDATE into the existing session record for the same
+  /// file_id, so that one offline session produces exactly ONE pending log entry
+  /// containing both the open flag and the final cumulative duration.
   static Future<void> _storeLocally(
     String fileId, {
     String? fileName,
@@ -109,14 +112,47 @@ class OfflineAccessTracker {
         logs = jsonDecode(existingJson) as List<dynamic>;
       }
 
-      logs.add({
-        'file_id': fileId,
-        'file_name': fileName ?? 'File #$fileId',
-        'accessed_at': DateTime.now().toIso8601String(),
-        'increment_open': incrementOpen,
-        if (viewDurationIncrement != null) 'view_duration_increment': viewDurationIncrement,
-        if (mediaDuration != null) 'media_duration': mediaDuration,
-      });
+      if (!incrementOpen && viewDurationIncrement != null) {
+        // Duration update: find the LAST pending record for this file_id
+        // and update it in-place instead of appending a new record.
+        int lastIndex = -1;
+        for (int i = logs.length - 1; i >= 0; i--) {
+          if (logs[i]['file_id'].toString() == fileId) {
+            lastIndex = i;
+            break;
+          }
+        }
+
+        if (lastIndex >= 0) {
+          // Update existing record with the latest cumulative duration
+          logs[lastIndex]['view_duration_increment'] = viewDurationIncrement;
+          logs[lastIndex]['accessed_at'] = DateTime.now().toIso8601String();
+          if (mediaDuration != null) {
+            logs[lastIndex]['media_duration'] = mediaDuration;
+          }
+        } else {
+          // No existing record for this file (edge case: open was already synced online).
+          // Create a new record without increment_open so the server only updates duration.
+          logs.add({
+            'file_id': fileId,
+            'file_name': fileName ?? 'File #$fileId',
+            'accessed_at': DateTime.now().toIso8601String(),
+            'increment_open': false,
+            'view_duration_increment': viewDurationIncrement,
+            if (mediaDuration != null) 'media_duration': mediaDuration,
+          });
+        }
+      } else {
+        // New open event — always append a new record to start a new session.
+        logs.add({
+          'file_id': fileId,
+          'file_name': fileName ?? 'File #$fileId',
+          'accessed_at': DateTime.now().toIso8601String(),
+          'increment_open': incrementOpen,
+          if (viewDurationIncrement != null) 'view_duration_increment': viewDurationIncrement,
+          if (mediaDuration != null) 'media_duration': mediaDuration,
+        });
+      }
 
       await AppStorage.write(_storageKey, jsonEncode(logs));
       _startSyncTimer();
