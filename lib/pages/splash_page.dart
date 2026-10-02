@@ -159,29 +159,31 @@ class _SplashPageState extends State<SplashPage>
       canPop: false,
       child: Scaffold(
         backgroundColor: Colors.black,
-        body: GestureDetector(
-          onTap: _onTap,
-          behavior: HitTestBehavior.opaque,
-          child: Center(
-            child: _frames.isEmpty
-                ? const SizedBox.shrink()
-                : AnimatedBuilder(
-                    animation: _controller,
-                    builder: (context, child) {
-                      int frameIndex = (_controller.value * (_frames.length - 1))
-                          .floor();
-                      if (frameIndex < 0) frameIndex = 0;
-                      if (frameIndex >= _frames.length)
-                        frameIndex = _frames.length - 1;
+        body: SafeArea(
+          child: GestureDetector(
+            onTap: _onTap,
+            behavior: HitTestBehavior.opaque,
+            child: Center(
+              child: _frames.isEmpty
+                  ? const SizedBox.shrink()
+                  : AnimatedBuilder(
+                      animation: _controller,
+                      builder: (context, child) {
+                        int frameIndex = (_controller.value * (_frames.length - 1))
+                            .floor();
+                        if (frameIndex < 0) frameIndex = 0;
+                        if (frameIndex >= _frames.length)
+                          frameIndex = _frames.length - 1;
 
-                      return RawImage(
-                        image: _frames[frameIndex].image,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: double.infinity,
-                      );
-                    },
-                  ),
+                        return RawImage(
+                          image: _frames[frameIndex].image,
+                          fit: BoxFit.contain,
+                          width: double.infinity,
+                          height: double.infinity,
+                        );
+                      },
+                    ),
+            ),
           ),
         ),
       ),

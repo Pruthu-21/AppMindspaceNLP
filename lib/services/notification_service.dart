@@ -79,7 +79,6 @@ void backgroundNotificationHandler(NotificationResponse response) {
         importance: Importance.max,
         priority: Priority.high,
         playSound: true,
-        fullScreenIntent: true,
         category: AndroidNotificationCategory.alarm,
         actions: <AndroidNotificationAction>[
           AndroidNotificationAction(
