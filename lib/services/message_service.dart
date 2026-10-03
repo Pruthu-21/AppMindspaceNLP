@@ -29,6 +29,27 @@ class AppMessage {
   }
 }
 
+
+List<Map<String, dynamic>> parseMessagesResponse(String responseBody) {
+  try {
+    final dynamic decoded = json.decode(responseBody);
+    List<dynamic> data = [];
+    if (decoded is List) {
+      data = decoded;
+    } else if (decoded is Map) {
+      if (decoded['data'] is List) {
+        data = decoded['data'];
+      } else if (decoded['messages'] is List) {
+        data = decoded['messages'];
+      }
+    }
+    return data.map((e) => e as Map<String, dynamic>).toList();
+  } catch (e) {
+    debugPrint('Error parsing messages: $e');
+    return [];
+  }
+}
+
 class MessageService {
   // Replace with your actual API endpoint URL
   final String baseUrl = 'https://mindspacenlp.com/api';
@@ -83,16 +104,8 @@ class MessageService {
       );
 
       if (response.statusCode == 200) {
-        final dynamic decoded = json.decode(response.body);
-        List<dynamic> data = [];
-        if (decoded is List) {
-          data = decoded;
-        } else if (decoded is Map) {
-          if (decoded['data'] is List) {
-            data = decoded['data'];
-          } else if (decoded['messages'] is List) data = decoded['messages'];
-        }
-        final fetchedMessages = data.map((json) => AppMessage.fromJson(json)).toList();
+        final List<Map<String, dynamic>> parsedData = await compute(parseMessagesResponse, response.body);
+        final fetchedMessages = parsedData.map((json) => AppMessage.fromJson(json)).toList();
         messages.addAll(fetchedMessages);
         
         // Mark as read

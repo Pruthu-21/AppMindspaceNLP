@@ -133,7 +133,10 @@ class _MessagesPageState extends State<MessagesPage> {
           }
         );
       },
-    );
+    ).then((_) {
+      subjectController.dispose();
+      messageController.dispose();
+    });
   }
 
   @override

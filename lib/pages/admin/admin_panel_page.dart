@@ -284,7 +284,10 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
           },
         );
       },
-    );
+    ).then((_) {
+      passwordController.dispose();
+      confirmPasswordController.dispose();
+    });
   }
 
   @override

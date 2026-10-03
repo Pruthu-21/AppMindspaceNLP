@@ -200,7 +200,9 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
           ],
         );
       },
-    );
+    ).then((_) {
+      renameController.dispose();
+    });
   }
 
   void _handleDelete() {

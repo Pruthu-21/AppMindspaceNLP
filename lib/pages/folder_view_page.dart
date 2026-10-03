@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
@@ -12,6 +13,45 @@ import '../services/role_manager.dart';
 import '../widgets/app_toast.dart';
 import 'file_details_page.dart';
 import '../services/download_service.dart';
+
+
+Map<String, List<Map<String, dynamic>>> parseFolderContentsResponse(String responseBody) {
+  try {
+    final decoded = jsonDecode(responseBody);
+    List<dynamic> rawFiles = [];
+    List<dynamic> rawFolders = [];
+
+    if (decoded is Map) {
+      if (decoded['files'] is List) rawFiles = decoded['files'];
+      if (decoded['folders'] is List) rawFolders = decoded['folders'];
+      if (rawFiles.isEmpty && rawFolders.isEmpty && decoded['data'] is List) {
+        final List<dynamic> data = decoded['data'];
+        for (var item in data) {
+          if (item['is_folder'] == true) {
+            rawFolders.add(item);
+          } else {
+            rawFiles.add(item);
+          }
+        }
+      }
+    } else if (decoded is List) {
+      for (var item in decoded) {
+        if (item['is_folder'] == true) {
+          rawFolders.add(item);
+        } else {
+          rawFiles.add(item);
+        }
+      }
+    }
+    return {
+      'rawFiles': rawFiles.map((e) => e as Map<String, dynamic>).toList(),
+      'rawFolders': rawFolders.map((e) => e as Map<String, dynamic>).toList(),
+    };
+  } catch (e) {
+    debugPrint('Error parsing folder contents: $e');
+    return {'rawFiles': [], 'rawFolders': []};
+  }
+}
 
 class FolderViewPage extends StatefulWidget {
   final FileModel folder;
@@ -74,32 +114,9 @@ class _FolderViewPageState extends State<FolderViewPage> {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
-        List<dynamic> rawFiles = [];
-        List<dynamic> rawFolders = [];
-
-        if (decoded is Map) {
-          if (decoded['files'] is List) rawFiles = decoded['files'];
-          if (decoded['folders'] is List) rawFolders = decoded['folders'];
-          if (rawFiles.isEmpty && rawFolders.isEmpty && decoded['data'] is List) {
-            final List<dynamic> data = decoded['data'];
-            for (var item in data) {
-              if (item['is_folder'] == true) {
-                rawFolders.add(item);
-              } else {
-                rawFiles.add(item);
-              }
-            }
-          }
-        } else if (decoded is List) {
-          for (var item in decoded) {
-            if (item['is_folder'] == true) {
-              rawFolders.add(item);
-            } else {
-              rawFiles.add(item);
-            }
-          }
-        }
+        final parsedData = await compute(parseFolderContentsResponse, response.body);
+        List<Map<String, dynamic>> rawFiles = parsedData['rawFiles'] ?? [];
+        List<Map<String, dynamic>> rawFolders = parsedData['rawFolders'] ?? [];
 
         final parsedFolders = rawFolders.map((item) {
           return FileModel(
@@ -941,7 +958,9 @@ class _FolderViewPageState extends State<FolderViewPage> {
           ),
         ],
       ),
-    );
+    ).then((_) {
+      controller.dispose();
+    });
   }
 
   Widget _buildItemGridOrList(List<FileModel> items) {
@@ -956,7 +975,7 @@ class _FolderViewPageState extends State<FolderViewPage> {
         delegate: SliverChildBuilderDelegate(
           (context, index) {
           final item = items[index];
-          return FileCard(
+          return RepaintBoundary(child: FileCard(
             file: item,
             isGrid: true,
             isSelectionMode: _isSelectionMode,
@@ -992,7 +1011,7 @@ class _FolderViewPageState extends State<FolderViewPage> {
                 );
               }
             },
-          );
+          ));
           },
           childCount: items.length,
         ),
@@ -1002,7 +1021,7 @@ class _FolderViewPageState extends State<FolderViewPage> {
         delegate: SliverChildBuilderDelegate(
           (context, index) {
           final item = items[index];
-          return FileCard(
+          return RepaintBoundary(child: FileCard(
             file: item,
             isGrid: false,
             isSelectionMode: _isSelectionMode,
@@ -1038,7 +1057,7 @@ class _FolderViewPageState extends State<FolderViewPage> {
                 );
               }
             },
-          );
+          ));
           },
           childCount: items.length,
         ),

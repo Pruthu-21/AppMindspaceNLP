@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../constants/app_colors.dart';
@@ -20,6 +21,30 @@ import '../../services/recent_service.dart';
 import '../../services/message_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'messages_page.dart';
+
+List<Map<String, dynamic>> parseFileListResponse(String responseBody) {
+  try {
+    final dynamic decoded = jsonDecode(responseBody);
+    List<dynamic> data = [];
+    if (decoded is List) {
+      data = decoded;
+    } else if (decoded is Map) {
+      if (decoded['data'] is List) {
+        data = decoded['data'] as List;
+      } else if (decoded['files'] is List) {
+        data = decoded['files'] as List;
+      } else if (decoded['items'] is List) {
+        data = decoded['items'] as List;
+      } else if (decoded['result'] is List) {
+        data = decoded['result'] as List;
+      }
+    }
+    return data.map((e) => e as Map<String, dynamic>).toList();
+  } catch (e) {
+    debugPrint('Error parsing JSON: $e');
+    return [];
+  }
+}
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -87,19 +112,9 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  List<FileModel> _parseFileList(String responseBody) {
+  Future<List<FileModel>> _parseFileList(String responseBody) async {
     try {
-      final dynamic decoded = jsonDecode(responseBody);
-      List<dynamic> data = [];
-      if (decoded is List) {
-        data = decoded;
-      } else if (decoded is Map) {
-        if (decoded['data'] is List) {
-          data = decoded['data'] as List;
-        } else if (decoded['files'] is List) data = decoded['files'] as List;
-        else if (decoded['items'] is List) data = decoded['items'] as List;
-        else if (decoded['result'] is List) data = decoded['result'] as List;
-      }
+      final List<Map<String, dynamic>> data = await compute(parseFileListResponse, responseBody);
 
       return data.map((item) {
         final isFolder = item['is_folder'] == true || item['mime_type'] == 'folder' || item['type'] == 'folder';
@@ -165,42 +180,41 @@ class _HomePageState extends State<HomePage> {
     try {
       final recents = await RecentService.getRecentFiles();
 
-      // Fetch My Drive files
+      // Fetch My Drive and Shared With Me files concurrently
       List<FileModel> myDrive = [];
+      List<FileModel> shared = [];
       bool myDriveFailed = false;
-      try {
-        final resMy = await http.get(
+      bool sharedFailed = false;
+
+      final results = await Future.wait([
+        http.get(
           Uri.parse('https://mindspacenlp.com/api/drive/my-drive'),
           headers: {'Authorization': 'Bearer ${AuthManager.token}', 'Accept': 'application/json'},
-        ).timeout(const Duration(seconds: 10));
-
-        if (resMy.statusCode == 200) {
-          myDrive = _parseFileList(resMy.body);
-        } else {
-          myDriveFailed = true;
-        }
-      } catch (e) {
-        myDriveFailed = true;
-        debugPrint(e.toString());
-      }
-
-      // Fetch Shared With Me files
-      List<FileModel> shared = [];
-      bool sharedFailed = false;
-      try {
-        final resShared = await http.get(
+        ).timeout(const Duration(seconds: 10)).catchError((e) {
+          debugPrint(e.toString());
+          return http.Response('', 500);
+        }),
+        http.get(
           Uri.parse('https://mindspacenlp.com/api/drive/shared-with-me'),
           headers: {'Authorization': 'Bearer ${AuthManager.token}', 'Accept': 'application/json'},
-        ).timeout(const Duration(seconds: 10));
+        ).timeout(const Duration(seconds: 10)).catchError((e) {
+          debugPrint(e.toString());
+          return http.Response('', 500);
+        }),
+      ]);
 
-        if (resShared.statusCode == 200) {
-          shared = _parseFileList(resShared.body);
-        } else {
-          sharedFailed = true;
-        }
-      } catch (e) {
+      final resMy = results[0];
+      if (resMy.statusCode == 200) {
+        myDrive = await _parseFileList(resMy.body);
+      } else {
+        myDriveFailed = true;
+      }
+
+      final resShared = results[1];
+      if (resShared.statusCode == 200) {
+        shared = await _parseFileList(resShared.body);
+      } else {
         sharedFailed = true;
-        debugPrint(e.toString());
       }
 
       if (myDriveFailed && sharedFailed) {
@@ -615,7 +629,9 @@ class _HomePageState extends State<HomePage> {
           ],
         );
       },
-    );
+    ).then((_) {
+      folderController.dispose();
+    });
   }
 
   Widget _buildSheetItem(
@@ -1060,7 +1076,7 @@ class _HomePageState extends State<HomePage> {
                               ),
                               itemBuilder: (context, index) {
                                 final folder = folders[index];
-                                return FileCard(
+                                return RepaintBoundary(child: FileCard(
                                   file: folder,
                                   isGrid: true,
                                   isSelectionMode: _isSelectionMode,
@@ -1078,7 +1094,7 @@ class _HomePageState extends State<HomePage> {
                                       );
                                     }
                                   },
-                                );
+                                ));
                               },
                             )
                           : ListView.builder(
@@ -1087,7 +1103,7 @@ class _HomePageState extends State<HomePage> {
                               itemCount: folders.length,
                               itemBuilder: (context, index) {
                                 final folder = folders[index];
-                                return FileCard(
+                                return RepaintBoundary(child: FileCard(
                                   file: folder,
                                   isGrid: false,
                                   isSelectionMode: _isSelectionMode,
@@ -1105,7 +1121,7 @@ class _HomePageState extends State<HomePage> {
                                       );
                                     }
                                   },
-                                );
+                                ));
                               },
                             ),
                       const SizedBox(height: 16),
@@ -1117,7 +1133,7 @@ class _HomePageState extends State<HomePage> {
                         itemCount: filesOnly.length,
                         itemBuilder: (context, index) {
                           final file = filesOnly[index];
-                          return FileCard(
+                          return RepaintBoundary(child: FileCard(
                             file: file,
                             isGrid: false,
                             isSelectionMode: _isSelectionMode,
@@ -1138,7 +1154,7 @@ class _HomePageState extends State<HomePage> {
                             onMenuSelected: (action) {
                               _handleFileAction(file, action);
                             },
-                          );
+                          ));
                         },
                       ),
                     ],
@@ -1154,7 +1170,7 @@ class _HomePageState extends State<HomePage> {
                       itemCount: _filteredSharedWithMeFiles.length,
                       itemBuilder: (context, index) {
                         final file = _filteredSharedWithMeFiles[index];
-                        return FileCard(
+                        return RepaintBoundary(child: FileCard(
                           file: file,
                           isGrid: false,
                           isSelectionMode: _isSelectionMode,
@@ -1175,7 +1191,7 @@ class _HomePageState extends State<HomePage> {
                           onMenuSelected: (action) {
                             _handleFileAction(file, action);
                           },
-                        );
+                        ));
                       },
                     ),
                   ],
@@ -1391,7 +1407,9 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-    );
+    ).then((_) {
+      controller.dispose();
+    });
   }
 
   void _showShareDialog(List<String> fileIds) async {
