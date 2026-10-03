@@ -946,17 +946,15 @@ class _FolderViewPageState extends State<FolderViewPage> {
 
   Widget _buildItemGridOrList(List<FileModel> items) {
     if (_isGridView) {
-      return GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: items.length,
+      return SliverGrid(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
           childAspectRatio: 1.3,
         ),
-        itemBuilder: (context, index) {
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
           final item = items[index];
           return FileCard(
             file: item,
@@ -995,14 +993,14 @@ class _FolderViewPageState extends State<FolderViewPage> {
               }
             },
           );
-        },
+          },
+          childCount: items.length,
+        ),
       );
     } else {
-      return ListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: items.length,
-        itemBuilder: (context, index) {
+      return SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
           final item = items[index];
           return FileCard(
             file: item,
@@ -1041,7 +1039,9 @@ class _FolderViewPageState extends State<FolderViewPage> {
               }
             },
           );
-        },
+          },
+          childCount: items.length,
+        ),
       );
     }
   }

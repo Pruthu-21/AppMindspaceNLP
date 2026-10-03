@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../models/file_model.dart';
@@ -233,12 +234,15 @@ class FileCard extends StatelessWidget {
         tag: 'hero-icon-${file.id}',
         child: ClipRRect(
           borderRadius: BorderRadius.circular(10),
-          child: Image.network(
-            file.previewUrl!,
+          child: CachedNetworkImage(
+            imageUrl: file.previewUrl!,
             width: isGrid ? 40 : 44,
             height: isGrid ? 40 : 44,
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => _buildDefaultBox(context, Icons.image_rounded, AppColors.info),
+            memCacheWidth: isGrid ? 120 : 132,
+            memCacheHeight: isGrid ? 120 : 132,
+            placeholder: (context, url) => _buildDefaultBox(context, Icons.image_rounded, AppColors.info),
+            errorWidget: (context, url, error) => _buildDefaultBox(context, Icons.broken_image_rounded, AppColors.info),
           ),
         ),
       );

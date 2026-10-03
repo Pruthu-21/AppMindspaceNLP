@@ -52,6 +52,7 @@ dependencies:
   firebase_messaging: ^16.6.0
   wakelock_plus: ^1.5.2
   background_downloader: ^9.5.9
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:

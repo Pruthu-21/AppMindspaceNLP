@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -28,6 +29,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  Timer? _debounce;
+  List<FileModel> _cachedFolders = [];
+  List<FileModel> _cachedFilesOnly = [];
   bool _isGridView = true;
   String _searchQuery = '';
   List<FileModel> _filteredMyDriveFiles = [];
@@ -209,7 +213,10 @@ class _HomePageState extends State<HomePage> {
           _sharedWithMeFiles = [];
           MockData.files.clear();
           MockData.files.addAll(offlineFiles);
-          _onSearchChanged(_searchQuery);
+          _filteredMyDriveFiles = List<FileModel>.from(_myDriveFiles);
+          _filteredSharedWithMeFiles = List<FileModel>.from(_sharedWithMeFiles);
+          _cachedFolders = _filteredMyDriveFiles.where((f) => f.isFolder).toList();
+          _cachedFilesOnly = _filteredMyDriveFiles.where((f) => !f.isFolder).toList();
           _isLoading = false;
           _isOffline = true;
         });
@@ -223,9 +230,10 @@ class _HomePageState extends State<HomePage> {
 
       Future<List<FileModel>> updateOfflineStatus(List<FileModel> list) async {
         debugPrint('MSNLP_HOME | OFFLINE_SCAN started');
+        final downloadedNames = await DownloadService.getDownloadedNames();
         final List<FileModel> updated = [];
         for (var file in list) {
-          final isDl = await DownloadService.isFileDownloaded(file.name);
+          final isDl = downloadedNames.contains(file.name);
           if (isDl) {
             debugPrint('MSNLP_HOME | FILE_DETECTED fileId=${file.id} exists=true');
             final localPath = await DownloadService.getLocalFilePath(file.name);
@@ -733,12 +741,19 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final folders = _filteredMyDriveFiles.where((f) => f.isFolder).toList();
-    final filesOnly = _filteredMyDriveFiles.where((f) => !f.isFolder).toList();
+    final folders = _cachedFolders;
+    final filesOnly = _cachedFilesOnly;
 
     return ValueListenableBuilder<AppRole>(
       valueListenable: RoleManager.roleNotifier,

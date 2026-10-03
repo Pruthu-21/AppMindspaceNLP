@@ -162,6 +162,34 @@ class DownloadService {
     }
   }
 
+
+  static Future<Set<String>> getDownloadedNames() async {
+    if (kIsWeb) return {};
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final dir = Directory(directory.path);
+      if (!await dir.exists()) return {};
+      final entities = dir.listSync();
+      final fileNames = entities.whereType<File>().map((e) => e.uri.pathSegments.last).toSet();
+      
+      final catalogFile = await _getCatalogFile();
+      if (!await catalogFile.exists()) return {};
+      final content = await catalogFile.readAsString();
+      final data = jsonDecode(content) as Map<String, dynamic>;
+      
+      final validNames = <String>{};
+      for (final key in data.keys) {
+        if (fileNames.contains(key)) {
+          validNames.add(key);
+        }
+      }
+      return validNames;
+    } catch (e) {
+      debugPrint('Error: $e');
+      return {};
+    }
+  }
+
   static Future<bool> isFileDownloaded(String fileName) async {
     if (kIsWeb) return false;
     try {
