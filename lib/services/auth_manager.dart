@@ -291,7 +291,7 @@ class AuthManager {
   static Future<void> logout() async {
     try {
       await _googleSignIn.signOut();
-    } catch (_) {}
+    } catch (e) { debugPrint('Error: $e'); }
     currentUser = null;
     token = null;
     RoleManager.switchRole(AppRole.user);

@@ -7,12 +7,12 @@ class SectionHeader extends StatelessWidget {
   final Widget? trailing;
 
   const SectionHeader({
-    Key? key,
+    super.key,
     required this.title,
     this.actionText,
     this.onActionPressed,
     this.trailing,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -8,13 +8,13 @@ class EmptyWidget extends StatelessWidget {
   final VoidCallback? onActionPressed;
 
   const EmptyWidget({
-    Key? key,
+    super.key,
     required this.icon,
     required this.title,
     required this.description,
     this.actionText,
     this.onActionPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -39,8 +39,8 @@ class EmptyWidget extends StatelessWidget {
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
                       colors: [
-                        theme.colorScheme.primary.withOpacity(0.06),
-                        theme.colorScheme.secondary.withOpacity(0.02),
+                        theme.colorScheme.primary.withValues(alpha: 0.06),
+                        theme.colorScheme.secondary.withValues(alpha: 0.02),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -52,10 +52,10 @@ class EmptyWidget extends StatelessWidget {
                   height: 88,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+                    color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: theme.colorScheme.primary.withOpacity(0.04),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.04),
                         blurRadius: 20,
                         offset: const Offset(0, 8),
                       ),
@@ -65,7 +65,7 @@ class EmptyWidget extends StatelessWidget {
                 Icon(
                   icon,
                   size: 40,
-                  color: theme.colorScheme.primary.withOpacity(0.8),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.8),
                 ),
               ],
             ),

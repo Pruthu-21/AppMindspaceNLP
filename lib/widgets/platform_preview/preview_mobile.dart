@@ -90,7 +90,7 @@ Widget buildPlatformImage(String url) {
 class NativePdfViewer extends StatefulWidget {
   final String url;
   final bool isNetwork;
-  const NativePdfViewer({Key? key, required this.url, required this.isNetwork}) : super(key: key);
+  const NativePdfViewer({super.key, required this.url, required this.isNetwork});
 
   @override
   State<NativePdfViewer> createState() => _NativePdfViewerState();

@@ -4,7 +4,7 @@ import '../constants/app_colors.dart';
 import '../widgets/buttons.dart';
 
 class PrivacyPermissionsPage extends StatelessWidget {
-  const PrivacyPermissionsPage({Key? key}) : super(key: key);
+  const PrivacyPermissionsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +62,7 @@ class PrivacyPermissionsPage extends StatelessWidget {
                     Text(
                       'Learn how Mindspace NLP secures your data and respects your local device permissions.',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.85),
+                        color: Colors.white.withValues(alpha: 0.85),
                         fontSize: 13,
                       ),
                       textAlign: TextAlign.center,
@@ -152,7 +152,7 @@ class PrivacyPermissionsPage extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: AppColors.primary.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.support_agent_rounded, color: AppColors.primary, size: 28),
@@ -234,7 +234,7 @@ class PrivacyPermissionsPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.08),
+              color: AppColors.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: AppColors.primary, size: 22),
@@ -254,7 +254,7 @@ class PrivacyPermissionsPage extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.12),
+                        color: statusColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(

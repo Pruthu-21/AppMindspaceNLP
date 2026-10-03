@@ -7,10 +7,10 @@ class ReviewCard extends StatefulWidget {
   final VoidCallback? onLikePressed;
 
   const ReviewCard({
-    Key? key,
+    super.key,
     required this.review,
     this.onLikePressed,
-  }) : super(key: key);
+  });
 
   @override
   State<ReviewCard> createState() => _ReviewCardState();
@@ -71,7 +71,7 @@ class _ReviewCardState extends State<ReviewCard> {
                 height: 40,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [avatarColor.withOpacity(0.8), avatarColor],
+                    colors: [avatarColor.withValues(alpha: 0.8), avatarColor],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -121,7 +121,7 @@ class _ReviewCardState extends State<ReviewCard> {
                   } else {
                     return Icon(
                       Icons.star_rounded,
-                      color: isDark ? Colors.white10 : Colors.black.withOpacity(0.08),
+                      color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.08),
                       size: 16,
                     );
                   }
@@ -148,12 +148,12 @@ class _ReviewCardState extends State<ReviewCard> {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: _isLiked
-                        ? theme.colorScheme.primary.withOpacity(0.08)
-                        : (isDark ? Colors.white.withOpacity(0.02) : Colors.black.withOpacity(0.02)),
+                        ? theme.colorScheme.primary.withValues(alpha: 0.08)
+                        : (isDark ? Colors.white.withValues(alpha: 0.02) : Colors.black.withValues(alpha: 0.02)),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: _isLiked
-                          ? theme.colorScheme.primary.withOpacity(0.2)
+                          ? theme.colorScheme.primary.withValues(alpha: 0.2)
                           : Colors.transparent,
                     ),
                   ),

@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
-import '../constants/mock_data.dart';
 import '../models/file_model.dart';
 import '../widgets/search_bar_widget.dart';
 import '../widgets/file_card.dart';
 import '../widgets/empty_widget.dart';
 import 'file_details_page.dart';
-import 'preview/file_previewer_page.dart';
 import '../services/download_service.dart';
 
 class DownloadsPage extends StatefulWidget {
-  const DownloadsPage({Key? key}) : super(key: key);
+  const DownloadsPage({super.key});
 
   @override
   State<DownloadsPage> createState() => _DownloadsPageState();
@@ -234,7 +232,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.accent.withOpacity(0.12),
+                        color: AppColors.accent.withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 class FileModel {
   final String id;
   final String name;
@@ -44,7 +45,9 @@ class FileModel {
       if (unit == 'GB') return (numVal * 1024 * 1024 * 1024).toInt();
       if (unit == 'TB') return (numVal * 1024 * 1024 * 1024 * 1024).toInt();
       return numVal.toInt();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Error: $e');
+
       return 0;
     }
   }

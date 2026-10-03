@@ -4,7 +4,7 @@ import '../../models/file_model.dart';
 import '../../services/offline_access_tracker.dart';
 import '../../widgets/platform_preview/preview_loader.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../reviews_page.dart'; // Just checking if it exists, or maybe we don't need the review sheet right away in the previewer
+// Just checking if it exists, or maybe we don't need the review sheet right away in the previewer
 import '../../widgets/custom_audio_player.dart';
 import '../../widgets/custom_video_player.dart';
 

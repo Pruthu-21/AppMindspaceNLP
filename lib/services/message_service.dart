@@ -51,8 +51,9 @@ class MessageService {
         if (decoded is List) {
           data = decoded;
         } else if (decoded is Map) {
-          if (decoded['data'] is List) data = decoded['data'];
-          else if (decoded['messages'] is List) data = decoded['messages'];
+          if (decoded['data'] is List) {
+            data = decoded['data'];
+          } else if (decoded['messages'] is List) data = decoded['messages'];
         }
         
         if (data.isNotEmpty) {
@@ -65,7 +66,7 @@ class MessageService {
         }
       }
     } catch (e) {
-      print('Error checking unread messages: $e');
+      debugPrint('Error checking unread messages: $e');
     }
   }
 
@@ -87,8 +88,9 @@ class MessageService {
         if (decoded is List) {
           data = decoded;
         } else if (decoded is Map) {
-          if (decoded['data'] is List) data = decoded['data'];
-          else if (decoded['messages'] is List) data = decoded['messages'];
+          if (decoded['data'] is List) {
+            data = decoded['data'];
+          } else if (decoded['messages'] is List) data = decoded['messages'];
         }
         final fetchedMessages = data.map((json) => AppMessage.fromJson(json)).toList();
         messages.addAll(fetchedMessages);
@@ -101,7 +103,7 @@ class MessageService {
         }
       }
     } catch (e) {
-      print('Error fetching messages: $e');
+      debugPrint('Error fetching messages: $e');
     }
 
     return messages;
@@ -130,7 +132,7 @@ class MessageService {
       
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      print('Error sending message: $e');
+      debugPrint('Error sending message: $e');
       return false;
     }
   }
@@ -149,7 +151,7 @@ class MessageService {
         }),
       );
     } catch (e) {
-      print('Error updating online status: $e');
+      debugPrint('Error updating online status: $e');
     }
   }
 
@@ -167,7 +169,7 @@ class MessageService {
         }),
       );
     } catch (e) {
-      print('Error updating FCM token: $e');
+      debugPrint('Error updating FCM token: $e');
     }
   }
 
@@ -192,7 +194,7 @@ class MessageService {
       
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      print('Error sending issue report: $e');
+      debugPrint('Error sending issue report: $e');
       return false;
     }
   }

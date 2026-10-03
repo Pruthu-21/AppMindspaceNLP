@@ -45,7 +45,7 @@ void main() async {
 }
 
 class MindSpaceDriveApp extends StatelessWidget {
-  const MindSpaceDriveApp({Key? key}) : super(key: key);
+  const MindSpaceDriveApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +71,7 @@ class MindSpaceDriveApp extends StatelessWidget {
 }
 
 class AppStartupHelper extends StatefulWidget {
-  const AppStartupHelper({Key? key}) : super(key: key);
+  const AppStartupHelper({super.key});
 
   @override
   State<AppStartupHelper> createState() => _AppStartupHelperState();

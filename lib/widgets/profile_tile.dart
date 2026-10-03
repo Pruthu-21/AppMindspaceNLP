@@ -10,14 +10,14 @@ class ProfileTile extends StatelessWidget {
   final bool isDestructive;
 
   const ProfileTile({
-    Key? key,
+    super.key,
     required this.icon,
     required this.title,
     this.subtitle,
     this.trailing,
     required this.onTap,
     this.isDestructive = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -39,8 +39,8 @@ class ProfileTile extends StatelessWidget {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: isDestructive
-                    ? AppColors.error.withOpacity(0.1)
-                    : (isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03)),
+                    ? AppColors.error.withValues(alpha: 0.1)
+                    : (isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.03)),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(

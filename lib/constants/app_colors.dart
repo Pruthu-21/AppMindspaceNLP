@@ -25,6 +25,6 @@ class AppColors {
   static const Color success = Color(0xFF10B981);
 
   // Glassmorphic styling utilities
-  static Color glassBgLight = Colors.white.withOpacity(0.7);
-  static Color glassBgDark = const Color(0xFF1E293B).withOpacity(0.7);
+  static Color glassBgLight = Colors.white.withValues(alpha: 0.7);
+  static Color glassBgDark = const Color(0xFF1E293B).withValues(alpha: 0.7);
 }

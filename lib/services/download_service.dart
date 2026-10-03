@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import '../models/file_model.dart';
@@ -183,7 +182,9 @@ class DownloadService {
         }
       }
       return false;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Error: $e');
+
       return false;
     }
   }
@@ -195,7 +196,7 @@ class DownloadService {
         final directory = await getApplicationDocumentsDirectory();
         return '${directory.path}/$fileName';
       }
-    } catch (_) {}
+    } catch (e) { debugPrint('Error: $e'); }
     return null;
   }
 
@@ -208,7 +209,7 @@ class DownloadService {
         await file.delete();
       }
       await removeOfflineMetadataByFileName(fileName);
-    } catch (_) {}
+    } catch (e) { debugPrint('Error: $e'); }
   }
 
   // --- LOCAL OFFLINE CATALOG MANAGEMENT ---
@@ -425,7 +426,9 @@ class DownloadService {
         },
         body: jsonEncode(body),
       ).timeout(const Duration(seconds: 5));
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Error: $e');
+
       // Silent catch — does not interrupt user experience if offline or network fails
     }
   }

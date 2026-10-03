@@ -5,7 +5,7 @@ import '../services/message_service.dart';
 class MessagesPage extends StatefulWidget {
   final String userToken;
 
-  const MessagesPage({Key? key, required this.userToken}) : super(key: key);
+  const MessagesPage({super.key, required this.userToken});
 
   @override
   State<MessagesPage> createState() => _MessagesPageState();
@@ -48,6 +48,7 @@ class _MessagesPageState extends State<MessagesPage> {
   }
 
   void _showReportIssueDialog() {
+    final outerContext = context;
     final subjectController = TextEditingController();
     final messageController = TextEditingController();
     bool isSubmitting = false;
@@ -115,15 +116,15 @@ class _MessagesPageState extends State<MessagesPage> {
                             message: message,
                           );
 
-                          if (mounted) {
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(success ? 'Issue reported successfully!' : 'Failed to report issue'),
-                                backgroundColor: success ? Colors.green : Colors.red,
-                              ),
-                            );
-                          }
+                          if (!context.mounted) return;
+                          Navigator.pop(context);
+                          if (!outerContext.mounted) return;
+                          ScaffoldMessenger.of(outerContext).showSnackBar(
+                            SnackBar(
+                              content: Text(success ? 'Issue reported successfully!' : 'Failed to report issue'),
+                              backgroundColor: success ? Colors.green : Colors.red,
+                            ),
+                          );
                         },
                         child: const Text('Submit'),
                       ),
@@ -136,7 +137,7 @@ class _MessagesPageState extends State<MessagesPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+    Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Messages'),

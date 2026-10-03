@@ -48,8 +48,8 @@ dependencies:
   flutter_local_notifications: ^17.1.2
   timezone: ^0.9.0
   font_awesome_flutter: ^11.0.0
-  firebase_core: any
-  firebase_messaging: any
+  firebase_core: ^4.14.0
+  firebase_messaging: ^16.6.0
   wakelock_plus: ^1.5.2
   background_downloader: ^9.5.9
 

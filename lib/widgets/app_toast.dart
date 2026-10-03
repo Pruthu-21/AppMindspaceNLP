@@ -59,7 +59,7 @@ class AppToast {
           onDismiss: () {
             try {
               entry.remove();
-            } catch (_) {}
+            } catch (e) { debugPrint('Error: $e'); }
             if (_currentEntry == entry) {
               _currentEntry = null;
             }
@@ -82,14 +82,13 @@ class _ToastWidget extends StatefulWidget {
   final VoidCallback onDismiss;
 
   const _ToastWidget({
-    Key? key,
     required this.message,
     required this.icon,
     required this.iconColor,
     required this.borderColor,
     required this.isDark,
     required this.onDismiss,
-  }) : super(key: key);
+  });
 
   @override
   State<_ToastWidget> createState() => _ToastWidgetState();

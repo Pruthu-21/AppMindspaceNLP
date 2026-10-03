@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/notification_service.dart';
 
 class RemindersPage extends StatefulWidget {
-  const RemindersPage({Key? key}) : super(key: key);
+  const RemindersPage({super.key});
 
   @override
   State<RemindersPage> createState() => _RemindersPageState();

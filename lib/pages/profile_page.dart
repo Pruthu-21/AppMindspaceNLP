@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/mock_data.dart';
@@ -11,8 +10,6 @@ import 'auth/login_page.dart';
 import 'reviews_page.dart';
 import 'privacy_permissions_page.dart';
 import 'help_faq_page.dart';
-import 'messages_page.dart';
-import 'reminders_page.dart';
 import 'admin/admin_send_message_page.dart';
 
 // A dynamic theme state notifier to allow theme toggling in the UI
@@ -27,7 +24,9 @@ class ThemeNotifier {
       } else {
         themeMode.value = ThemeMode.light;
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Error: $e');
+
       themeMode.value = ThemeMode.light;
     }
   }
@@ -37,12 +36,12 @@ class ThemeNotifier {
     final themeStr = isDark ? 'dark' : 'light';
     try {
       await AppStorage.write('app_theme', themeStr);
-    } catch (_) {}
+    } catch (e) { debugPrint('Error: $e'); }
   }
 }
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+  const ProfilePage({super.key});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -86,6 +85,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _handleLogout() {
+    final outerContext = context;
     // Show confirmation dialog
     showDialog(
       context: context,
@@ -112,13 +112,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 Navigator.pop(context);
                 await AuthManager.logout();
                 
-                if (mounted) {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LoginPage()),
-                    (route) => false,
-                  );
-                }
+                if (!outerContext.mounted) return;
+                Navigator.pushAndRemoveUntil(
+                  outerContext,
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                  (route) => false,
+                );
               },
               child: Text(
                 LanguageNotifier.translate('logout'),
@@ -187,12 +186,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   trailing: isSelected ? Icon(Icons.check_rounded, color: theme.colorScheme.primary) : null,
                   onTap: () async {
                     await LanguageNotifier.setLanguage(lang['code']!);
-                    if (mounted) {
-                      Navigator.pop(context);
-                    }
+                    if (!context.mounted) return;
+                    Navigator.pop(context);
                   },
                 );
-              }).toList(),
+              }),
               const SizedBox(height: 16),
             ],
           ),
@@ -242,7 +240,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: theme.colorScheme.primary.withOpacity(0.2),
+                            color: theme.colorScheme.primary.withValues(alpha: 0.2),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -424,7 +422,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         child: LinearProgressIndicator(
                           value: used / total,
                           color: theme.colorScheme.primary,
-                          backgroundColor: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+                          backgroundColor: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
                           minHeight: 6,
                         ),
                       ),
@@ -457,7 +455,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       ThemeNotifier.toggleTheme(_isDarkMode);
                     });
                   },
-                  activeColor: theme.colorScheme.primary,
+                  activeThumbColor: theme.colorScheme.primary,
                 ),
                 onTap: () {},
               ),
@@ -543,7 +541,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       );
                     },
-                    activeColor: theme.colorScheme.primary,
+                    activeThumbColor: theme.colorScheme.primary,
                   ),
                   onTap: () {},
                 ),

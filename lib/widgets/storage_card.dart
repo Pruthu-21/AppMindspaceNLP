@@ -6,9 +6,9 @@ class StorageCard extends StatelessWidget {
   final VoidCallback? onUpgradePressed;
 
   const StorageCard({
-    Key? key,
+    super.key,
     this.onUpgradePressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -27,18 +27,18 @@ class StorageCard extends StatelessWidget {
           colors: isDark
               ? [
                   AppColors.surfaceDark,
-                  AppColors.surfaceDark.withOpacity(0.8),
+                  AppColors.surfaceDark.withValues(alpha: 0.8),
                 ]
               : [
                   Colors.white,
-                  Colors.white.withOpacity(0.9),
+                  Colors.white.withValues(alpha: 0.9),
                 ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.primary.withOpacity(0.04),
+            color: theme.colorScheme.primary.withValues(alpha: 0.04),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -76,7 +76,7 @@ class StorageCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -121,7 +121,7 @@ class StorageCard extends StatelessWidget {
                   Expanded(
                     flex: ((total - used) * 10).toInt(),
                     child: Container(
-                      color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+                      color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
                     ),
                   ),
                 ],

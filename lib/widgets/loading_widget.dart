@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class LoadingWidget extends StatelessWidget {
-  const LoadingWidget({Key? key}) : super(key: key);
+  const LoadingWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -32,11 +32,11 @@ class PulseSkeleton extends StatefulWidget {
   final double borderRadius;
 
   const PulseSkeleton({
-    Key? key,
+    super.key,
     required this.width,
     required this.height,
     this.borderRadius = 8.0,
-  }) : super(key: key);
+  });
 
   @override
   State<PulseSkeleton> createState() => _PulseSkeletonState();
@@ -75,7 +75,7 @@ class _PulseSkeletonState extends State<PulseSkeleton> with SingleTickerProvider
             width: widget.width,
             height: widget.height,
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06),
+              color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(widget.borderRadius),
             ),
           ),
@@ -86,7 +86,7 @@ class _PulseSkeletonState extends State<PulseSkeleton> with SingleTickerProvider
 }
 
 class FileListSkeleton extends StatelessWidget {
-  const FileListSkeleton({Key? key}) : super(key: key);
+  const FileListSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +125,7 @@ class FileListSkeleton extends StatelessWidget {
 }
 
 class FileGridSkeleton extends StatelessWidget {
-  const FileGridSkeleton({Key? key}) : super(key: key);
+  const FileGridSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -145,7 +145,7 @@ class FileGridSkeleton extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Theme.of(context).dividerTheme.color ?? Colors.grey.withOpacity(0.1),
+              color: Theme.of(context).dividerTheme.color ?? Colors.grey.withValues(alpha: 0.1),
             ),
           ),
           child: const Column(

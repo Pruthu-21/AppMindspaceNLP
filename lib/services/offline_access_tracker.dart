@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -35,7 +36,9 @@ class OfflineAccessTracker {
           return;
         }
         await syncPendingLogs();
-      } catch (_) {
+      } catch (e) {
+      debugPrint('Error: $e');
+
         // Keep retrying on next timer tick
       }
     });
@@ -67,15 +70,17 @@ class OfflineAccessTracker {
             'file_name': fileName,
             'accessed_at': DateTime.now().toIso8601String(),
             'increment_open': incrementOpen,
-            if (viewDurationIncrement != null) 'view_duration_increment': viewDurationIncrement,
-            if (mediaDuration != null) 'media_duration': mediaDuration,
+            'view_duration_increment': ?viewDurationIncrement,
+            'media_duration': ?mediaDuration,
           }),
         ).timeout(const Duration(seconds: 4));
 
         if (response.statusCode == 200 || response.statusCode == 201) {
           synced = true;
         }
-      } catch (_) {
+      } catch (e) {
+      debugPrint('Error: $e');
+
         synced = false;
       }
     }
@@ -139,7 +144,7 @@ class OfflineAccessTracker {
             'accessed_at': DateTime.now().toIso8601String(),
             'increment_open': false,
             'view_duration_increment': viewDurationIncrement,
-            if (mediaDuration != null) 'media_duration': mediaDuration,
+            'media_duration': ?mediaDuration,
           });
         }
       } else {
@@ -149,14 +154,14 @@ class OfflineAccessTracker {
           'file_name': fileName ?? 'File #$fileId',
           'accessed_at': DateTime.now().toIso8601String(),
           'increment_open': incrementOpen,
-          if (viewDurationIncrement != null) 'view_duration_increment': viewDurationIncrement,
-          if (mediaDuration != null) 'media_duration': mediaDuration,
+          'view_duration_increment': ?viewDurationIncrement,
+          'media_duration': ?mediaDuration,
         });
       }
 
       await AppStorage.write(_storageKey, jsonEncode(logs));
       _startSyncTimer();
-    } catch (_) {}
+    } catch (e) { debugPrint('Error: $e'); }
   }
 
   /// Silently upload all locally stored offline file access logs to the server when connected.
@@ -208,7 +213,9 @@ class OfflineAccessTracker {
           if (response.statusCode != 200 && response.statusCode != 201) {
             remaining.add(log);
           }
-        } catch (_) {
+        } catch (e) {
+      debugPrint('Error: $e');
+
           remaining.add(log);
         }
       }
@@ -223,7 +230,9 @@ class OfflineAccessTracker {
         await AppStorage.write(_storageKey, jsonEncode(remaining));
         _startSyncTimer();
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Error: $e');
+
       _startSyncTimer();
     }
   }

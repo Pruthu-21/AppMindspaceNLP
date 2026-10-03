@@ -15,7 +15,7 @@ class FileCard extends StatelessWidget {
   final bool isSelected;
 
   const FileCard({
-    Key? key,
+    super.key,
     required this.file,
     required this.isGrid,
     required this.onTap,
@@ -24,7 +24,7 @@ class FileCard extends StatelessWidget {
     this.onMenuSelected,
     this.isSelectionMode = false,
     this.isSelected = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +44,7 @@ class FileCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           color: isSelected 
-              ? theme.colorScheme.primary.withOpacity(0.12)
+              ? theme.colorScheme.primary.withValues(alpha: 0.12)
               : (isDark ? AppColors.surfaceDark : Colors.white),
           border: Border.all(
             color: isSelected 
@@ -131,7 +131,7 @@ class FileCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           color: isSelected 
-              ? theme.colorScheme.primary.withOpacity(0.12)
+              ? theme.colorScheme.primary.withValues(alpha: 0.12)
               : (isDark ? AppColors.surfaceDark : Colors.white),
           border: Border.all(
             color: isSelected 
@@ -280,7 +280,7 @@ class FileCard extends StatelessWidget {
       width: isGrid ? 40 : 44,
       height: isGrid ? 40 : 44,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(
@@ -358,7 +358,7 @@ class FileCard extends StatelessWidget {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.3),
+                      color: Colors.grey.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -650,7 +650,7 @@ class FileCard extends StatelessWidget {
           child: LinearProgressIndicator(
             value: progress,
             minHeight: isGrid ? 3 : 4,
-            backgroundColor: Colors.grey.withOpacity(0.2),
+            backgroundColor: Colors.grey.withValues(alpha: 0.2),
             valueColor: AlwaysStoppedAnimation<Color>(
               isDownloading ? AppColors.primary : Colors.grey,
             ),

@@ -13,7 +13,7 @@ import 'profile_page.dart';
 import 'admin/admin_panel_page.dart';
 
 class NavigationShell extends StatefulWidget {
-  const NavigationShell({Key? key}) : super(key: key);
+  const NavigationShell({super.key});
 
   static final ValueNotifier<int> navigationNotifier = ValueNotifier<int>(0);
   static final ValueNotifier<bool> hideBottomNavNotifier = ValueNotifier<bool>(false);
@@ -165,14 +165,14 @@ class _NavigationShellState extends State<NavigationShell> {
                     child: Container(
                       height: 64,
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.surfaceDark.withOpacity(0.95) : Colors.white.withOpacity(0.95),
+                        color: isDark ? AppColors.surfaceDark.withValues(alpha: 0.95) : Colors.white.withValues(alpha: 0.95),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
                           color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(isDark ? 0.25 : 0.06),
+                            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.06),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -235,7 +235,7 @@ class _NavigationShellState extends State<NavigationShell> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
               color: isSelected
-                  ? theme.colorScheme.primary.withOpacity(0.12)
+                  ? theme.colorScheme.primary.withValues(alpha: 0.12)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(16),
             ),

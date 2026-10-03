@@ -7,11 +7,11 @@ class NotificationTile extends StatefulWidget {
   final VoidCallback? onDismiss;
 
   const NotificationTile({
-    Key? key,
+    super.key,
     required this.notification,
     required this.onTap,
     this.onDismiss,
-  }) : super(key: key);
+  });
 
   @override
   State<NotificationTile> createState() => _NotificationTileState();

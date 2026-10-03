@@ -2,13 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import '../constants/mock_data.dart';
 import '../models/notification_model.dart';
 import '../services/auth_manager.dart';
 import '../widgets/notification_tile.dart';
 
 class NotificationsPage extends StatefulWidget {
-  const NotificationsPage({Key? key}) : super(key: key);
+  const NotificationsPage({super.key});
 
   @override
   State<NotificationsPage> createState() => _NotificationsPageState();
@@ -68,7 +67,9 @@ class _NotificationsPageState extends State<NotificationsPage>
           });
         }
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Error: $e');
+
       // Quiet failover — maintains clean empty state
     }
   }

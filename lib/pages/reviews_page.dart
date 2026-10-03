@@ -23,7 +23,7 @@ class ChatMessage {
 }
 
 class ReviewsPage extends StatefulWidget {
-  const ReviewsPage({Key? key}) : super(key: key);
+  const ReviewsPage({super.key});
 
   @override
   State<ReviewsPage> createState() => _ReviewsPageState();
@@ -33,7 +33,6 @@ class _ReviewsPageState extends State<ReviewsPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   List<ChatMessage> _messages = [];
-  bool _isLoading = false;
 
   static const String adminEmail = 'mindspace0123@gmail.com';
 
@@ -46,7 +45,6 @@ class _ReviewsPageState extends State<ReviewsPage> {
 
   void _loadInitialMessages() {
     final user = AuthManager.currentUser;
-    final userEmail = user?.email ?? 'User';
     final userName = user?.name ?? 'User';
 
     // Default 1-to-1 greeting from MindSpace Admin
@@ -76,7 +74,6 @@ class _ReviewsPageState extends State<ReviewsPage> {
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         final List<dynamic> data = body['data'] ?? body['messages'] ?? (body is List ? body : []);
-        final currentUserEmail = AuthManager.currentUser?.email ?? '';
 
         final loaded = data.map((item) {
           final sender = item['sender_email'] ?? item['email'] ?? '';
@@ -97,7 +94,7 @@ class _ReviewsPageState extends State<ReviewsPage> {
           _scrollToBottom();
         }
       }
-    } catch (_) {}
+    } catch (e) { debugPrint('Error: $e'); }
   }
 
   Future<void> _sendMessage() async {
@@ -139,7 +136,7 @@ class _ReviewsPageState extends State<ReviewsPage> {
             'message': text,
           }),
         ).timeout(const Duration(seconds: 5));
-      } catch (_) {}
+      } catch (e) { debugPrint('Error: $e'); }
     }
   }
 
@@ -153,6 +150,14 @@ class _ReviewsPageState extends State<ReviewsPage> {
         );
       }
     });
+  }
+
+  @override
+    @override
+  void dispose() {
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override

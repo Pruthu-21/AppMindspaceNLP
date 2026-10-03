@@ -4,7 +4,7 @@ import '../../services/message_service.dart';
 class AdminSendMessagePage extends StatefulWidget {
   final String adminToken;
 
-  const AdminSendMessagePage({Key? key, required this.adminToken}) : super(key: key);
+  const AdminSendMessagePage({super.key, required this.adminToken});
 
   @override
   State<AdminSendMessagePage> createState() => _AdminSendMessagePageState();
@@ -49,6 +49,15 @@ class _AdminSendMessagePageState extends State<AdminSendMessagePage> {
         );
       }
     }
+  }
+
+  @override
+    @override
+  void dispose() {
+    _titleController.dispose();
+    _bodyController.dispose();
+    _attachmentUrlController.dispose();
+    super.dispose();
   }
 
   @override

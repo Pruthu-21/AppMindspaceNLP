@@ -7,12 +7,12 @@ class PrimaryButton extends StatefulWidget {
   final IconData? icon;
 
   const PrimaryButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.onPressed,
     this.isLoading = false,
     this.icon,
-  }) : super(key: key);
+  });
 
   @override
   State<PrimaryButton> createState() => _PrimaryButtonState();
@@ -69,7 +69,7 @@ class _PrimaryButtonState extends State<PrimaryButton> with SingleTickerProvider
             ),
             boxShadow: [
               BoxShadow(
-                color: theme.colorScheme.primary.withOpacity(0.3),
+                color: theme.colorScheme.primary.withValues(alpha: 0.3),
                 blurRadius: 16,
                 offset: const Offset(0, 8),
               ),
@@ -116,12 +116,12 @@ class SecondaryButton extends StatefulWidget {
   final IconData? icon;
 
   const SecondaryButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.onPressed,
     this.isLoading = false,
     this.icon,
-  }) : super(key: key);
+  });
 
   @override
   State<SecondaryButton> createState() => _SecondaryButtonState();
@@ -169,9 +169,9 @@ class _SecondaryButtonState extends State<SecondaryButton> with SingleTickerProv
           height: 56,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
             border: Border.all(
-              color: isDark ? Colors.white.withOpacity(0.1) : theme.colorScheme.outline.withOpacity(0.15),
+              color: isDark ? Colors.white.withValues(alpha: 0.1) : theme.colorScheme.outline.withValues(alpha: 0.15),
               width: 1.5,
             ),
           ),
@@ -215,12 +215,12 @@ class DangerButton extends StatefulWidget {
   final IconData? icon;
 
   const DangerButton({
-    Key? key,
+    super.key,
     required this.text,
     required this.onPressed,
     this.isLoading = false,
     this.icon,
-  }) : super(key: key);
+  });
 
   @override
   State<DangerButton> createState() => _DangerButtonState();
@@ -270,9 +270,9 @@ class _DangerButtonState extends State<DangerButton> with SingleTickerProviderSt
           height: 56,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            color: isDark ? dangerColor.withOpacity(0.08) : dangerColor.withOpacity(0.04),
+            color: isDark ? dangerColor.withValues(alpha: 0.08) : dangerColor.withValues(alpha: 0.04),
             border: Border.all(
-              color: dangerColor.withOpacity(0.3),
+              color: dangerColor.withValues(alpha: 0.3),
               width: 1.5,
             ),
           ),

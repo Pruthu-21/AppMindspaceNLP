@@ -5,23 +5,19 @@ import '../constants/mock_data.dart';
 import '../models/file_model.dart';
 import '../widgets/buttons.dart';
 import '../services/role_manager.dart';
-import '../services/offline_access_tracker.dart';
 import '../services/download_service.dart';
 import 'preview/file_previewer_page.dart';
-import '../widgets/platform_preview/preview_loader.dart';
 import '../widgets/rotating_vinyl.dart';
 import '../services/recent_service.dart';
-import '../widgets/custom_audio_player.dart';
-import '../widgets/custom_video_player.dart';
 import '../widgets/app_toast.dart';
 
 class FileDetailsPage extends StatefulWidget {
   final FileModel file;
 
   const FileDetailsPage({
-    Key? key,
+    super.key,
     required this.file,
-  }) : super(key: key);
+  });
 
   @override
   State<FileDetailsPage> createState() => _FileDetailsPageState();
@@ -31,33 +27,25 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
   late bool _isFavorite;
   late bool _isDownloaded;
   late String _fileName;
-  String? _activePath;
   @override
   void initState() {
     super.initState();
     _isFavorite = widget.file.isFavorite;
     _isDownloaded = widget.file.isDownloaded;
     _fileName = widget.file.name;
-    _activePath = widget.file.previewUrl;
     _checkOfflineStatus();
     RecentService.addFileToRecent(widget.file);
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 
   Future<void> _checkOfflineStatus() async {
     final downloaded = await DownloadService.isFileDownloaded(_fileName);
     final localPath = await DownloadService.getLocalFilePath(_fileName);
+    if (!mounted) return;
     if (mounted) {
       setState(() {
         _isDownloaded = downloaded;
         if (downloaded && localPath != null) {
-          _activePath = localPath;
         } else {
-          _activePath = widget.file.previewUrl;
         }
       });
     }
@@ -102,6 +90,7 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
 
         AppToast.showInfo(context, 'Saving "$_fileName" offline in background...');
         final success = await DownloadService.downloadFile(previewUrl, _fileName, model: widget.file);
+        if (!mounted) return;
 
         if (mounted) {
           setState(() {
@@ -119,6 +108,7 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
       }
     } else {
       await DownloadService.deleteDownloadedFile(_fileName);
+      if (!mounted) return;
     }
 
     setState(() {
@@ -434,7 +424,7 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -460,9 +450,6 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
   }
 
   Widget _buildPreviewContent(BuildContext context) {
-    final theme = Theme.of(context);
-    final url = _activePath;
-    final hasUrl = url != null && url.isNotEmpty;
 
     if (widget.file.format == 'folder') {
       return _buildPreviewIcon(Icons.folder_rounded, Colors.amber.shade600);
@@ -503,11 +490,11 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Colors.black.withValues(alpha: 0.15),
                   blurRadius: 16,
                 ),
               ],
@@ -533,7 +520,7 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
       child: Container(
         padding: const EdgeInsets.all(28),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
+          color: color.withValues(alpha: 0.08),
           shape: BoxShape.circle,
         ),
         child: Icon(

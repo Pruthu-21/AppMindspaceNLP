@@ -16,7 +16,7 @@ import '../services/download_service.dart';
 class FolderViewPage extends StatefulWidget {
   final FileModel folder;
 
-  const FolderViewPage({Key? key, required this.folder}) : super(key: key);
+  const FolderViewPage({super.key, required this.folder});
 
   @override
   State<FolderViewPage> createState() => _FolderViewPageState();
@@ -186,7 +186,9 @@ class _FolderViewPageState extends State<FolderViewPage> {
           _isLoading = false;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Error: $e');
+
       setState(() {
         _isLoading = false;
       });
@@ -626,6 +628,7 @@ class _FolderViewPageState extends State<FolderViewPage> {
                         }),
                       );
 
+                      if (!context.mounted) return;
                       if (response.statusCode == 200) {
                         AppToast.showSuccess(context, 'Sharing permissions updated successfully!');
                         await _fetchFolderContents();
@@ -633,6 +636,7 @@ class _FolderViewPageState extends State<FolderViewPage> {
                         AppToast.showError(context, 'Update failed (${response.statusCode})');
                       }
                     } catch (e) {
+                      if (!context.mounted) return;
                       AppToast.showError(context, 'Sharing error: $e');
                     }
                     _clearSelection();
@@ -697,10 +701,11 @@ class _FolderViewPageState extends State<FolderViewPage> {
             .where((f) => !folderIdsToMove.contains(f.id))
             .toList();
       }
-    } catch (_) {}
+    } catch (e) { debugPrint(e.toString()); }
 
     String? selectedTargetFolderId;
 
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (dialogCtx) {
@@ -749,7 +754,7 @@ class _FolderViewPageState extends State<FolderViewPage> {
                             });
                           },
                         );
-                      }).toList(),
+                      }),
                   ],
                 ),
               ),
@@ -777,6 +782,7 @@ class _FolderViewPageState extends State<FolderViewPage> {
                         }),
                       );
 
+                      if (!context.mounted) return;
                       if (response.statusCode == 200) {
                         AppToast.showSuccess(context, 'Items moved successfully!');
                         await _fetchFolderContents();
@@ -784,6 +790,7 @@ class _FolderViewPageState extends State<FolderViewPage> {
                         AppToast.showError(context, 'Move failed (${response.statusCode})');
                       }
                     } catch (e) {
+                      if (!context.mounted) return;
                       AppToast.showError(context, 'Move error: $e');
                     }
                   },
@@ -840,7 +847,7 @@ class _FolderViewPageState extends State<FolderViewPage> {
         color: isDark ? AppColors.surfaceDark : Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.12),
+            color: Colors.black.withValues(alpha: 0.12),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -917,14 +924,16 @@ class _FolderViewPageState extends State<FolderViewPage> {
                       'new_name': newName,
                     }),
                   );
+                  if (!context.mounted) return;
                   if (response.statusCode == 200) {
-                    if (mounted) AppToast.showSuccess(context, 'Renamed to "$newName"');
+                    AppToast.showSuccess(context, 'Renamed to "$newName"');
                     await _fetchFolderContents();
                   } else {
-                    if (mounted) AppToast.showError(context, 'Rename failed (${response.statusCode})');
+                    AppToast.showError(context, 'Rename failed (${response.statusCode})');
                   }
                 } catch (e) {
-                  if (mounted) AppToast.showError(context, 'Rename error: $e');
+                  if (!context.mounted) return;
+                  AppToast.showError(context, 'Rename error: $e');
                 }
               }
             },

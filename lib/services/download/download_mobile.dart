@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:background_downloader/background_downloader.dart';
 import '../download_service.dart';
 
@@ -48,7 +47,9 @@ Future<bool> startPlatformDownload(String url, String fileName, {Function(double
       try {
         final result = await InternetAddress.lookup('google.com').timeout(const Duration(seconds: 5));
         return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-      } catch (_) {
+      } catch (e) {
+      debugPrint('Error: $e');
+
         return false;
       }
     }

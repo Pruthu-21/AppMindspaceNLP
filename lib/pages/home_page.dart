@@ -5,7 +5,6 @@ import '../../constants/app_colors.dart';
 import '../../constants/mock_data.dart';
 import '../../models/file_model.dart';
 import '../../widgets/search_bar_widget.dart';
-import '../../widgets/storage_card.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/file_card.dart';
 import '../../services/role_manager.dart';
@@ -16,14 +15,13 @@ import '../../widgets/app_toast.dart';
 import 'navigation_shell.dart';
 import 'file_details_page.dart';
 import 'folder_view_page.dart';
-import 'preview/file_previewer_page.dart';
 import '../../services/recent_service.dart';
 import '../../services/message_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'messages_page.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -92,8 +90,9 @@ class _HomePageState extends State<HomePage> {
       if (decoded is List) {
         data = decoded;
       } else if (decoded is Map) {
-        if (decoded['data'] is List) data = decoded['data'] as List;
-        else if (decoded['files'] is List) data = decoded['files'] as List;
+        if (decoded['data'] is List) {
+          data = decoded['data'] as List;
+        } else if (decoded['files'] is List) data = decoded['files'] as List;
         else if (decoded['items'] is List) data = decoded['items'] as List;
         else if (decoded['result'] is List) data = decoded['result'] as List;
       }
@@ -138,7 +137,9 @@ class _HomePageState extends State<HomePage> {
           previewUrl: fileUrl,
         );
       }).toList();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Error: $e');
+
       return [];
     }
   }
@@ -162,6 +163,7 @@ class _HomePageState extends State<HomePage> {
 
       // Fetch My Drive files
       List<FileModel> myDrive = [];
+      bool myDriveFailed = false;
       try {
         final resMy = await http.get(
           Uri.parse('https://mindspacenlp.com/api/drive/my-drive'),
@@ -170,11 +172,17 @@ class _HomePageState extends State<HomePage> {
 
         if (resMy.statusCode == 200) {
           myDrive = _parseFileList(resMy.body);
+        } else {
+          myDriveFailed = true;
         }
-      } catch (_) {}
+      } catch (e) {
+        myDriveFailed = true;
+        debugPrint(e.toString());
+      }
 
       // Fetch Shared With Me files
       List<FileModel> shared = [];
+      bool sharedFailed = false;
       try {
         final resShared = await http.get(
           Uri.parse('https://mindspacenlp.com/api/drive/shared-with-me'),
@@ -183,8 +191,32 @@ class _HomePageState extends State<HomePage> {
 
         if (resShared.statusCode == 200) {
           shared = _parseFileList(resShared.body);
+        } else {
+          sharedFailed = true;
         }
-      } catch (_) {}
+      } catch (e) {
+        sharedFailed = true;
+        debugPrint(e.toString());
+      }
+
+      if (myDriveFailed && sharedFailed) {
+        if (!mounted) return;
+        debugPrint('MSNLP_HOME | OFFLINE_SCAN started (fallback)');
+        final offlineFiles = await DownloadService.getOfflineFiles();
+        if (!mounted) return;
+        setState(() {
+          _myDriveFiles = offlineFiles;
+          _sharedWithMeFiles = [];
+          MockData.files.clear();
+          MockData.files.addAll(offlineFiles);
+          _onSearchChanged(_searchQuery);
+          _isLoading = false;
+          _isOffline = true;
+        });
+        return;
+      } else if (myDriveFailed || sharedFailed) {
+        if (mounted) AppToast.showError(context, 'Some data could not be loaded');
+      }
 
        final sharedIds = shared.map((s) => s.id).toSet();
       final cleanMyDrive = myDrive.where((f) => !sharedIds.contains(f.id)).toList();
@@ -220,6 +252,7 @@ class _HomePageState extends State<HomePage> {
 
       final updatedMyDrive = await updateOfflineStatus(cleanMyDrive);
       final updatedShared = await updateOfflineStatus(shared);
+      if (!mounted) return;
       final allLoaded = [...updatedMyDrive, ...updatedShared];
 
       setState(() {
@@ -234,22 +267,7 @@ class _HomePageState extends State<HomePage> {
       });
 
     } catch (e) {
-      debugPrint('MSNLP_HOME | OFFLINE_SCAN started (fallback)');
-      final offlineFiles = await DownloadService.getOfflineFiles();
-      debugPrint('MSNLP_HOME | OFFLINE_SCAN filesFound=${offlineFiles.length}');
-      for (var f in offlineFiles) {
-        debugPrint('MSNLP_HOME | FILE_DETECTED fileId=${f.id} exists=true');
-      }
-      setState(() {
-        if (offlineFiles.isNotEmpty) {
-          _sharedWithMeFiles = [];
-          MockData.files.clear();
-          MockData.files.addAll(offlineFiles);
-          _onSearchChanged(_searchQuery);
-        }
-        _isLoading = false;
-        _isOffline = true;
-      });
+      debugPrint('MSNLP_HOME | unexpected error: $e');
     }
   }
 
@@ -604,7 +622,7 @@ class _HomePageState extends State<HomePage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 28),
@@ -641,7 +659,7 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.error.withOpacity(0.1),
+                color: AppColors.error.withValues(alpha: 0.1),
               ),
               child: const Icon(
                 Icons.wifi_off_rounded,
@@ -688,7 +706,7 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: theme.colorScheme.primary.withOpacity(0.1),
+              color: theme.colorScheme.primary.withValues(alpha: 0.1),
             ),
             child: Icon(
               Icons.folder_open_rounded,
@@ -772,9 +790,9 @@ class _HomePageState extends State<HomePage> {
                                     margin: const EdgeInsets.only(right: 8),
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                     decoration: BoxDecoration(
-                                      color: AppColors.primary.withOpacity(0.18),
+                                      color: AppColors.primary.withValues(alpha: 0.18),
                                       borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(color: AppColors.primary.withOpacity(0.4)),
+                                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
@@ -933,10 +951,10 @@ class _HomePageState extends State<HomePage> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               decoration: BoxDecoration(
-                                color: theme.colorScheme.primary.withOpacity(0.08),
+                                color: theme.colorScheme.primary.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: theme.colorScheme.primary.withOpacity(0.15),
+                                  color: theme.colorScheme.primary.withValues(alpha: 0.15),
                                 ),
                               ),
                               child: Row(
@@ -1189,7 +1207,7 @@ class _HomePageState extends State<HomePage> {
         color: isDark ? AppColors.surfaceDark : Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.12),
+            color: Colors.black.withValues(alpha: 0.12),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -1343,11 +1361,13 @@ class _HomePageState extends State<HomePage> {
                       'new_name': newName,
                     }),
                   );
+                  if (!context.mounted) return;
                   if (response.statusCode == 200) {
                     AppToast.showSuccess(context, 'Renamed to "$newName"');
                     await _fetchSharedFiles();
                   }
                 } catch (e) {
+                  if (!context.mounted) return;
                   AppToast.showError(context, 'Rename failed: $e');
                 }
               }
@@ -1502,6 +1522,7 @@ class _HomePageState extends State<HomePage> {
                         }),
                       );
 
+                      if (!context.mounted) return;
                       if (response.statusCode == 200) {
                         AppToast.showSuccess(context, 'Sharing permissions updated successfully!');
                         await _fetchSharedFiles();
@@ -1509,6 +1530,7 @@ class _HomePageState extends State<HomePage> {
                         AppToast.showError(context, 'Update failed (${response.statusCode})');
                       }
                     } catch (e) {
+                      if (!context.mounted) return;
                       AppToast.showError(context, 'Sharing error: $e');
                     }
                     _clearSelection();
@@ -1592,7 +1614,7 @@ class _HomePageState extends State<HomePage> {
                             });
                           },
                         );
-                      }).toList(),
+                      }),
                   ],
                 ),
               ),
@@ -1620,14 +1642,16 @@ class _HomePageState extends State<HomePage> {
                         }),
                       );
 
+                      if (!context.mounted) return;
                       if (response.statusCode == 200) {
-                        if (mounted) AppToast.showSuccess(context, 'Moved successfully!');
+                        AppToast.showSuccess(context, 'Moved successfully!');
                         await _fetchSharedFiles();
                       } else {
-                        if (mounted) AppToast.showError(context, 'Move failed (${response.statusCode})');
+                        AppToast.showError(context, 'Move failed (${response.statusCode})');
                       }
                     } catch (e) {
-                      if (mounted) AppToast.showError(context, 'Move error: $e');
+                      if (!context.mounted) return;
+                      AppToast.showError(context, 'Move error: $e');
                     }
                   },
                   child: const Text('Move Here'),
@@ -1676,6 +1700,7 @@ class _HomePageState extends State<HomePage> {
       debugPrint('MSNLP_FILE | DELETE_START fileId=${file.id}');
       try {
         await DownloadService.deleteDownloadedFile(file.name);
+        if (!mounted) return;
         debugPrint('MSNLP_FILE | PHYSICAL_DELETE path=${file.name} success=true');
         debugPrint('MSNLP_FILE | METADATA_DELETE fileId=${file.id} success=true');
         
@@ -1709,6 +1734,7 @@ class _HomePageState extends State<HomePage> {
       AppToast.showInfo(context, 'Saving "${file.name}" to local device storage...');
       final url = file.previewUrl ?? '';
       final ok = await DownloadService.downloadFile(url, file.name, model: file);
+      if (!mounted) return;
       if (ok) {
         setState(() {
           final index = MockData.files.indexWhere((f) => f.id == file.id);

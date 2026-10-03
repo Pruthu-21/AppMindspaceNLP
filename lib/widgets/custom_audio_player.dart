@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -19,7 +18,7 @@ class CustomAudioPlayer extends StatefulWidget {
   final Function(Duration duration)? onDurationChanged;
 
   const CustomAudioPlayer({
-    Key? key,
+    super.key,
     required this.url,
     required this.fileName,
     this.fileId,
@@ -29,7 +28,7 @@ class CustomAudioPlayer extends StatefulWidget {
     this.onPositionChanged,
     this.onPlayingChanged,
     this.onDurationChanged,
-  }) : super(key: key);
+  });
 
   @override
   State<CustomAudioPlayer> createState() => _CustomAudioPlayerState();
@@ -297,7 +296,7 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
                       color: isDark ? Colors.black87 : Colors.grey.shade900,
                       boxShadow: [
                         BoxShadow(
-                          color: theme.colorScheme.primary.withOpacity(0.15),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.15),
                           blurRadius: 12,
                         ),
                       ],
@@ -377,7 +376,7 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
                   child: SliderTheme(
                     data: SliderTheme.of(context).copyWith(
                       activeTrackColor: theme.colorScheme.primary,
-                      inactiveTrackColor: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+                      inactiveTrackColor: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
                       thumbColor: theme.colorScheme.primary,
                       trackHeight: 3.0,
                       thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6.0),
@@ -432,7 +431,7 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
                     color: isDark ? Colors.black87 : Colors.grey.shade900,
                     boxShadow: [
                       BoxShadow(
-                        color: theme.colorScheme.primary.withOpacity(0.2),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.2),
                         blurRadius: 36,
                         spreadRadius: 4,
                       ),

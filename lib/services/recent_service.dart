@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'app_storage.dart';
 import '../models/file_model.dart';
@@ -26,7 +27,7 @@ class RecentService {
           );
         }).toList();
       }
-    } catch (_) {}
+    } catch (e) { debugPrint('Error: $e'); }
     return [];
   }
 
@@ -62,6 +63,6 @@ class RecentService {
       }).toList();
       
       await AppStorage.write(_storageKey, jsonEncode(serialized));
-    } catch (_) {}
+    } catch (e) { debugPrint('Error: $e'); }
   }
 }

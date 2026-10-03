@@ -4,7 +4,7 @@ import '../constants/app_colors.dart';
 import '../widgets/buttons.dart';
 
 class HelpFaqPage extends StatelessWidget {
-  const HelpFaqPage({Key? key}) : super(key: key);
+  const HelpFaqPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +60,7 @@ class HelpFaqPage extends StatelessWidget {
                     Text(
                       'Browse frequently asked questions regarding offline sync, storage capacities and account security.',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.85),
+                        color: Colors.white.withValues(alpha: 0.85),
                         fontSize: 13,
                       ),
                     ),

@@ -13,7 +13,7 @@ import '../widgets/app_toast.dart';
 import 'file_details_page.dart';
 
 class RecentPage extends StatefulWidget {
-  const RecentPage({Key? key}) : super(key: key);
+  const RecentPage({super.key});
 
   @override
   State<RecentPage> createState() => _RecentPageState();
@@ -78,7 +78,7 @@ class _RecentPageState extends State<RecentPage> {
           }).toList();
         }
       }
-    } catch (_) {}
+    } catch (e) { debugPrint('Error: $e'); }
 
     if (items.isEmpty) {
       items = await RecentService.getRecentFiles();
@@ -143,7 +143,6 @@ class _RecentPageState extends State<RecentPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     // Grouping
     final todayFiles = _recentFilesList.where((f) => _isToday(f.uploadDate)).toList();
@@ -456,6 +455,7 @@ class _RecentPageState extends State<RecentPage> {
       final isCurrentlyDownloaded = file.isDownloaded;
       if (isCurrentlyDownloaded) {
         await DownloadService.deleteDownloadedFile(file.name);
+        if (!mounted) return;
         setState(() {
           _filterRecentFiles();
         });
@@ -466,6 +466,7 @@ class _RecentPageState extends State<RecentPage> {
         AppToast.showInfo(context, 'Saving "${file.name}" to local device storage...');
         final url = file.previewUrl ?? '';
         final ok = await DownloadService.downloadFile(url, file.name, model: file);
+        if (!mounted) return;
         if (ok) {
           setState(() {
             _filterRecentFiles();

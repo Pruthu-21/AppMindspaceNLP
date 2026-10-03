@@ -7,11 +7,11 @@ class SearchBarWidget extends StatelessWidget {
   final VoidCallback? onFilterPressed;
 
   const SearchBarWidget({
-    Key? key,
+    super.key,
     required this.hintText,
     this.onChanged,
     this.onFilterPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +29,7 @@ class SearchBarWidget extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

@@ -113,13 +113,13 @@ class LanguageNotifier {
       if (lang == 'hi' || lang == 'gu' || lang == 'en') {
         language.value = lang!;
       }
-    } catch (_) {}
+    } catch (e) { debugPrint('Error: $e'); }
   }
 
   static Future<void> setLanguage(String langCode) async {
     language.value = langCode;
     try {
       await AppStorage.write('app_lang', langCode);
-    } catch (_) {}
+    } catch (e) { debugPrint('Error: $e'); }
   }
 }

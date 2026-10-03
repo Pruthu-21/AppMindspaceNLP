@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import '../../constants/app_colors.dart';
 import '../../services/auth_manager.dart';
 import '../../widgets/search_bar_widget.dart';
-import '../../widgets/buttons.dart';
 
 class AdminUser {
   final String id;
@@ -23,7 +22,7 @@ class AdminUser {
 }
 
 class AdminPanelPage extends StatefulWidget {
-  const AdminPanelPage({Key? key}) : super(key: key);
+  const AdminPanelPage({super.key});
 
   @override
   State<AdminPanelPage> createState() => _AdminPanelPageState();
@@ -33,7 +32,6 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
   List<AdminUser> _users = [];
   List<AdminUser> _filteredUsers = [];
   String _searchQuery = '';
-  bool _isLoading = false;
 
   String _totalUsersCount = '...';
   String _totalFilesCount = '...';
@@ -47,7 +45,6 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
 
   Future<void> _fetchAdminUsers() async {
     if (AuthManager.token == null || AuthManager.token!.startsWith('google_token_')) return;
-    setState(() { _isLoading = true; });
 
     try {
       final response = await http.get(
@@ -88,15 +85,11 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
             } else {
               _totalUsersCount = loaded.length.toString();
             }
-            _isLoading = false;
           });
         }
       } else {
-        if (mounted) setState(() { _isLoading = false; });
       }
-    } catch (_) {
-      if (mounted) setState(() { _isLoading = false; });
-    }
+    } catch (e) { debugPrint('Error: $e'); }
   }
 
   void _onSearchChanged(String query) {
@@ -295,7 +288,7 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+    Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -404,7 +397,7 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                       child: Row(
                         children: [
                           CircleAvatar(
-                            backgroundColor: avatarColor.withOpacity(0.12),
+                            backgroundColor: avatarColor.withValues(alpha: 0.12),
                             child: Text(
                               user.initials,
                               style: TextStyle(color: avatarColor, fontWeight: FontWeight.bold, fontSize: 14),
@@ -426,7 +419,7 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                         decoration: BoxDecoration(
-                                          color: AppColors.primary.withOpacity(0.1),
+                                          color: AppColors.primary.withValues(alpha: 0.1),
                                           borderRadius: BorderRadius.circular(6),
                                         ),
                                         child: const Text(
@@ -547,7 +540,7 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withOpacity(0.1),
+                  color: AppColors.accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Text(

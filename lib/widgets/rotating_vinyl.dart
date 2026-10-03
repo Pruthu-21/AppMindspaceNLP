@@ -3,7 +3,7 @@ import '../constants/app_colors.dart';
 
 class RotatingVinyl extends StatefulWidget {
   final double size;
-  const RotatingVinyl({Key? key, this.size = 90}) : super(key: key);
+  const RotatingVinyl({super.key, this.size = 90});
 
   @override
   State<RotatingVinyl> createState() => _RotatingVinylState();

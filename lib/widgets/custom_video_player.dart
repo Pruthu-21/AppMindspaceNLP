@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -19,7 +18,7 @@ class CustomVideoPlayer extends StatefulWidget {
   final Function(Duration duration)? onDurationChanged;
 
   const CustomVideoPlayer({
-    Key? key,
+    super.key,
     required this.url,
     required this.fileName,
     this.fileId,
@@ -29,7 +28,7 @@ class CustomVideoPlayer extends StatefulWidget {
     this.onPositionChanged,
     this.onPlayingChanged,
     this.onDurationChanged,
-  }) : super(key: key);
+  });
 
   @override
   State<CustomVideoPlayer> createState() => _CustomVideoPlayerState();
