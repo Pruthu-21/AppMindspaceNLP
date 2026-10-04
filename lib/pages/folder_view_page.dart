@@ -7,6 +7,9 @@ import '../constants/app_colors.dart';
 import '../models/file_model.dart';
 import '../widgets/search_bar_widget.dart';
 import '../widgets/file_card.dart';
+import 'dialogs/rename_dialog.dart';
+import 'dialogs/share_dialog.dart';
+import 'dialogs/move_dialog.dart';
 import '../widgets/states/loading_skeleton.dart';
 import '../widgets/states/empty_state.dart';
 import 'navigation_shell.dart';
@@ -516,169 +519,34 @@ class _FolderViewPageState extends State<FolderViewPage> {
   }
 
   void _showShareDialog(List<String> fileIds) async {
-    List<dynamic> usersList = [];
-    bool isFetchingUsers = true;
-    Set<int> selectedUserIds = {};
-    String searchUserQuery = '';
-
-    showDialog(
-      context: context,
-      builder: (dialogCtx) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            if (isFetchingUsers) {
-              Future.wait([
-                http.get(
-                  Uri.parse('https://mindspacenlp.com/api/drive/users'),
-                  headers: {
-                    'Authorization': 'Bearer ${AuthManager.token}',
-                    'Accept': 'application/json',
-                  },
-                ),
-                if (fileIds.isNotEmpty)
-                  http.get(
-                    Uri.parse('https://mindspacenlp.com/api/drive/file/${fileIds.first}/shared-users'),
-                    headers: {
-                      'Authorization': 'Bearer ${AuthManager.token}',
-                      'Accept': 'application/json',
-                    },
-                  ),
-              ]).then((responses) {
-                final usersRes = responses[0];
-                if (usersRes.statusCode == 200) {
-                  final decoded = jsonDecode(usersRes.body);
-                  final data = decoded['data'] ?? (decoded is List ? decoded : []);
-                  usersList = data is List ? data : [];
-                }
-
-                if (responses.length > 1 && responses[1].statusCode == 200) {
-                  final decodedShared = jsonDecode(responses[1].body);
-                  final List<dynamic> sharedData = decodedShared is List
-                      ? decodedShared
-                      : (decodedShared['data'] is List ? decodedShared['data'] : []);
-
-                  for (var su in sharedData) {
-                    final int sId = int.tryParse(su['id']?.toString() ?? '') ?? 0;
-                    if (sId > 0) selectedUserIds.add(sId);
-                  }
-                }
-
-                setDialogState(() {
-                  isFetchingUsers = false;
-                });
-              }).catchError((_) {
-                setDialogState(() {
-                  isFetchingUsers = false;
-                });
-              });
-            }
-
-            final filteredUsers = usersList.where((u) {
-              final name = (u['name'] ?? '').toString().toLowerCase();
-              final email = (u['email'] ?? '').toString().toLowerCase();
-              final q = searchUserQuery.trim().toLowerCase();
-              return q.isEmpty || name.contains(q) || email.contains(q);
-            }).toList();
-
-            return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: Text('Share ${fileIds.length} Item(s)'),
-              content: SizedBox(
-                width: double.maxFinite,
-                height: 360,
-                child: Column(
-                  children: [
-                    TextField(
-                      onChanged: (val) {
-                        setDialogState(() {
-                          searchUserQuery = val;
-                        });
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Search user by name or email...',
-                        prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Expanded(
-                      child: isFetchingUsers
-                          ? const Center(child: CircularProgressIndicator())
-                          : (filteredUsers.isEmpty
-                              ? const Center(child: Text('No matching users found.'))
-                              : ListView.builder(
-                                  itemCount: filteredUsers.length,
-                                  itemBuilder: (context, index) {
-                                    final user = filteredUsers[index];
-                                    final int uId = int.tryParse(user['id']?.toString() ?? '') ?? 0;
-                                    final uName = user['name'] ?? 'User';
-                                    final uEmail = user['email'] ?? '';
-                                    final isSelected = selectedUserIds.contains(uId);
-
-                                    return CheckboxListTile(
-                                      value: isSelected,
-                                      title: Text(uName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                                      subtitle: Text(uEmail, style: const TextStyle(fontSize: 12)),
-                                      onChanged: (val) {
-                                        setDialogState(() {
-                                          if (val == true) {
-                                            selectedUserIds.add(uId);
-                                          } else {
-                                            selectedUserIds.remove(uId);
-                                          }
-                                        });
-                                      },
-                                    );
-                                  },
-                                )),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogCtx),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    Navigator.pop(dialogCtx);
-                    try {
-                      final response = await http.post(
-                        Uri.parse('https://mindspacenlp.com/api/drive/share'),
-                        headers: {
-                          'Authorization': 'Bearer ${AuthManager.token}',
-                          'Content-Type': 'application/json',
-                          'Accept': 'application/json',
-                        },
-                        body: jsonEncode({
-                          'file_ids': fileIds,
-                          'user_ids': selectedUserIds.toList(),
-                        }),
-                      );
-
-                      if (!context.mounted) return;
-                      if (response.statusCode == 200) {
-                        AppToast.showSuccess(context, 'Sharing permissions updated successfully!');
-                        await _fetchFolderContents();
-                      } else {
-                        AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
-                      }
-                    } catch (e) {
-                      if (!context.mounted) return;
-                      AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
-                    }
-                    _clearSelection();
-                  },
-                  child: const Text('Save'),
-                ),
-              ],
-            );
+    final selectedUserIds = await ShareDialog.show(context, fileIds);
+    if (selectedUserIds != null) {
+      _clearSelection();
+      try {
+        final response = await http.post(
+          Uri.parse('https://mindspacenlp.com/api/drive/share'),
+          headers: {
+            'Authorization': 'Bearer ${AuthManager.token}',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
           },
+          body: jsonEncode({
+            'file_ids': fileIds,
+            'user_ids': selectedUserIds,
+          }),
         );
-      },
-    );
+        if (!mounted) return;
+        if (response.statusCode == 200) {
+          AppToast.showSuccess(context, 'Shared successfully!');
+          _fetchFolderContents();
+        } else {
+          AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
+        }
+      } catch (e) {
+        if (!mounted) return;
+        AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
+      }
+    }
   }
 
   void _showMoveDialog(List<String> selectedIds) async {
@@ -699,139 +567,39 @@ class _FolderViewPageState extends State<FolderViewPage> {
       }
     }
 
-    // Fetch folders dynamically from my-drive to show as targets
-    List<FileModel> availableFolders = [];
-    try {
-      final res = await http.get(
-        Uri.parse('https://mindspacenlp.com/api/drive/my-drive'),
-        headers: {
-          'Authorization': 'Bearer ${AuthManager.token}',
-          'Accept': 'application/json',
-        },
-      );
-      if (res.statusCode == 200) {
-        final decoded = jsonDecode(res.body);
-        final List<dynamic> data = decoded['data'] ?? decoded['files'] ?? [];
-        availableFolders = data
-            .map((item) {
-              final isFolder = item['is_folder'] == true || item['mime_type'] == 'folder';
-              if (isFolder) {
-                return FileModel(
-                  id: (item['id'] ?? '').toString(),
-                  name: (item['name'] ?? 'Untitled Folder').toString(),
-                  format: 'folder',
-                  sizeBytes: 0,
-                  uploadDate: DateTime.tryParse(item['created_at'] ?? '') ?? DateTime.now(),
-                  ownerName: item['owner'] ?? 'Admin',
-                );
-              }
-              return null;
-            })
-            .whereType<FileModel>()
-            .where((f) => !folderIdsToMove.contains(f.id))
-            .toList();
-      }
-    } catch (e) { debugPrint(e.toString()); }
+    final availableFolders = _allSubItems.where((f) => f.isFolder && !folderIdsToMove.contains(f.id)).toList();
 
-    String? selectedTargetFolderId;
-
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      builder: (dialogCtx) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: Text('Move ${selectedIds.length} Item(s) to...'),
-              content: SizedBox(
-                width: double.maxFinite,
-                height: 320,
-                child: ListView(
-                  children: [
-                    ListTile(
-                      leading: const Icon(Icons.folder_special_rounded, color: Colors.blue, size: 28),
-                      title: const Text('Root Directory ( / )', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                      subtitle: const Text('Main My Drive location', style: TextStyle(fontSize: 12)),
-                      trailing: selectedTargetFolderId == null
-                          ? const Icon(Icons.check_circle_rounded, color: Colors.blue)
-                          : const Icon(Icons.circle_outlined, color: Colors.grey),
-                      onTap: () {
-                        setDialogState(() {
-                          selectedTargetFolderId = null;
-                        });
-                      },
-                    ),
-                    const Divider(),
-                    if (availableFolders.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Text('No sub-folders available.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
-                      )
-                    else
-                      ...availableFolders.map((folder) {
-                        final isSelected = selectedTargetFolderId == folder.id;
-                        return ListTile(
-                          leading: Icon(Icons.folder_rounded, color: Colors.amber.shade600, size: 28),
-                          title: Text(folder.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                          subtitle: const Text('Folder', style: TextStyle(fontSize: 12)),
-                          trailing: isSelected
-                              ? const Icon(Icons.check_circle_rounded, color: Colors.blue)
-                              : const Icon(Icons.circle_outlined, color: Colors.grey),
-                          onTap: () {
-                            setDialogState(() {
-                              selectedTargetFolderId = folder.id;
-                            });
-                          },
-                        );
-                      }),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogCtx),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    Navigator.pop(dialogCtx);
-                    _clearSelection();
-                    try {
-                      final response = await http.post(
-                        Uri.parse('https://mindspacenlp.com/api/drive/move'),
-                        headers: {
-                          'Authorization': 'Bearer ${AuthManager.token}',
-                          'Content-Type': 'application/json',
-                          'Accept': 'application/json',
-                        },
-                        body: jsonEncode({
-                          'file_ids': fileIdsToMove,
-                          'folder_ids': folderIdsToMove,
-                          'target_folder_id': selectedTargetFolderId != null ? int.tryParse(selectedTargetFolderId!) : null,
-                        }),
-                      );
-
-                      if (!context.mounted) return;
-                      if (response.statusCode == 200) {
-                        AppToast.showSuccess(context, 'Items moved successfully!');
-                        await _fetchFolderContents();
-                      } else {
-                        AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
-                      }
-                    } catch (e) {
-                      if (!context.mounted) return;
-                      AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
-                    }
-                  },
-                  child: const Text('Move'),
-                ),
-              ],
-            );
+    final targetFolderId = await MoveDialog.show(context, selectedIds.length, availableFolders);
+    
+    if (targetFolderId != null) {
+      _clearSelection();
+      try {
+        final response = await http.post(
+          Uri.parse('https://mindspacenlp.com/api/drive/move'),
+          headers: {
+            'Authorization': 'Bearer ${AuthManager.token}',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
           },
+          body: jsonEncode({
+            'file_ids': fileIdsToMove,
+            'folder_ids': folderIdsToMove,
+            'target_folder_id': targetFolderId == -1 ? null : targetFolderId,
+          }),
         );
-      },
-    );
+
+        if (!mounted) return;
+        if (response.statusCode == 200) {
+          AppToast.showSuccess(context, 'Moved successfully!');
+          _fetchFolderContents();
+        } else {
+          AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
+        }
+      } catch (e) {
+        if (!mounted) return;
+        AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
+      }
+    }
   }
 
   void _handleDeleteOfflineAction(FileModel file) async {
@@ -919,61 +687,34 @@ class _FolderViewPageState extends State<FolderViewPage> {
     );
   }
 
-  void _showRenameDialog(FileModel item) {
-    final controller = TextEditingController(text: item.name);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Rename ${item.isFolder ? "Folder" : "File"}'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(hintText: 'Enter new name'),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final newName = controller.text.trim();
-              if (newName.isNotEmpty && newName != item.name) {
-                Navigator.pop(context);
-                try {
-                  final response = await http.post(
-                    Uri.parse('https://mindspacenlp.com/api/drive/rename'),
-                    headers: {
-                      'Authorization': 'Bearer ${AuthManager.token}',
-                      'Content-Type': 'application/json',
-                      'Accept': 'application/json',
-                    },
-                    body: jsonEncode({
-                      'item_id': int.tryParse(item.id) ?? item.id,
-                      'item_type': item.isFolder ? 'folder' : 'file',
-                      'new_name': newName,
-                    }),
-                  );
-                  if (!context.mounted) return;
-                  if (response.statusCode == 200) {
-                    AppToast.showSuccess(context, 'Renamed to "$newName"');
-                    await _fetchFolderContents();
-                  } else {
-                    AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
-                  }
-                } catch (e) {
-                  if (!context.mounted) return;
-                  AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
-                }
-              }
-            },
-            child: const Text('Rename'),
-          ),
-        ],
-      ),
-    ).then((_) {
-      controller.dispose();
-    });
+  void _showRenameDialog(FileModel item) async {
+    final newName = await RenameDialog.show(context, item);
+    if (newName != null && newName.isNotEmpty && newName != item.name) {
+      try {
+        final response = await http.post(
+          Uri.parse('https://mindspacenlp.com/api/admin/drive/rename'),
+          headers: {
+            'Authorization': 'Bearer ${AuthManager.token}',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'item_id': int.tryParse(item.id) ?? item.id,
+            'item_type': item.isFolder ? 'folder' : 'file',
+            'new_name': newName,
+          }),
+        );
+        if (!mounted) return;
+        if (response.statusCode == 200) {
+          AppToast.showSuccess(context, 'Renamed to "$newName"');
+          _fetchFolderContents();
+        } else {
+          AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
+        }
+      } catch (e) {
+        if (!mounted) return;
+        AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
+      }
+    }
   }
 
   Widget _buildItemGridOrList(List<FileModel> items) {
