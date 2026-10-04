@@ -7,10 +7,14 @@ import '../constants/app_colors.dart';
 import '../models/file_model.dart';
 import '../widgets/search_bar_widget.dart';
 import '../widgets/file_card.dart';
-import '../widgets/empty_widget.dart';
+import '../widgets/states/loading_skeleton.dart';
+import '../widgets/states/empty_state.dart';
+import 'navigation_shell.dart';
+
 import '../services/auth_manager.dart';
 import '../services/role_manager.dart';
 import '../widgets/app_toast.dart';
+import '../utils/error_helper.dart';
 import 'file_details_page.dart';
 import '../services/download_service.dart';
 
@@ -253,11 +257,11 @@ class _FolderViewPageState extends State<FolderViewPage> {
           if (mounted) AppToast.showSuccess(context, 'Uploaded successfully!');
           await _fetchFolderContents();
         } else {
-          if (mounted) AppToast.showError(context, 'Upload failed (${response.statusCode})');
+          if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
         }
       }
     } catch (e) {
-      if (mounted) AppToast.showError(context, 'Upload error: $e');
+      if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
     }
   }
 
@@ -270,7 +274,14 @@ class _FolderViewPageState extends State<FolderViewPage> {
     final subFolders = _filteredItems.where((f) => f.isFolder).toList();
     final subFiles = _filteredItems.where((f) => !f.isFolder).toList();
 
-    return Scaffold(
+    return PopScope(
+      canPop: !_isSelectionMode,
+      onPopInvokedWithResult: (didPop, result) {
+        if (_isSelectionMode) {
+          _clearSelection();
+        }
+      },
+      child: Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
@@ -320,7 +331,7 @@ class _FolderViewPageState extends State<FolderViewPage> {
                 child: RefreshIndicator(
                   onRefresh: _fetchFolderContents,
                   child: _isLoading
-                      ? const Center(child: CircularProgressIndicator())
+                      ? (_isGridView ? const FileGridSkeleton() : const FileListSkeleton())
                       : (_filteredItems.isEmpty
                           ? const EmptyWidget(
                               icon: Icons.folder_open_rounded,
@@ -366,6 +377,7 @@ class _FolderViewPageState extends State<FolderViewPage> {
       bottomNavigationBar: _isSelectionMode
           ? _buildMultiSelectBottomBar(context, theme, isDark)
           : null,
+    ),
     );
   }
 
@@ -373,6 +385,7 @@ class _FolderViewPageState extends State<FolderViewPage> {
     setState(() {
       _selectedFileIds.clear();
       _isSelectionMode = false;
+      NavigationShell.hideBottomNavNotifier.value = false;
     });
   }
 
@@ -441,10 +454,10 @@ class _FolderViewPageState extends State<FolderViewPage> {
                   if (mounted) AppToast.showSuccess(context, 'Items deleted successfully.');
                   await _fetchFolderContents();
                 } else {
-                  if (mounted) AppToast.showError(context, 'Delete failed (${response.statusCode})');
+                  if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
                 }
               } catch (e) {
-                if (mounted) AppToast.showError(context, 'Delete error: $e');
+                if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
               }
             },
             child: const Text('Delete', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
@@ -489,10 +502,10 @@ class _FolderViewPageState extends State<FolderViewPage> {
                   if (mounted) AppToast.showSuccess(context, '"${item.name}" deleted successfully.');
                   await _fetchFolderContents();
                 } else {
-                  if (mounted) AppToast.showError(context, 'Delete failed (${response.statusCode})');
+                  if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
                 }
               } catch (e) {
-                if (mounted) AppToast.showError(context, 'Delete error: $e');
+                if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
               }
             },
             child: const Text('Delete', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
@@ -650,11 +663,11 @@ class _FolderViewPageState extends State<FolderViewPage> {
                         AppToast.showSuccess(context, 'Sharing permissions updated successfully!');
                         await _fetchFolderContents();
                       } else {
-                        AppToast.showError(context, 'Update failed (${response.statusCode})');
+                        AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
                       }
                     } catch (e) {
                       if (!context.mounted) return;
-                      AppToast.showError(context, 'Sharing error: $e');
+                      AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
                     }
                     _clearSelection();
                   },
@@ -804,11 +817,11 @@ class _FolderViewPageState extends State<FolderViewPage> {
                         AppToast.showSuccess(context, 'Items moved successfully!');
                         await _fetchFolderContents();
                       } else {
-                        AppToast.showError(context, 'Move failed (${response.statusCode})');
+                        AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
                       }
                     } catch (e) {
                       if (!context.mounted) return;
-                      AppToast.showError(context, 'Move error: $e');
+                      AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
                     }
                   },
                   child: const Text('Move'),
@@ -852,7 +865,7 @@ class _FolderViewPageState extends State<FolderViewPage> {
     } else {
       if (mounted) {
         final error = DownloadService.downloadErrorNotifier.value ?? 'Failed to download "${file.name}". Please check internet connection.';
-        AppToast.showError(context, error);
+        AppToast.showError(context, ErrorHelper.getFriendlyMessage(error));
       }
     }
   }
@@ -946,11 +959,11 @@ class _FolderViewPageState extends State<FolderViewPage> {
                     AppToast.showSuccess(context, 'Renamed to "$newName"');
                     await _fetchFolderContents();
                   } else {
-                    AppToast.showError(context, 'Rename failed (${response.statusCode})');
+                    AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
                   }
                 } catch (e) {
                   if (!context.mounted) return;
-                  AppToast.showError(context, 'Rename error: $e');
+                  AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
                 }
               }
             },
@@ -966,8 +979,8 @@ class _FolderViewPageState extends State<FolderViewPage> {
   Widget _buildItemGridOrList(List<FileModel> items) {
     if (_isGridView) {
       return SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 180,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
           childAspectRatio: 1.3,

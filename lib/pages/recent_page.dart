@@ -5,11 +5,12 @@ import '../constants/app_colors.dart';
 import '../models/file_model.dart';
 import '../widgets/search_bar_widget.dart';
 import '../widgets/file_card.dart';
-import '../widgets/empty_widget.dart';
+import '../widgets/states/empty_state.dart';
 import '../services/recent_service.dart';
 import '../services/download_service.dart';
 import '../services/auth_manager.dart';
 import '../widgets/app_toast.dart';
+import '../utils/error_helper.dart';
 import 'file_details_page.dart';
 
 class RecentPage extends StatefulWidget {
@@ -477,7 +478,7 @@ class _RecentPageState extends State<RecentPage> {
         } else {
           if (mounted) {
             final error = DownloadService.downloadErrorNotifier.value ?? 'Failed to download "${file.name}". Please check internet connection.';
-            AppToast.showError(context, error);
+            AppToast.showError(context, ErrorHelper.getFriendlyMessage(error));
           }
         }
       }

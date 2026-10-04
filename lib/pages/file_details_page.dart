@@ -10,6 +10,7 @@ import 'preview/file_previewer_page.dart';
 import '../widgets/rotating_vinyl.dart';
 import '../services/recent_service.dart';
 import '../widgets/app_toast.dart';
+import '../utils/error_helper.dart';
 
 class FileDetailsPage extends StatefulWidget {
   final FileModel file;
@@ -101,7 +102,7 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
         if (!success) {
           if (mounted) {
             final error = DownloadService.downloadErrorNotifier.value ?? 'Download failed. Please check internet connection.';
-            AppToast.showError(context, error);
+            AppToast.showError(context, ErrorHelper.getFriendlyMessage(error));
           }
           return;
         }

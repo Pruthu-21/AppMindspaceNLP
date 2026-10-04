@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'item_fade_in.dart';
 import '../constants/app_colors.dart';
 import '../models/file_model.dart';
 import '../services/role_manager.dart';
@@ -36,12 +37,13 @@ class FileCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return InkWell(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(12),
+    return Semantics(
+      label: '${file.name}, ${file.isFolder ? 'Folder' : file.sizeString}',
+      button: true,
+      child: ItemFadeIn(
+      child: Material(
+        color: Colors.transparent,
+      child: Ink(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           color: isSelected 
@@ -54,7 +56,13 @@ class FileCard extends StatelessWidget {
             width: isSelected ? 2 : 1,
           ),
         ),
-        child: Column(
+        child: InkWell(
+          onTap: onTap,
+          onLongPress: onLongPress,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -86,13 +94,18 @@ class FileCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    file.isFolder ? 'Folder' : file.sizeString,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontSize: 11,
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  Flexible(
+                    child: Text(
+                      file.isFolder ? 'Folder' : file.sizeString,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontSize: 11,
+                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 4),
                   Row(
                     children: [
                       if (file.isPinned)
@@ -115,6 +128,10 @@ class FileCard extends StatelessWidget {
           ],
         ),
       ),
+      ),
+      ),
+      ),
+    ),
     );
   }
 
@@ -122,26 +139,34 @@ class FileCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return InkWell(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: isSelected 
-              ? theme.colorScheme.primary.withValues(alpha: 0.12)
-              : (isDark ? AppColors.surfaceDark : Colors.white),
-          border: Border.all(
+    return Semantics(
+      label: '${file.name}, ${file.isFolder ? 'Folder' : file.sizeString}',
+      button: true,
+      child: ItemFadeIn(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Material(
+          color: Colors.transparent,
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
             color: isSelected 
-                ? theme.colorScheme.primary 
-                : (isDark ? AppColors.dividerDark : AppColors.dividerLight),
-            width: isSelected ? 2 : 1,
+                ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                : (isDark ? AppColors.surfaceDark : Colors.white),
+            border: Border.all(
+              color: isSelected 
+                  ? theme.colorScheme.primary 
+                  : (isDark ? AppColors.dividerDark : AppColors.dividerLight),
+              width: isSelected ? 2 : 1,
+            ),
           ),
-        ),
-        child: Row(
+          child: InkWell(
+            onTap: onTap,
+            onLongPress: onLongPress,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              child: Row(
           children: [
             if (isSelectionMode)
               Padding(
@@ -171,10 +196,14 @@ class FileCard extends StatelessWidget {
                   if (file.downloadStatus == 'completed') ...[
                     Row(
                       children: [
-                        Text(
-                          file.isFolder ? 'Folder' : file.sizeString,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontSize: 12,
+                        Flexible(
+                          child: Text(
+                            file.isFolder ? 'Folder' : file.sizeString,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -224,6 +253,11 @@ class FileCard extends StatelessWidget {
           ],
         ),
       ),
+      ),
+      ),
+      ),
+      ),
+    ),
     );
   }
 
@@ -239,8 +273,8 @@ class FileCard extends StatelessWidget {
             width: isGrid ? 40 : 44,
             height: isGrid ? 40 : 44,
             fit: BoxFit.cover,
-            memCacheWidth: isGrid ? 120 : 132,
-            memCacheHeight: isGrid ? 120 : 132,
+            memCacheWidth: isGrid ? 80 : 88,
+            memCacheHeight: isGrid ? 80 : 88,
             placeholder: (context, url) => _buildDefaultBox(context, Icons.image_rounded, AppColors.info),
             errorWidget: (context, url, error) => _buildDefaultBox(context, Icons.broken_image_rounded, AppColors.info),
           ),
@@ -275,7 +309,10 @@ class FileCard extends StatelessWidget {
 
     return Hero(
       tag: 'hero-icon-${file.id}',
-      child: _buildDefaultBox(context, icon, color),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+        child: Center(child: _buildDefaultBox(context, icon, color)),
+      ),
     );
   }
 
@@ -287,10 +324,12 @@ class FileCard extends StatelessWidget {
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Icon(
-        icon,
-        color: color,
-        size: isGrid ? 20 : 22,
+      child: Center(
+        child: Icon(
+          icon,
+          color: color,
+          size: isGrid ? 20 : 22,
+        ),
       ),
     );
   }
@@ -630,12 +669,16 @@ class FileCard extends StatelessWidget {
                 ),
               )
             else
-              Text(
-                isDownloading ? 'Downloading...' : 'Stopped ($percentText)',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: isDownloading ? AppColors.primary : Colors.red,
+              Expanded(
+                child: Text(
+                  isDownloading ? 'Downloading...' : 'Stopped ($percentText)',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: isDownloading ? AppColors.primary : Colors.red,
+                  ),
                 ),
               ),
             if (!isGrid) const SizedBox(width: 8),

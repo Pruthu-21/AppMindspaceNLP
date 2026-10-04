@@ -3,7 +3,7 @@ import '../constants/app_colors.dart';
 import '../models/file_model.dart';
 import '../widgets/search_bar_widget.dart';
 import '../widgets/file_card.dart';
-import '../widgets/empty_widget.dart';
+import '../widgets/states/empty_state.dart';
 import 'file_details_page.dart';
 import '../services/download_service.dart';
 

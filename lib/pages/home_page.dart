@@ -1,3 +1,4 @@
+import '../utils/error_helper.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
@@ -486,11 +487,11 @@ class _HomePageState extends State<HomePage> {
           if (mounted) AppToast.showSuccess(context, 'File(s) uploaded successfully!');
           await _fetchSharedFiles();
         } else {
-          if (mounted) AppToast.showError(context, 'Upload failed (${response.statusCode}): ${response.body}');
+          if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
         }
       }
     } catch (e) {
-      if (mounted) AppToast.showError(context, 'Error picking/uploading file: $e');
+      if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
     }
   }
 
@@ -617,10 +618,10 @@ class _HomePageState extends State<HomePage> {
                       if (mounted) AppToast.showSuccess(context, 'Folder "$folderName" created!');
                       await _fetchSharedFiles();
                     } else {
-                      if (mounted) AppToast.showError(context, 'Failed to create folder (${response.statusCode})');
+                      if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
                     }
                   } catch (e) {
-                    if (mounted) AppToast.showError(context, 'Error creating folder: $e');
+                    if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
                   }
                 }
               },
@@ -776,7 +777,14 @@ class _HomePageState extends State<HomePage> {
       builder: (context, currentRole, child) {
         final isAdmin = currentRole == AppRole.admin;
 
-        return Scaffold(
+        return PopScope(
+          canPop: !_isSelectionMode,
+          onPopInvokedWithResult: (didPop, result) {
+            if (_isSelectionMode) {
+              _clearSelection();
+            }
+          },
+          child: Scaffold(
           body: SafeArea(
             child: RefreshIndicator(
               onRefresh: () async {
@@ -784,7 +792,7 @@ class _HomePageState extends State<HomePage> {
               },
               child: ListView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 160), // Extra bottom padding so FAB never overlaps file cards
+                padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.paddingOf(context).bottom + 160), // Extra bottom padding so FAB never overlaps file cards
                 children: [
                   // Greeting Header
                   Row(
@@ -867,6 +875,7 @@ class _HomePageState extends State<HomePage> {
                                 valueListenable: MessageService.hasUnreadMessages,
                                 builder: (context, hasUnread, child) {
                                   return IconButton(
+                                    tooltip: 'Notifications',
                                     icon: Badge(
                                       isLabelVisible: hasUnread,
                                       backgroundColor: Colors.red,
@@ -888,8 +897,10 @@ class _HomePageState extends State<HomePage> {
                             },
                           ),
                           const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: () {
+                          Tooltip(
+                            message: 'Profile',
+                            child: GestureDetector(
+                              onTap: () {
                               NavigationShell.navigationNotifier.value = 4; // Navigate to Profile Tab
                             },
                             child: Container(
@@ -913,7 +924,7 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               ),
                             ),
-                          ),
+                          ),),
                         ],
                       ),
                     ],
@@ -933,7 +944,7 @@ class _HomePageState extends State<HomePage> {
                     const SectionHeader(title: 'Recent Files'),
                     const SizedBox(height: 8),
                     SizedBox(
-                      height: 110,
+                      height: MediaQuery.textScalerOf(context).scale(110),
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
@@ -1068,8 +1079,8 @@ class _HomePageState extends State<HomePage> {
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: folders.length,
-                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
+                              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                                maxCrossAxisExtent: 180,
                                 crossAxisSpacing: 12,
                                 mainAxisSpacing: 12,
                                 childAspectRatio: 1.5,
@@ -1217,7 +1228,7 @@ class _HomePageState extends State<HomePage> {
               : null,
           floatingActionButton: (isAdmin && !_isSelectionMode)
               ? Padding(
-                  padding: const EdgeInsets.only(bottom: 78.0),
+                  padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom + 80.0),
                   child: FloatingActionButton(
                     onPressed: () => _showUploadBottomSheet(context),
                     backgroundColor: theme.colorScheme.primary,
@@ -1226,6 +1237,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 )
               : null,
+          ),
         );
       },
     );
@@ -1345,10 +1357,10 @@ class _HomePageState extends State<HomePage> {
                   if (mounted) AppToast.showSuccess(context, 'Items deleted successfully.');
                   await _fetchSharedFiles();
                 } else {
-                  if (mounted) AppToast.showError(context, 'Delete failed (${response.statusCode})');
+                  if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
                 }
               } catch (e) {
-                if (mounted) AppToast.showError(context, 'Delete error: $e');
+                if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
               }
             },
             child: const Text('Delete', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
@@ -1399,7 +1411,7 @@ class _HomePageState extends State<HomePage> {
                   }
                 } catch (e) {
                   if (!context.mounted) return;
-                  AppToast.showError(context, 'Rename failed: $e');
+                  AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
                 }
               }
             },
@@ -1560,11 +1572,11 @@ class _HomePageState extends State<HomePage> {
                         AppToast.showSuccess(context, 'Sharing permissions updated successfully!');
                         await _fetchSharedFiles();
                       } else {
-                        AppToast.showError(context, 'Update failed (${response.statusCode})');
+                        AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
                       }
                     } catch (e) {
                       if (!context.mounted) return;
-                      AppToast.showError(context, 'Sharing error: $e');
+                      AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
                     }
                     _clearSelection();
                   },
@@ -1680,11 +1692,11 @@ class _HomePageState extends State<HomePage> {
                         AppToast.showSuccess(context, 'Moved successfully!');
                         await _fetchSharedFiles();
                       } else {
-                        AppToast.showError(context, 'Move failed (${response.statusCode})');
+                        AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
                       }
                     } catch (e) {
                       if (!context.mounted) return;
-                      AppToast.showError(context, 'Move error: $e');
+                      AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
                     }
                   },
                   child: const Text('Move Here'),
@@ -1793,7 +1805,7 @@ class _HomePageState extends State<HomePage> {
       } else {
         if (mounted) {
           final error = DownloadService.downloadErrorNotifier.value ?? 'Failed to download "${file.name}". Please check internet connection.';
-          AppToast.showError(context, error);
+          AppToast.showError(context, ErrorHelper.getFriendlyMessage(error));
         }
       }
     }
