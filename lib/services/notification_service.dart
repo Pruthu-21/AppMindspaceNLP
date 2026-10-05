@@ -246,7 +246,7 @@ class NotificationService {
       _notificationDetails(),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
+          UILocalNotificationDateInterpretation.wallClockTime,
     );
   }
   // Schedule a reminder model
@@ -265,7 +265,7 @@ class NotificationService {
           scheduledDate,
           _notificationDetails(),
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-          uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+          uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.wallClockTime,
           payload: payload,
         );
       } else if (reminder.repeat == RepeatType.daily) {
@@ -278,7 +278,7 @@ class NotificationService {
           scheduledDate,
           _notificationDetails(),
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-          uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+          uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.wallClockTime,
           matchDateTimeComponents: DateTimeComponents.time,
           payload: payload,
         );
@@ -294,7 +294,7 @@ class NotificationService {
             scheduledDate,
             _notificationDetails(),
             androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-            uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+            uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.wallClockTime,
             matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
             payload: payload,
           );
@@ -314,7 +314,7 @@ class NotificationService {
             scheduledDate,
             _notificationDetails(),
             androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-            uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+            uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.wallClockTime,
             payload: payload,
           );
         } else if (reminder.repeat == RepeatType.daily) {
@@ -326,7 +326,7 @@ class NotificationService {
             scheduledDate,
             _notificationDetails(),
             androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-            uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+            uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.wallClockTime,
             matchDateTimeComponents: DateTimeComponents.time,
             payload: payload,
           );
@@ -341,7 +341,7 @@ class NotificationService {
               scheduledDate,
               _notificationDetails(),
               androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-              uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+              uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.wallClockTime,
               matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
               payload: payload,
             );
