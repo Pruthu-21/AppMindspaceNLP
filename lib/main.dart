@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'models/reminder_model.dart';
+import 'services/reminder_repository.dart';
+
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'theme/app_theme.dart';
@@ -16,6 +19,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'services/firebase_stub.dart' if (dart.library.io) 'services/firebase_mobile.dart' as fb;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/messages_page.dart';
+import 'pages/reminders_page.dart';
 import 'pages/splash_page.dart';
 
 Map<String, dynamic>? pendingNotificationTarget;
@@ -74,6 +78,40 @@ void openMessagesFromNotification(Map<String, dynamic> data) {
   
   MessageService().checkUnreadMessages(token);
 
+  final type = data['type'];
+  if (type == 'reminder') {
+    // Disable if it was a 'once' reminder
+    final reminderId = data['id'];
+    if (reminderId != null && reminderId is int) {
+      final repo = ReminderRepository();
+      repo.loadReminders().then((reminders) {
+        final index = reminders.indexWhere((r) => r.id == reminderId);
+        if (index != -1 && reminders[index].repeat == RepeatType.once) {
+          repo.setEnabled(reminderId, false);
+        }
+      });
+    }
+
+    bool isRemindersTop = false;
+    nav.popUntil((route) {
+      if (route.settings.name == '/reminders') {
+        isRemindersTop = true;
+      }
+      return true;
+    });
+
+    if (!isRemindersTop) {
+      debugPrint('MSNLP_NOTIF: Pushing RemindersPage');
+      nav.push(MaterialPageRoute(
+        settings: const RouteSettings(name: '/reminders'),
+        builder: (_) => const RemindersPage(),
+      ));
+    } else {
+      debugPrint('MSNLP_NOTIF: RemindersPage is already top');
+    }
+    return;
+  }
+
   bool isMessagesTop = false;
   nav.popUntil((route) {
     if (route.settings.name == '/messages') {
@@ -110,22 +148,26 @@ void main() async {
       if (reminderString != null) {
         final savedTime = DateTime.tryParse(reminderString);
         if (savedTime != null) {
-          DateTime nextTime = savedTime;
-          final now = DateTime.now();
-          while (nextTime.isBefore(now)) {
-            nextTime = nextTime.add(const Duration(days: 1));
-          }
-          await NotificationService().scheduleReminder(
-            id: 0,
+          final repo = ReminderRepository();
+          final r = Reminder(
+            id: DateTime.now().millisecondsSinceEpoch % 100000,
             title: 'Mindspace Reminder',
-            body: 'It is time for your scheduled Mindspace session.',
-            scheduledDate: nextTime,
+            hour: savedTime.hour,
+            minute: savedTime.minute,
+            repeat: RepeatType.daily,
+            weekdays: [],
+            enabled: true,
+            createdAt: DateTime.now(),
           );
+          await repo.addReminder(r);
         }
       }
       
       await prefs.setBool('reminders_migrated_v1', true);
     }
+    
+    // Reschedule all reminders
+    await NotificationService().rescheduleAll();
   } catch (e) {
     debugPrint('Error initializing NotificationService: $e');
   }
