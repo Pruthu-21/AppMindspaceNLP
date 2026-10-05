@@ -13,6 +13,8 @@ import 'services/notification_service.dart';
 import 'pages/splash_page.dart';
 import 'services/firebase_stub.dart' if (dart.library.io) 'services/firebase_mobile.dart' as fb;
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -20,6 +22,32 @@ void main() async {
 
   try {
     await NotificationService().init();
+    
+    // Migration for old notifications
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('reminders_migrated_v1') != true) {
+      await NotificationService().flutterLocalNotificationsPlugin.cancelAll();
+      
+      final reminderString = prefs.getString('user_reminder');
+      if (reminderString != null) {
+        final savedTime = DateTime.tryParse(reminderString);
+        if (savedTime != null) {
+          DateTime nextTime = savedTime;
+          final now = DateTime.now();
+          while (nextTime.isBefore(now)) {
+            nextTime = nextTime.add(const Duration(days: 1));
+          }
+          await NotificationService().scheduleReminder(
+            id: 0,
+            title: 'Mindspace Reminder',
+            body: 'It is time for your scheduled Mindspace session.',
+            scheduledDate: nextTime,
+          );
+        }
+      }
+      
+      await prefs.setBool('reminders_migrated_v1', true);
+    }
   } catch (e) {
     debugPrint('Error initializing NotificationService: $e');
   }

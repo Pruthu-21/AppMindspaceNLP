@@ -4,6 +4,7 @@ import '../constants/app_colors.dart';
 import '../services/role_manager.dart';
 import '../services/auth_manager.dart';
 import '../services/language_notifier.dart';
+import '../services/permission_service.dart';
 import 'auth/login_page.dart';
 import 'home_page.dart';
 import 'recent_page.dart';
@@ -37,6 +38,10 @@ class _NavigationShellState extends State<NavigationShell> {
           context,
           MaterialPageRoute(builder: (context) => const LoginPage()),
         );
+      });
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        PermissionService.checkAndRequestPermissions(context);
       });
     }
   }

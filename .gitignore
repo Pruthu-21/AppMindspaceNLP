@@ -59,3 +59,8 @@ firebase_options.dart
 
 # Mac OS backup files
 * 2.*
+
+# Logs and Reports
+flutter_log.txt
+android/build/reports/
+**/ephemeral/
