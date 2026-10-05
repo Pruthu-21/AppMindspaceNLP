@@ -24,13 +24,15 @@ class AppToast {
     );
   }
 
-  static void showInfo(BuildContext context, String message) {
+  static void showInfo(BuildContext context, String message, {String? actionLabel, VoidCallback? onAction}) {
     _showOverlay(
       context,
       message: message,
       icon: Icons.info_outline_rounded,
       iconColor: AppColors.primary,
       borderColor: AppColors.primary.withValues(alpha: 0.3),
+      actionLabel: actionLabel,
+      onAction: onAction,
     );
   }
 
@@ -40,6 +42,8 @@ class AppToast {
     required IconData icon,
     required Color iconColor,
     required Color borderColor,
+    String? actionLabel,
+    VoidCallback? onAction,
   }) {
     _currentEntry?.remove();
     _currentEntry = null;
@@ -56,6 +60,8 @@ class AppToast {
           iconColor: iconColor,
           borderColor: borderColor,
           isDark: isDark,
+          actionLabel: actionLabel,
+          onAction: onAction,
           onDismiss: () {
             try {
               entry.remove();
@@ -79,6 +85,8 @@ class _ToastWidget extends StatefulWidget {
   final Color iconColor;
   final Color borderColor;
   final bool isDark;
+  final String? actionLabel;
+  final VoidCallback? onAction;
   final VoidCallback onDismiss;
 
   const _ToastWidget({
@@ -87,6 +95,8 @@ class _ToastWidget extends StatefulWidget {
     required this.iconColor,
     required this.borderColor,
     required this.isDark,
+    this.actionLabel,
+    this.onAction,
     required this.onDismiss,
   });
 
@@ -116,7 +126,7 @@ class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderSta
 
     _controller.forward();
 
-    Future.delayed(const Duration(seconds: 4), () {
+    Future.delayed(Duration(seconds: (widget.actionLabel != null) ? 6 : 4), () {
       if (mounted) {
         _controller.reverse().then((_) {
           widget.onDismiss();
@@ -187,6 +197,27 @@ class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderSta
                         ),
                       ),
                     ),
+                    if (widget.actionLabel != null && widget.onAction != null) ...[
+                      const SizedBox(width: 8),
+                      TextButton(
+                        onPressed: () {
+                          widget.onAction!();
+                          _controller.reverse().then((_) {
+                            widget.onDismiss();
+                          });
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: widget.iconColor,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(
+                          widget.actionLabel!,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

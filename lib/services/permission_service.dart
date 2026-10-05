@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart';
 
 class PermissionService {
   static bool _hasRequestedThisSession = false;
@@ -85,24 +85,51 @@ class PermissionService {
     }
 
     // Full-Screen Intent (Android 14+)
-    // flutter_local_notifications plugin can request it
-    final flnPlugin = FlutterLocalNotificationsPlugin();
-    final androidPlugin = flnPlugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-    if (androidPlugin != null) {
-      // There's no direct way to check if full screen intent is granted via permission_handler,
-      // but we can request it. We will just try to request it.
-      // Wait, we can't check status easily. Let's just ask if we know we need it?
-      // Actually Android 14+ requires it. We'll just call it if SDK >= 34.
-      // Unfortunately we don't have device_info_plus, but we can just call requestFullScreenIntentPermission.
-      if (!context.mounted) return;
-      bool shouldRequest = await _showExplanationDialog(
-        context,
-        'Full-Screen Intent',
-        'We need full-screen intent permission to show reminders over other apps.',
-      );
-      if (shouldRequest) {
-        await androidPlugin.requestFullScreenIntentPermission();
+    // ignore: dead_code
+    if (false) {
+      final methodChannel = const MethodChannel('mindspace/permissions');
+      final canUse = await methodChannel.invokeMethod<bool>('canUseFullScreenIntent') ?? true;
+      
+      if (!canUse) {
+        final lastFsiVersion = prefs.getString('fsi_asked_version');
+        if (lastFsiVersion != packageInfo.version) {
+          prefs.setString('fsi_asked_version', packageInfo.version);
+          if (!context.mounted) return;
+          
+          bool? result = await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              title: const Text('Full-Screen Intent'),
+              content: const Text('Allow full-screen alerts so reminders can wake your screen when the phone is locked. You can change this later in Settings.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Not now'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Open settings'),
+                ),
+              ],
+            ),
+          );
+          
+          if (result == true) {
+            await methodChannel.invokeMethod('openFullScreenIntentSettings');
+            
+            // Wait for app to resume to re-check
+            final observer = _LifecycleEventHandler(
+              resumeCallBack: () async {
+                final granted = await methodChannel.invokeMethod<bool>('canUseFullScreenIntent') ?? true;
+                if (granted) {
+                  debugPrint('FSI granted on resume');
+                }
+              }
+            );
+            WidgetsBinding.instance.addObserver(observer);
+          }
+        }
       }
     }
   }
@@ -153,5 +180,19 @@ class PermissionService {
         ],
       ),
     );
+  }
+}
+
+class _LifecycleEventHandler extends WidgetsBindingObserver {
+  final Future<void> Function() resumeCallBack;
+
+  _LifecycleEventHandler({required this.resumeCallBack});
+
+  @override
+  Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
+    if (state == AppLifecycleState.resumed) {
+      await resumeCallBack();
+      WidgetsBinding.instance.removeObserver(this);
+    }
   }
 }

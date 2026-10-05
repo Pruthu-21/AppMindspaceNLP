@@ -37,7 +37,10 @@ class _MessagesPageState extends State<MessagesPage> {
   }
 
   Future<void> _launchUrl(String urlString) async {
-    final Uri url = Uri.parse(urlString);
+    final Uri? url = Uri.tryParse(urlString);
+    if (url == null || (url.scheme != 'http' && url.scheme != 'https')) {
+      return;
+    }
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -181,7 +184,7 @@ class _MessagesPageState extends State<MessagesPage> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(msg.body),
+                      LinkifiedText(text: msg.body, onLaunch: _launchUrl),
                       if (msg.attachmentUrl != null && msg.attachmentUrl!.isNotEmpty) ...[
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
@@ -202,6 +205,82 @@ class _MessagesPageState extends State<MessagesPage> {
             },
           );
         },
+      ),
+    );
+  }
+}
+
+class LinkifiedText extends StatefulWidget {
+  final String text;
+  final Function(String) onLaunch;
+
+  const LinkifiedText({super.key, required this.text, required this.onLaunch});
+
+  @override
+  State<LinkifiedText> createState() => _LinkifiedTextState();
+}
+
+class _LinkifiedTextState extends State<LinkifiedText> {
+  final List<dynamic> _spans = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _parseText();
+  }
+
+  @override
+  void didUpdateWidget(LinkifiedText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text) {
+      _parseText();
+    }
+  }
+
+  void _parseText() {
+    _spans.clear();
+    final RegExp urlRegex = RegExp(r'(https?:\/\/[^\s]+)', caseSensitive: false);
+    final matches = urlRegex.allMatches(widget.text);
+    
+    int currentPosition = 0;
+    for (final match in matches) {
+      if (match.start > currentPosition) {
+        _spans.add(widget.text.substring(currentPosition, match.start));
+      }
+      _spans.add(Uri.parse(match.group(0)!));
+      currentPosition = match.end;
+    }
+    
+    if (currentPosition < widget.text.length) {
+      _spans.add(widget.text.substring(currentPosition));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text.rich(
+      TextSpan(
+        children: _spans.map((span) {
+          if (span is String) {
+            return TextSpan(text: span, style: DefaultTextStyle.of(context).style);
+          } else if (span is Uri) {
+            final urlString = span.toString();
+            return WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: GestureDetector(
+                onTap: () => widget.onLaunch(urlString),
+                child: Text(
+                  urlString,
+                  style: DefaultTextStyle.of(context).style.copyWith(
+                    color: Colors.blue,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            );
+          }
+          return const TextSpan();
+        }).toList(),
       ),
     );
   }

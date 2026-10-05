@@ -2,9 +2,20 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import '../main.dart';
 
 @pragma('vm:entry-point')
 void backgroundNotificationHandler(NotificationResponse response) {
+  debugPrint('MSNLP_NOTIF: backgroundNotificationHandler called, actionId: ${response.actionId}, payload: ${response.payload}');
+  WidgetsFlutterBinding.ensureInitialized();
+  if (response.actionId == 'open_link') {
+    debugPrint('MSNLP_NOTIF: open_link action triggered in background isolate, ignoring as it should be handled in foreground.');
+    return;
+  }
+
   if (response.actionId == 'snooze_id') {
     tz.initializeTimeZones(); // Ensure timezones are initialized in background isolate
     // Schedule for 10 minutes later
@@ -21,6 +32,20 @@ void backgroundNotificationHandler(NotificationResponse response) {
 
 @pragma('vm:entry-point')
 void foregroundNotificationHandler(NotificationResponse response) {
+  debugPrint('MSNLP_NOTIF: foregroundNotificationHandler called, actionId: ${response.actionId}, payload: ${response.payload}');
+  if (response.payload != null && response.payload!.isNotEmpty) {
+    try {
+      final Map<String, dynamic> data = json.decode(response.payload!);
+      if (response.actionId != null) {
+        data['actionId'] = response.actionId;
+      }
+      openMessagesFromNotification(data);
+      return;
+    } catch (e) {
+      debugPrint('Error parsing notification payload: $e');
+    }
+  }
+
   if (response.actionId == 'snooze_id') {
     // Schedule for 10 minutes later
     final now = DateTime.now();
@@ -180,12 +205,24 @@ class NotificationService {
     required int id,
     required String title,
     required String body,
+    Map<String, dynamic>? data,
   }) async {
+    String? payload;
+    if (data != null) {
+      final payloadData = {
+        'message_id': data['message_id'],
+        'type': data['type'],
+        'link': data['link'],
+      };
+      payload = json.encode(payloadData);
+    }
+
     await flutterLocalNotificationsPlugin.show(
       id,
       title,
       body,
       _messageNotificationDetails(),
+      payload: payload,
     );
   }
 

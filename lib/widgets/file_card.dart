@@ -61,7 +61,7 @@ class FileCard extends StatelessWidget {
           onLongPress: onLongPress,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
             child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

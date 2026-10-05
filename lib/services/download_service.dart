@@ -175,12 +175,16 @@ class DownloadService {
       final catalogFile = await _getCatalogFile();
       if (!await catalogFile.exists()) return {};
       final content = await catalogFile.readAsString();
-      final data = jsonDecode(content) as Map<String, dynamic>;
+      final decoded = jsonDecode(content);
+      final List<dynamic> data = decoded is List ? decoded : [];
       
       final validNames = <String>{};
-      for (final key in data.keys) {
-        if (fileNames.contains(key)) {
-          validNames.add(key);
+      for (final item in data) {
+        if (item is Map<String, dynamic>) {
+          final name = item['name'] as String?;
+          if (name != null && fileNames.contains(name)) {
+            validNames.add(name);
+          }
         }
       }
       return validNames;
