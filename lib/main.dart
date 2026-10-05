@@ -19,7 +19,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'services/firebase_stub.dart' if (dart.library.io) 'services/firebase_mobile.dart' as fb;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/messages_page.dart';
-import 'pages/reminders_page.dart';
+
+import 'pages/alarm_screen.dart';
 import 'pages/splash_page.dart';
 
 Map<String, dynamic>? pendingNotificationTarget;
@@ -79,36 +80,15 @@ void openMessagesFromNotification(Map<String, dynamic> data) {
   MessageService().checkUnreadMessages(token);
 
   final type = data['type'];
-  if (type == 'reminder') {
-    // Disable if it was a 'once' reminder
-    final reminderId = data['id'];
-    if (reminderId != null && reminderId is int) {
-      final repo = ReminderRepository();
-      repo.loadReminders().then((reminders) {
-        final index = reminders.indexWhere((r) => r.id == reminderId);
-        if (index != -1 && reminders[index].repeat == RepeatType.once) {
-          repo.setEnabled(reminderId, false);
-        }
-      });
-    }
-
-    bool isRemindersTop = false;
-    nav.popUntil((route) {
-      if (route.settings.name == '/reminders') {
-        isRemindersTop = true;
-      }
-      return true;
-    });
-
-    if (!isRemindersTop) {
-      debugPrint('MSNLP_NOTIF: Pushing RemindersPage');
-      nav.push(MaterialPageRoute(
-        settings: const RouteSettings(name: '/reminders'),
-        builder: (_) => const RemindersPage(),
-      ));
-    } else {
-      debugPrint('MSNLP_NOTIF: RemindersPage is already top');
-    }
+  if (type == 'reminder' || actionId == 'stop_id') {
+    final reminderId = data['id'] as int? ?? 0;
+    final title = data['title'] as String? ?? 'Mindspace Reminder';
+    
+    debugPrint('MSNLP_NOTIF: Pushing AlarmScreen for id $reminderId');
+    nav.push(MaterialPageRoute(
+      settings: const RouteSettings(name: '/alarm'),
+      builder: (_) => AlarmScreen(reminderId: reminderId, title: title),
+    ));
     return;
   }
 
@@ -194,12 +174,17 @@ void main() async {
     final launchDetails = await NotificationService().flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
     if (launchDetails?.didNotificationLaunchApp ?? false) {
       final response = launchDetails!.notificationResponse;
-      if (response?.actionId == 'open_link' && response?.payload != null) {
+      if (response?.payload != null) {
         final data = json.decode(response!.payload!);
-        final link = data['link'];
-        if (link != null && link is String && link.isNotEmpty) {
-          debugPrint('MSNLP_NOTIF: early check actionId open_link, parsing link: $link');
-          await openUrlOrFallback(link);
+        final actionId = response.actionId ?? data['actionId'];
+        if (actionId == 'open_link') {
+          final link = data['link'];
+          if (link != null && link is String && link.isNotEmpty) {
+            debugPrint('MSNLP_NOTIF: early check actionId open_link, parsing link: $link');
+            await openUrlOrFallback(link);
+            skipSplash = true;
+          }
+        } else if (data['type'] == 'reminder' || actionId == 'stop_id') {
           skipSplash = true;
         }
       }

@@ -1,6 +1,7 @@
 package com.mindspace.nlp
 
 import android.os.Bundle
+import android.view.WindowManager
 import android.os.Build
 import android.content.Intent
 import android.provider.Settings
@@ -48,7 +49,29 @@ class MainActivity : FlutterActivity() {
         }
         
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "mindspace/app").setMethodCallHandler { call, result ->
-            if (call.method == "moveTaskToBack") {
+            if (call.method == "setAlarmWindowFlags") {
+                val enable = call.argument<Boolean>("enable") ?: false
+                if (enable) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                        setShowWhenLocked(true)
+                        setTurnScreenOn(true)
+                    } else {
+                        window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
+                    }
+                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                } else {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                        setShowWhenLocked(false)
+                        setTurnScreenOn(false)
+                    } else {
+                        window.clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                                          WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
+                    }
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                }
+                result.success(null)
+            } else if (call.method == "moveTaskToBack") {
                 moveTaskToBack(true)
                 result.success(null)
             } else if (call.method == "openUrl") {

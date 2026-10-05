@@ -7,6 +7,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'dart:typed_data';
 import '../main.dart';
 
 @pragma('vm:entry-point')
@@ -19,16 +20,45 @@ void backgroundNotificationHandler(NotificationResponse response) {
   }
 
   if (response.actionId == 'snooze_id') {
-    tz.initializeTimeZones(); // Ensure timezones are initialized in background isolate
-    // Schedule for 10 minutes later
-    final now = DateTime.now();
-    final snoozeTime = now.add(const Duration(minutes: 10));
-    NotificationService().scheduleReminder(
-      id: 0,
-      title: 'Mindspace Reminder (Snoozed)',
-      body: 'It is time for your scheduled Mindspace session.',
-      scheduledDate: snoozeTime,
-    );
+    try {
+      tz.initializeTimeZones(); // Ensure timezones are initialized in background isolate
+      // Schedule for 10 minutes later
+      final now = DateTime.now();
+      final snoozeTime = now.add(const Duration(minutes: 10));
+      
+      int rId = 0;
+      String rTitle = 'Mindspace Reminder';
+      if (response.payload != null && response.payload!.isNotEmpty) {
+        try {
+          final data = json.decode(response.payload!);
+          rId = data['id'] as int? ?? 0;
+          rTitle = data['title'] as String? ?? 'Mindspace Reminder';
+        } catch (_) {}
+      }
+      
+      debugPrint('MSNLP_REMINDER: background snooze triggered for id $rId');
+      
+      final reminder = Reminder(
+        id: rId,
+        title: '$rTitle (Snoozed)',
+        hour: snoozeTime.hour,
+        minute: snoozeTime.minute,
+        repeat: RepeatType.once,
+        weekdays: [],
+        enabled: true,
+        createdAt: DateTime.now(),
+      );
+      
+      NotificationService().scheduleReminderModel(reminder).then((_) {
+        debugPrint('MSNLP_REMINDER: background snooze successfully scheduled');
+      }).catchError((e) {
+        debugPrint('MSNLP_REMINDER: background isolate failed to schedule snooze: $e');
+      });
+      
+      NotificationService().flutterLocalNotificationsPlugin.cancel(rId * 10);
+    } catch (e) {
+      debugPrint('MSNLP_REMINDER: background isolate failed to schedule snooze: $e');
+    }
   }
 }
 
@@ -49,15 +79,38 @@ void foregroundNotificationHandler(NotificationResponse response) {
   }
 
   if (response.actionId == 'snooze_id') {
-    // Schedule for 10 minutes later
-    final now = DateTime.now();
-    final snoozeTime = now.add(const Duration(minutes: 10));
-    NotificationService().scheduleReminder(
-      id: 0,
-      title: 'Mindspace Reminder (Snoozed)',
-      body: 'It is time for your scheduled Mindspace session.',
-      scheduledDate: snoozeTime,
-    );
+    try {
+      final now = DateTime.now();
+      final snoozeTime = now.add(const Duration(minutes: 10));
+      
+      int rId = 0;
+      String rTitle = 'Mindspace Reminder';
+      if (response.payload != null && response.payload!.isNotEmpty) {
+        try {
+          final data = json.decode(response.payload!);
+          rId = data['id'] as int? ?? 0;
+          rTitle = data['title'] as String? ?? 'Mindspace Reminder';
+        } catch (_) {}
+      }
+      
+      debugPrint('MSNLP_REMINDER: foreground snooze triggered for id $rId');
+      
+      final reminder = Reminder(
+        id: rId,
+        title: '$rTitle (Snoozed)',
+        hour: snoozeTime.hour,
+        minute: snoozeTime.minute,
+        repeat: RepeatType.once,
+        weekdays: [],
+        enabled: true,
+        createdAt: DateTime.now(),
+      );
+      
+      NotificationService().scheduleReminderModel(reminder);
+      NotificationService().flutterLocalNotificationsPlugin.cancel(rId * 10);
+    } catch (e) {
+      debugPrint('MSNLP_REMINDER: foreground isolate failed to schedule snooze: $e');
+    }
   }
 }
 
@@ -150,7 +203,7 @@ class NotificationService {
 
   // Define notification details with default system sound and full-screen intent
   NotificationDetails _notificationDetails() {
-    return const NotificationDetails(
+    return NotificationDetails(
       android: AndroidNotificationDetails(
         'mindspace_reminders_v4', // Changed ID to use new channel
         'Reminders',
@@ -159,10 +212,15 @@ class NotificationService {
         importance: Importance.max,
         priority: Priority.high,
         playSound: true,
-        sound: RawResourceAndroidNotificationSound('mindspace_reminder'),
+        sound: const RawResourceAndroidNotificationSound('mindspace_reminder'),
         audioAttributesUsage: AudioAttributesUsage.alarm,
         category: AndroidNotificationCategory.alarm,
-        actions: <AndroidNotificationAction>[
+        fullScreenIntent: true,
+        ongoing: true,
+        autoCancel: false,
+        visibility: NotificationVisibility.public,
+        additionalFlags: Int32List.fromList([4]), // FLAG_INSISTENT
+        actions: const <AndroidNotificationAction>[
           AndroidNotificationAction(
             'stop_id',
             'Stop',
@@ -171,8 +229,8 @@ class NotificationService {
           ),
           AndroidNotificationAction(
             'snooze_id',
-            'Snooze (10 mins)',
-            showsUserInterface: true,
+            'Snooze 10 min',
+            showsUserInterface: false,
             cancelNotification: true,
           ),
         ],
@@ -252,7 +310,7 @@ class NotificationService {
   // Schedule a reminder model
   Future<bool> scheduleReminderModel(Reminder reminder) async {
     bool exactPermitted = true;
-    final payload = json.encode({"type": "reminder", "id": reminder.id});
+    final payload = json.encode({"type": "reminder", "id": reminder.id, "title": reminder.title});
 
     try {
       if (reminder.repeat == RepeatType.once) {

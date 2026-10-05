@@ -84,9 +84,10 @@ class PermissionService {
       }
     }
 
+const kAskFullScreenIntent = true;
+
     // Full-Screen Intent (Android 14+)
-    // ignore: dead_code
-    if (false) {
+    if (kAskFullScreenIntent) {
       final methodChannel = const MethodChannel('mindspace/permissions');
       final canUse = await methodChannel.invokeMethod<bool>('canUseFullScreenIntent') ?? true;
       
@@ -101,7 +102,7 @@ class PermissionService {
             barrierDismissible: false,
             builder: (context) => AlertDialog(
               title: const Text('Full-Screen Intent'),
-              content: const Text('Allow full-screen alerts so reminders can wake your screen when the phone is locked. You can change this later in Settings.'),
+              content: const Text('Allow full-screen alarms so a reminder can wake your screen when the phone is locked.'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
