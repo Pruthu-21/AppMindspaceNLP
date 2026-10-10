@@ -4,7 +4,6 @@ import 'models/reminder_model.dart';
 import 'services/reminder_repository.dart';
 
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'theme/app_theme.dart';
 import 'pages/auth/login_page.dart';
 import 'pages/navigation_shell.dart';
@@ -111,46 +110,13 @@ void openMessagesFromNotification(Map<String, dynamic> data) {
   }
 }
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  // Firebase setup is moved to _checkSession() inside AppStartupHelper
 
-  try {
-    await NotificationService().init();
-    
-    // Migration for old notifications
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool('reminders_migrated_v1') != true) {
-      await NotificationService().flutterLocalNotificationsPlugin.cancelAll();
-      
-      final reminderString = prefs.getString('user_reminder');
-      if (reminderString != null) {
-        final savedTime = DateTime.tryParse(reminderString);
-        if (savedTime != null) {
-          final repo = ReminderRepository();
-          final r = Reminder(
-            id: DateTime.now().millisecondsSinceEpoch % 100000,
-            title: 'Mindspace Reminder',
-            hour: savedTime.hour,
-            minute: savedTime.minute,
-            repeat: RepeatType.daily,
-            weekdays: [],
-            enabled: true,
-            createdAt: DateTime.now(),
-          );
-          await repo.addReminder(r);
-        }
-      }
-      
-      await prefs.setBool('reminders_migrated_v1', true);
-    }
-    
-    // Reschedule all reminders
-    await NotificationService().rescheduleAll();
-  } catch (e) {
-    debugPrint('Error initializing NotificationService: $e');
-  }
+// Removed globalGifCodecFuture
+late Future<bool> globalSessionCheckFuture;
+
+Future<void> main() async {
+  final stopwatch = Stopwatch()..start();
+  WidgetsFlutterBinding.ensureInitialized();
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(
@@ -160,47 +126,104 @@ void main() async {
       systemNavigationBarDividerColor: Colors.transparent,
     ),
   );
-  
-  // Load saved theme and language asynchronously on app startup
-  try {
-    await ThemeNotifier.loadTheme();
-    await LanguageNotifier.loadLanguage();
-  } catch (e) {
-    debugPrint('Error loading preferences: $e');
-  }
 
-  bool skipSplash = false;
-  try {
-    final launchDetails = await NotificationService().flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
-    if (launchDetails?.didNotificationLaunchApp ?? false) {
-      final response = launchDetails!.notificationResponse;
-      if (response?.payload != null) {
-        final data = json.decode(response!.payload!);
-        final actionId = response.actionId ?? data['actionId'];
-        if (actionId == 'open_link') {
-          final link = data['link'];
+  // Pre-load theme so the Flutter splash screen immediately knows the correct theme
+  await ThemeNotifier.loadTheme();
+
+  globalSessionCheckFuture = () async {
+    // Load preferences and init Firebase in parallel
+    try {
+      await Future.wait([
+        LanguageNotifier.loadLanguage(),
+        fb.initFirebaseOnly(),
+      ]);
+    } catch (e) {
+      debugPrint('Error loading preferences: $e');
+    }
+
+    try {
+      final initialData = await fb.getInitialMessageData();
+      if (initialData != null) {
+        if (initialData['actionId'] == 'open_link') {
+          final link = initialData['link'];
           if (link != null && link is String && link.isNotEmpty) {
-            debugPrint('MSNLP_NOTIF: early check actionId open_link, parsing link: $link');
-            await openUrlOrFallback(link);
-            skipSplash = true;
+            openUrlOrFallback(link);
           }
-        } else if (data['type'] == 'reminder' || actionId == 'stop_id') {
-          skipSplash = true;
+        } else {
+          pendingNotificationTarget = initialData;
+        }
+      } else {
+        final plugin = NotificationService().flutterLocalNotificationsPlugin;
+        final launchDetails = await plugin.getNotificationAppLaunchDetails();
+        if (launchDetails?.didNotificationLaunchApp ?? false) {
+          final response = launchDetails!.notificationResponse;
+          if (response?.payload != null) {
+            final data = json.decode(response!.payload!);
+            final actionId = response.actionId ?? data['actionId'];
+            if (actionId == 'open_link') {
+              final link = data['link'];
+              if (link != null && link is String && link.isNotEmpty) {
+                openUrlOrFallback(link);
+              }
+            } else {
+              pendingNotificationTarget = data;
+            }
+          }
         }
       }
+    } catch (e) {
+      debugPrint('Error checking early launch details: $e');
     }
-  } catch (e) {
-    debugPrint('Error checking early launch details: $e');
-  }
-  
-  runApp(MindSpaceDriveApp(skipSplash: skipSplash));
+
+    return await AuthManager.tryAutoLogin().timeout(
+      const Duration(seconds: 3),
+      onTimeout: () => false,
+    );
+  }();
+
+  // Defer notification init and rescheduling to post-frame
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    try {
+      await NotificationService().init();
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool('reminders_migrated_v1') != true) {
+        await NotificationService().flutterLocalNotificationsPlugin.cancelAll();
+        final reminderString = prefs.getString('user_reminder');
+        if (reminderString != null) {
+          final savedTime = DateTime.tryParse(reminderString);
+          if (savedTime != null) {
+            final repo = ReminderRepository();
+            final r = Reminder(
+              id: DateTime.now().millisecondsSinceEpoch % 100000,
+              title: 'Mindspace Reminder',
+              hour: savedTime.hour,
+              minute: savedTime.minute,
+              repeat: RepeatType.daily,
+              weekdays: [],
+              enabled: true,
+              createdAt: DateTime.now(),
+            );
+            await repo.addReminder(r);
+          }
+        }
+        await prefs.setBool('reminders_migrated_v1', true);
+      }
+      await NotificationService().rescheduleAll();
+    } catch (e) {
+      debugPrint('Error initializing NotificationService: $e');
+    }
+  });
+
+  debugPrint('MSNLP_SPLASH: Time before runApp: ${stopwatch.elapsedMilliseconds}ms');
+  runApp(MindSpaceDriveApp(skipSplash: false, stopwatch: stopwatch));
 }
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class MindSpaceDriveApp extends StatelessWidget {
   final bool skipSplash;
-  const MindSpaceDriveApp({super.key, this.skipSplash = false});
+  final Stopwatch stopwatch;
+  const MindSpaceDriveApp({super.key, this.skipSplash = false, required this.stopwatch});
 
   @override
   Widget build(BuildContext context) {
@@ -217,7 +240,7 @@ class MindSpaceDriveApp extends StatelessWidget {
               theme: AppTheme.lightTheme,
               darkTheme: AppTheme.darkTheme,
               themeMode: currentThemeMode,
-              home: skipSplash ? const AppStartupHelper() : const SplashPage(),
+              home: skipSplash ? AppStartupHelper(stopwatch: stopwatch) : SplashPage(stopwatch: stopwatch),
             );
           },
         );
@@ -227,7 +250,8 @@ class MindSpaceDriveApp extends StatelessWidget {
 }
 
 class AppStartupHelper extends StatefulWidget {
-  const AppStartupHelper({super.key});
+  final Stopwatch? stopwatch;
+  const AppStartupHelper({super.key, this.stopwatch});
 
   @override
   State<AppStartupHelper> createState() => _AppStartupHelperState();
@@ -253,79 +277,51 @@ class _AppStartupHelperState extends State<AppStartupHelper> with WidgetsBinding
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
-    debugPrint('MSNLP_APPSTATE | LIFECYCLE state=${state.name}');
-    if (state == AppLifecycleState.paused) {
-      debugPrint('MSNLP_APPSTATE | SCREEN_OFF/BACKGROUND state=${state.name}');
-    }
     if (!_isLoggedIn) return;
-    
     final token = AuthManager.token;
     if (token == null) return;
 
     if (state == AppLifecycleState.resumed) {
-      // User came back to the app
       _messageService.updateOnlineStatus(token, true);
     } else if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
-      // User minimized or closed the app
       _messageService.updateOnlineStatus(token, false);
     }
   }
 
   Future<void> _checkSession() async {
-    final loggedIn = await AuthManager.tryAutoLogin();
+    final loggedIn = await globalSessionCheckFuture;
     
-    // Once login check is complete (and token is loaded if successful), sync any pending offline logs.
-    // If the device is currently offline, this will start a periodic timer to retry.
     OfflineAccessTracker.syncPendingLogs();
 
-    setState(() {
-      _isLoggedIn = loggedIn;
-      _isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoggedIn = loggedIn;
+        _isLoading = false;
+      });
+      if (widget.stopwatch != null) {
+        debugPrint('MSNLP_SPLASH: First usable screen visible at ${widget.stopwatch!.elapsedMilliseconds}ms');
+      }
+    }
 
     if (loggedIn) {
       final token = AuthManager.token;
       if (token != null) {
         _messageService.updateOnlineStatus(token, true);
-        await fb.setupFirebase(_messageService, token);
-        
-        try {
-          final launchDetails = await NotificationService().flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
-          if (launchDetails?.didNotificationLaunchApp ?? false) {
-             final payload = launchDetails?.notificationResponse?.payload;
-             if (payload != null && payload.isNotEmpty) {
-                final data = json.decode(payload);
-                if (data['actionId'] == null && launchDetails!.notificationResponse?.actionId != null) {
-                   data['actionId'] = launchDetails.notificationResponse!.actionId;
-                }
-                if (data['actionId'] != 'open_link') {
-                   pendingNotificationTarget ??= data;
-                }
-             }
-          }
-          
-          if (!kIsWeb) {
-            final initialData = await fb.getInitialMessageData();
-            if (initialData != null && pendingNotificationTarget == null) {
-              if (initialData['actionId'] != 'open_link') {
-                pendingNotificationTarget = initialData;
-              }
-            }
-          }
-        } catch (e) {
-          debugPrint('Error getting launch details in _checkSession: $e');
-        }
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          await fb.setupFirebase(_messageService, token);
+        });
 
         if (pendingNotificationTarget != null) {
-          debugPrint('MSNLP_NOTIF: Consuming pendingNotificationTarget: $pendingNotificationTarget');
           final target = pendingNotificationTarget!;
           pendingNotificationTarget = null;
-          // Wait a tick for NavigationShell to build, then open messages
           WidgetsBinding.instance.addPostFrameCallback((_) {
             openMessagesFromNotification(target);
           });
         }
       }
+    } else {
+      // Not logged in, pending notification should be cleared so they don't fire post-login randomly.
+      pendingNotificationTarget = null;
     }
   }
 

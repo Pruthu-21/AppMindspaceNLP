@@ -7,3 +7,5 @@ Future<void> setupFirebase(MessageService messageService, String? userToken) asy
 }
 
 Future<Map<String, dynamic>?> getInitialMessageData() async => null;
+
+Future<void> initFirebaseOnly() async {}

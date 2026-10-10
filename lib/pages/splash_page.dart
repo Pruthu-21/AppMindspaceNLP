@@ -1,146 +1,132 @@
-import 'dart:ui' as ui;
+import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
-import '../main.dart'; // To access AppStartupHelper
+import 'package:flutter/services.dart';
+import '../main.dart'; // AppStartupHelper, globalSessionCheckFuture
 
 class SplashPage extends StatefulWidget {
-  const SplashPage({super.key});
+  final Stopwatch stopwatch;
+  const SplashPage({super.key, required this.stopwatch});
 
   @override
   State<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends State<SplashPage>
-    with SingleTickerProviderStateMixin {
-  // Must match @color/splash_bg in android/app/src/main/res/values/colors.xml
-  static const Color _fallbackBg = Color(0xFF050d37); // replace with printed value
+class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
+  // ---------- Assets ----------
+  static const String _logoAsset = 'assets/splash/splash_logo.png';
 
-  late AnimationController _controller;
-  List<ui.FrameInfo> _frames = [];
+  // ---------- Brand palette ----------
+  static const Color _bgLight = Color(
+    0xFFF4F8FF,
+  ); // must match native splash colour
+  static const Color _bgDark = Color(
+    0xFF1A1A1A,
+  ); // must match native splash dark colour
+  static const Color _navy = Color(0xFF084088);
+  static const Color _sky = Color(0xFF0090D8);
+
+  // ---------- Timing ----------
+  static const int _minVisibleMs = 1200; // keep short = fast app feel
+  static const int _tapSkipAfterMs = 600;
+  static const int _fadeOutMs = 200;
+
+  late final AnimationController _intro; // fades in bar + background accents
+  late final AnimationController _pulse; // slow "breathing" glow behind logo
+
+  bool _started = false;
+  bool _sessionReady = false;
   bool _navigated = false;
-  int _totalDurationMs = 0;
-
-  Color _bgTop = _fallbackBg;
-  Color _bgBottom = _fallbackBg;
-
-  int _currentPhase = 1;
-  bool _isTapping = false;
-  DateTime _lastTapTime = DateTime.fromMillisecondsSinceEpoch(0);
+  bool _isFadingOut = false;
+  double _target = 0.0; // real progress target (0..1)
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    _intro = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 6000),
+      duration: const Duration(milliseconds: 600),
     );
-    _controller.addListener(_onTick);
-    _controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed) _navigateToMainApp();
-    });
-    _loadGif();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    );
+
+    // Real signal: flips when the session check really finishes.
+    globalSessionCheckFuture.then(
+      (_) {
+        _sessionReady = true;
+      },
+      onError: (Object _) {
+        _sessionReady = true; // never block the app because of an error
+      },
+    );
   }
 
-  String _hex(Color c) =>
-      '0x${c.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}';
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
 
-  /// Reads the GIF's top and bottom edge colors so the area around the
-  /// letterboxed image blends in with it.
-  Future<void> _sampleBackground(ui.Image img) async {
-    final bd = await img.toByteData(format: ui.ImageByteFormat.rawRgba);
-    if (bd == null) return;
-
-    Color px(int x, int y) {
-      final cx = x.clamp(0, img.width - 1);
-      final cy = y.clamp(0, img.height - 1);
-      final i = (cy * img.width + cx) * 4;
-      return Color.fromARGB(
-          255, bd.getUint8(i), bd.getUint8(i + 1), bd.getUint8(i + 2));
-    }
-
-    _bgTop = px(2, 2);
-    _bgBottom = px(2, img.height - 3);
-    debugPrint('SPLASH_BG top=${_hex(_bgTop)} bottom=${_hex(_bgBottom)}');
-  }
-
-  Future<void> _loadGif() async {
-    try {
-      final data = await rootBundle.load('assets/download.gif');
-      final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
-
-      final frames = <ui.FrameInfo>[];
-      int totalMs = 0;
-      for (int i = 0; i < codec.frameCount; i++) {
-        final frame = await codec.getNextFrame();
-        frames.add(frame);
-        totalMs += frame.duration.inMilliseconds;
+    // Decode the logo BEFORE we start, so the first Flutter frame already
+    // shows it (no flicker after the native splash).
+    precacheImage(const AssetImage(_logoAsset), context).whenComplete(() {
+      if (!mounted) return;
+      _intro.forward();
+      if (!MediaQuery.of(context).disableAnimations) {
+        _pulse.repeat(reverse: true);
       }
-      if (frames.isNotEmpty) await _sampleBackground(frames.first.image);
+      _setTarget(0.30);
+      _progressLoop();
+    });
+  }
 
-      if (!mounted) {
-        for (final f in frames) {
-          f.image.dispose();
-        }
+  // ---------- Progress logic ----------
+
+  void _setTarget(double v) {
+    if (!mounted || v <= _target) return; // only ever moves forward
+    setState(() => _target = v.clamp(0.0, 1.0));
+  }
+
+  Future<void> _progressLoop() async {
+    while (mounted && !_navigated && !_isFadingOut) {
+      final elapsed = widget.stopwatch.elapsedMilliseconds;
+
+      if (_sessionReady && elapsed >= _minVisibleMs) {
+        _setTarget(1.0);
+        await Future.delayed(
+          const Duration(milliseconds: 450),
+        ); // let bar finish
+        if (mounted) _fadeOutAndNavigate();
         return;
       }
-      setState(() {
-        _frames = frames;
-        _totalDurationMs = totalMs;
-      });
-      _controller.duration = Duration(milliseconds: _totalDurationMs);
-      _applySpeed();
-    } catch (error) {
-      debugPrint('Error loading splash GIF: $error');
-      _navigateToMainApp();
+
+      // Eases 30% -> 95% by the minimum time; holds at 90% until the
+      // session check truly completes.
+      final base = 0.30 + math.min(elapsed / _minVisibleMs, 1.0) * 0.65;
+      _setTarget(_sessionReady ? base : math.min(base, 0.90));
+      await Future.delayed(const Duration(milliseconds: 80));
     }
   }
 
-  void _onTick() {
-    if (_frames.isEmpty) return;
-    final frame = (_controller.value * (_frames.length - 1)).floor();
-
-    int newPhase;
-    if (frame >= _frames.length - 5) {
-      newPhase = 3;
-    } else if (frame > 45) {
-      newPhase = 2;
-    } else {
-      newPhase = 1;
-    }
-
-    final isTappingNow =
-        DateTime.now().difference(_lastTapTime).inMilliseconds < 300;
-
-    if (newPhase != _currentPhase || isTappingNow != _isTapping) {
-      _currentPhase = newPhase;
-      _isTapping = isTappingNow;
-      _applySpeed();
-    }
-  }
-
-  void _applySpeed() {
-    if (_controller.status == AnimationStatus.completed || _navigated) return;
-
-    double speedMultiplier = 1.0;
-    if (_currentPhase == 3) {
-      speedMultiplier = 0.25;
-    } else if (_currentPhase == 2 && _isTapping) {
-      speedMultiplier = 2.0;
-    }
-
-    final remainingValue = 1.0 - _controller.value;
-    if (remainingValue <= 0) return;
-
-    final newDuration =
-        ((remainingValue * _totalDurationMs) / speedMultiplier).round();
-    if (newDuration > 0) {
-      _controller.animateTo(1.0, duration: Duration(milliseconds: newDuration));
-    }
-  }
+  // ---------- Interaction & navigation ----------
 
   void _onTap() {
-    _lastTapTime = DateTime.now();
-    _onTick();
+    if (widget.stopwatch.elapsedMilliseconds > _tapSkipAfterMs) {
+      _fadeOutAndNavigate();
+    }
+  }
+
+  void _fadeOutAndNavigate() {
+    if (_navigated || _isFadingOut) return;
+    setState(() {
+      _isFadingOut = true;
+      _target = 1.0;
+    });
+    Future.delayed(const Duration(milliseconds: _fadeOutMs), () {
+      if (mounted) _navigateToMainApp();
+    });
   }
 
   void _navigateToMainApp() {
@@ -149,7 +135,7 @@ class _SplashPageState extends State<SplashPage>
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            const AppStartupHelper(),
+            AppStartupHelper(stopwatch: widget.stopwatch),
         transitionDuration: Duration.zero,
         reverseTransitionDuration: Duration.zero,
       ),
@@ -158,51 +144,229 @@ class _SplashPageState extends State<SplashPage>
 
   @override
   void dispose() {
-    _controller.dispose();
-    for (final f in _frames) {
-      f.image.dispose();
-    }
+    _intro.dispose();
+    _pulse.dispose();
     super.dispose();
+  }
+
+  // ---------- UI ----------
+
+  Color _a(Color c, double opacity) =>
+      c.withAlpha((opacity.clamp(0.0, 1.0) * 255).round());
+
+  String _statusFor(double v) {
+    if (v < 0.45) return 'Getting things ready';
+    if (v < 0.92) return 'Checking your session';
+    return 'Welcome back';
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final currentBg = Theme.of(context).scaffoldBackgroundColor;
+    final statusIconBrightness =
+        isDarkMode ? Brightness.light : Brightness.dark;
+    final statusBrightness = isDarkMode ? Brightness.dark : Brightness.light;
+
     return PopScope(
       canPop: false,
-      child: Scaffold(
-        backgroundColor: _bgTop,
-        // No SafeArea: the background must run under the status and nav bars.
-        body: GestureDetector(
-          onTap: _onTap,
-          behavior: HitTestBehavior.opaque,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [_bgTop, _bgBottom],
-              ),
-            ),
-            child: SizedBox.expand(
-              child: _frames.isEmpty
-                  ? const SizedBox.shrink()
-                  : RepaintBoundary(
-                      child: AnimatedBuilder(
-                        animation: _controller,
-                        builder: (context, child) {
-                          final idx = (_controller.value * (_frames.length - 1))
-                              .floor()
-                              .clamp(0, _frames.length - 1);
-                          return RawImage(
-                            image: _frames[idx].image,
-                            fit: BoxFit.contain,
-                          );
-                        },
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: statusIconBrightness,
+          statusBarBrightness: statusBrightness,
+          systemNavigationBarColor: currentBg,
+          systemNavigationBarIconBrightness: statusIconBrightness,
+        ),
+        child: Scaffold(
+          backgroundColor: currentBg,
+          body: GestureDetector(
+            onTap: _onTap,
+            behavior: HitTestBehavior.opaque,
+            child: AnimatedOpacity(
+              opacity: _isFadingOut ? 0.0 : 1.0,
+              duration: const Duration(milliseconds: _fadeOutMs),
+              child: LayoutBuilder(
+                builder: (context, c) {
+                  final w = c.maxWidth;
+                  final h = c.maxHeight;
+                  // Fixed logo width to precisely match native splash (Android 12 inner circle proportion)
+                  final logoW = 147.5;
+                  final barW = (w * 0.62).clamp(190.0, 320.0);
+                  final bottomPad = (h * 0.09).clamp(36.0, 84.0);
+
+                  return Stack(
+                    children: [
+                      // Soft brand-coloured light blobs (fade in after first frame)
+                      FadeTransition(
+                        opacity: _intro,
+                        child: Stack(
+                          children: [
+                            Positioned(
+                              top: -w * 0.45,
+                              left: -w * 0.35,
+                              child: _blob(w * 1.1, _a(_sky, 0.16)),
+                            ),
+                            Positioned(
+                              bottom: -w * 0.5,
+                              right: -w * 0.4,
+                              child: _blob(w * 1.2, _a(_navy, 0.10)),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+
+                      // Logo: exactly centred, same as native splash => seamless
+                      Center(child: _buildLogo(logoW)),
+
+                      // Progress block
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: bottomPad,
+                        child: FadeTransition(
+                          opacity: _intro,
+                          child: SafeArea(
+                            top: false,
+                            child: Center(child: _buildProgress(barW)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _blob(double size, Color color) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [color, _a(color, 0.0)],
+            stops: const [0.0, 1.0],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogo(double logoW) {
+    return AnimatedBuilder(
+      animation: _pulse,
+      builder: (context, child) {
+        final t = Curves.easeInOut.transform(_pulse.value);
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            // breathing glow
+            Container(
+              width: logoW * (1.25 + 0.08 * t),
+              height: logoW * (1.25 + 0.08 * t),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [_a(_sky, 0.10 + 0.10 * t), _a(_sky, 0.0)],
+                ),
+              ),
+            ),
+            Transform.scale(scale: 1.0 + 0.015 * t, child: child),
+          ],
+        );
+      },
+      child: Image.asset(
+        _logoAsset,
+        width: logoW,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
+        semanticLabel: 'Mindspace logo',
+      ),
+    );
+  }
+
+  Widget _buildProgress(double width) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDarkMode ? Colors.white : _navy;
+
+    return SizedBox(
+      width: width,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: 0.0, end: _target),
+        duration: const Duration(milliseconds: 380),
+        curve: Curves.easeOutCubic,
+        builder: (context, v, _) {
+          final pct = (v * 100).round().clamp(0, 100);
+          return Semantics(
+            label: 'Loading',
+            value: '$pct percent',
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      child: Text(
+                        _statusFor(v),
+                        key: ValueKey(_statusFor(v)),
+                        style: TextStyle(
+                          color: _a(textColor, isDarkMode ? 0.8 : 0.62),
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '$pct%',
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.4,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: Container(
+                    height: 5,
+                    color: _a(textColor, 0.10),
+                    alignment: Alignment.centerLeft,
+                    child: FractionallySizedBox(
+                      widthFactor: v.clamp(0.0, 1.0),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [_sky, isDarkMode ? _sky : _navy],
+                          ),
+                          borderRadius: BorderRadius.circular(6),
+                          boxShadow: [
+                            BoxShadow(color: _a(_sky, 0.45), blurRadius: 8),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

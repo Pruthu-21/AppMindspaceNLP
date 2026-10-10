@@ -65,10 +65,19 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   }
 }
 
+Future<void> initFirebaseOnly() async {
+  if (kIsWeb) return;
+  try {
+    await Firebase.initializeApp();
+  } catch (_) {}
+}
+
 Future<void> setupFirebase(MessageService messageService, String? userToken) async {
   if (kIsWeb) return;
   
-  await Firebase.initializeApp();
+  try {
+    await Firebase.initializeApp();
+  } catch (_) {}
   await FirebaseMessaging.instance.requestPermission();
   
   // Set iOS foreground notification presentation options

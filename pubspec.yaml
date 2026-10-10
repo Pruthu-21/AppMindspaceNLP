@@ -69,6 +69,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.6
 
 flutter_launcher_icons:
   android: true
@@ -90,7 +91,9 @@ flutter:
   assets:
     - assets/audio/mindspace_reminder.mp3
     - assets/logo.png
+    - assets/logo_transparent.png
     - assets/download.gif
+    - assets/splash/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -120,3 +123,17 @@ flutter:
 
 dependency_overrides:
   firebase_core_web: any
+
+flutter_native_splash:
+  color: "#F8FAFC"
+  color_dark: "#0F172A"
+  image: assets/splash/splash_logo.png
+  image_dark: assets/splash/splash_logo.png
+  fullscreen: false
+  android_gravity: center
+  ios: false
+  android_12:
+    color: "#F8FAFC"
+    color_dark: "#0F172A"
+    image: assets/splash/splash_logo_android12.png
+    image_dark: assets/splash/splash_logo_android12.png
