@@ -63,7 +63,10 @@ class _RegisterPageState extends State<RegisterPage> {
             (route) => false,
           );
         } else {
-          AppToast.showError(context, 'Registration failed. Email address may already be in use.');
+          AppToast.showError(
+            context,
+            'Registration failed. Email address may already be in use.',
+          );
         }
       }
     }
@@ -87,7 +90,10 @@ class _RegisterPageState extends State<RegisterPage> {
         child: Center(
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 8.0,
+            ),
             child: Form(
               key: _formKey,
               child: Column(
@@ -105,7 +111,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   Text(
                     'Sign up to get 10 GB of secure storage free',
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -151,7 +159,9 @@ class _RegisterPageState extends State<RegisterPage> {
                         return 'Please enter either email or phone number';
                       }
                       if (emailVal.isNotEmpty) {
-                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(emailVal)) {
+                        if (!RegExp(
+                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                        ).hasMatch(emailVal)) {
                           return 'Please enter a valid email';
                         }
                       }
@@ -216,10 +226,15 @@ class _RegisterPageState extends State<RegisterPage> {
                     },
                     decoration: InputDecoration(
                       hintText: 'Create a password',
-                      prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline_rounded,
+                        size: 20,
+                      ),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
                           size: 20,
                         ),
                         onPressed: () {
@@ -243,7 +258,9 @@ class _RegisterPageState extends State<RegisterPage> {
                           });
                         },
                         activeColor: theme.colorScheme.primary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
                       Expanded(
                         child: Text(
@@ -273,7 +290,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       Text(
                         'Already have an account? ',
                         style: TextStyle(
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                       GestureDetector(

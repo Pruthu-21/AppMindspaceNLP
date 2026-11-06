@@ -11,13 +11,13 @@ class PermissionService {
   static Future<void> checkAndRequestPermissions(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
     final packageInfo = await PackageInfo.fromPlatform();
-    
+
     final lastCheckedVersion = prefs.getString('permission_checked_version');
     final isNewVersion = lastCheckedVersion != packageInfo.version;
 
     // Run the check after splash once the user is logged in, and again after an app update
     if (_hasRequestedThisSession && !isNewVersion) return;
-    
+
     // Do not run if app is in background
     if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed &&
         WidgetsBinding.instance.lifecycleState != null) {
@@ -33,7 +33,7 @@ class PermissionService {
     final notificationStatus = await Permission.notification.status;
     if (notificationStatus.isDenied) {
       if (!context.mounted) return;
-      bool shouldRequest = await _showExplanationDialog(
+      bool shouldRequest = await showExplanationDialog(
         context,
         'Notifications',
         'We need notification permission to send you reminders and messages.',
@@ -42,7 +42,7 @@ class PermissionService {
         final res = await Permission.notification.request();
         if (res.isPermanentlyDenied) {
           if (!context.mounted) return;
-          await _showSettingsDialog(context, 'Notifications');
+          await showSettingsDialog(context, 'Notifications');
         }
       }
     }
@@ -51,7 +51,7 @@ class PermissionService {
     final exactAlarmStatus = await Permission.scheduleExactAlarm.status;
     if (exactAlarmStatus.isDenied) {
       if (!context.mounted) return;
-      bool shouldRequest = await _showExplanationDialog(
+      bool shouldRequest = await showExplanationDialog(
         context,
         'Exact Alarms',
         'We need exact alarm permission to make sure your reminders trigger exactly on time.',
@@ -61,7 +61,7 @@ class PermissionService {
         if (res.isPermanentlyDenied || res.isDenied) {
           // If denied, Android 12+ requires opening settings
           if (!context.mounted) return;
-          await _showSettingsDialog(context, 'Exact Alarms');
+          await showSettingsDialog(context, 'Exact Alarms');
         }
       }
     }
@@ -70,7 +70,7 @@ class PermissionService {
     final batteryStatus = await Permission.ignoreBatteryOptimizations.status;
     if (batteryStatus.isDenied) {
       if (!context.mounted) return;
-      bool shouldRequest = await _showExplanationDialog(
+      bool shouldRequest = await showExplanationDialog(
         context,
         'Battery Optimization',
         'To ensure reminders work in the background, please exempt the app from battery optimizations.',
@@ -79,30 +79,34 @@ class PermissionService {
         final res = await Permission.ignoreBatteryOptimizations.request();
         if (res.isPermanentlyDenied) {
           if (!context.mounted) return;
-          await _showSettingsDialog(context, 'Battery Optimization');
+          await showSettingsDialog(context, 'Battery Optimization');
         }
       }
     }
 
-const kAskFullScreenIntent = true;
+    const kAskFullScreenIntent = true;
 
     // Full-Screen Intent (Android 14+)
     if (kAskFullScreenIntent) {
       final methodChannel = const MethodChannel('mindspace/permissions');
-      final canUse = await methodChannel.invokeMethod<bool>('canUseFullScreenIntent') ?? true;
-      
+      final canUse =
+          await methodChannel.invokeMethod<bool>('canUseFullScreenIntent') ??
+          true;
+
       if (!canUse) {
         final lastFsiVersion = prefs.getString('fsi_asked_version');
         if (lastFsiVersion != packageInfo.version) {
           prefs.setString('fsi_asked_version', packageInfo.version);
           if (!context.mounted) return;
-          
+
           bool? result = await showDialog<bool>(
             context: context,
             barrierDismissible: false,
             builder: (context) => AlertDialog(
               title: const Text('Full-Screen Intent'),
-              content: const Text('Allow full-screen alarms so a reminder can wake your screen when the phone is locked.'),
+              content: const Text(
+                'Allow full-screen alarms so a reminder can wake your screen when the phone is locked.',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
@@ -115,18 +119,22 @@ const kAskFullScreenIntent = true;
               ],
             ),
           );
-          
+
           if (result == true) {
             await methodChannel.invokeMethod('openFullScreenIntentSettings');
-            
+
             // Wait for app to resume to re-check
             final observer = _LifecycleEventHandler(
               resumeCallBack: () async {
-                final granted = await methodChannel.invokeMethod<bool>('canUseFullScreenIntent') ?? true;
+                final granted =
+                    await methodChannel.invokeMethod<bool>(
+                      'canUseFullScreenIntent',
+                    ) ??
+                    true;
                 if (granted) {
                   debugPrint('FSI granted on resume');
                 }
-              }
+              },
             );
             WidgetsBinding.instance.addObserver(observer);
           }
@@ -135,8 +143,43 @@ const kAskFullScreenIntent = true;
     }
   }
 
-  static Future<bool> _showExplanationDialog(
-      BuildContext context, String title, String content) async {
+  /// Requests location permission using the existing MindSpaceNLP explanation and settings dialogs.
+  static Future<bool> requestLocationPermission(BuildContext context) async {
+    final status = await Permission.location.status;
+    if (status.isGranted) {
+      return true;
+    }
+
+    if (status.isPermanentlyDenied) {
+      if (!context.mounted) return false;
+      await showSettingsDialog(context, 'Location');
+      return false;
+    }
+
+    if (!context.mounted) return false;
+    final userAgreed = await showExplanationDialog(
+      context,
+      'Location Access',
+      'Mindspace NLP requires your device location to discover nearby spiritual places, display your position on the map, and calculate proximity intensity zones.',
+    );
+
+    if (userAgreed) {
+      final result = await Permission.location.request();
+      if (result.isGranted) {
+        return true;
+      } else if (result.isPermanentlyDenied) {
+        if (!context.mounted) return false;
+        await showSettingsDialog(context, 'Location');
+      }
+    }
+    return false;
+  }
+
+  static Future<bool> showExplanationDialog(
+    BuildContext context,
+    String title,
+    String content,
+  ) async {
     if (!context.mounted) return false;
     bool? result = await showDialog<bool>(
       context: context,
@@ -159,13 +202,18 @@ const kAskFullScreenIntent = true;
     return result ?? false;
   }
 
-  static Future<void> _showSettingsDialog(BuildContext context, String permissionName) async {
+  static Future<void> showSettingsDialog(
+    BuildContext context,
+    String permissionName,
+  ) async {
     if (!context.mounted) return;
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('$permissionName Denied'),
-        content: Text('Please enable $permissionName in the app settings to use this feature.'),
+        content: Text(
+          'Please enable $permissionName in the app settings to use this feature.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

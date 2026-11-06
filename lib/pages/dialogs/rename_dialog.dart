@@ -50,7 +50,10 @@ class _RenameDialogState extends State<RenameDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white60 : Colors.black54)),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
+          ),
         ),
         ElevatedButton(
           onPressed: () {
@@ -62,7 +65,9 @@ class _RenameDialogState extends State<RenameDialog> {
           style: ElevatedButton.styleFrom(
             backgroundColor: theme.colorScheme.primary,
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
           child: const Text('Rename'),
         ),

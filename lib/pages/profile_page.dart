@@ -14,8 +14,10 @@ import 'admin/admin_send_message_page.dart';
 
 // A dynamic theme state notifier to allow theme toggling in the UI
 class ThemeNotifier {
-  static final ValueNotifier<ThemeMode> themeMode = ValueNotifier(ThemeMode.light);
-  
+  static final ValueNotifier<ThemeMode> themeMode = ValueNotifier(
+    ThemeMode.light,
+  );
+
   static Future<void> loadTheme() async {
     try {
       final themeStr = await AppStorage.read('app_theme');
@@ -36,7 +38,9 @@ class ThemeNotifier {
     final themeStr = isDark ? 'dark' : 'light';
     try {
       await AppStorage.write('app_theme', themeStr);
-    } catch (e) { debugPrint('Error: $e'); }
+    } catch (e) {
+      debugPrint('Error: $e');
+    }
   }
 }
 
@@ -93,7 +97,9 @@ class _ProfilePageState extends State<ProfilePage> {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         return AlertDialog(
           backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: Text(
             LanguageNotifier.translate('logout'),
             style: const TextStyle(fontWeight: FontWeight.bold),
@@ -104,14 +110,16 @@ class _ProfilePageState extends State<ProfilePage> {
               onPressed: () => Navigator.pop(context),
               child: Text(
                 LanguageNotifier.translate('cancel'),
-                style: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
+                style: TextStyle(
+                  color: isDark ? Colors.white60 : Colors.black54,
+                ),
               ),
             ),
             TextButton(
               onPressed: () async {
                 Navigator.pop(context);
                 await AuthManager.logout();
-                
+
                 if (!outerContext.mounted) return;
                 Navigator.pushAndRemoveUntil(
                   outerContext,
@@ -121,7 +129,10 @@ class _ProfilePageState extends State<ProfilePage> {
               },
               child: Text(
                 LanguageNotifier.translate('logout'),
-                style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -170,20 +181,30 @@ class _ProfilePageState extends State<ProfilePage> {
               const SizedBox(height: 24),
               Text(
                 LanguageNotifier.translate('language'),
-                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 16),
               ...languages.map((lang) {
-                final isSelected = LanguageNotifier.language.value == lang['code'];
+                final isSelected =
+                    LanguageNotifier.language.value == lang['code'];
                 return ListTile(
                   title: Text(
                     lang['name']!,
                     style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                       color: isSelected ? theme.colorScheme.primary : null,
                     ),
                   ),
-                  trailing: isSelected ? Icon(Icons.check_rounded, color: theme.colorScheme.primary) : null,
+                  trailing: isSelected
+                      ? Icon(
+                          Icons.check_rounded,
+                          color: theme.colorScheme.primary,
+                        )
+                      : null,
                   onTap: () async {
                     await LanguageNotifier.setLanguage(lang['code']!);
                     if (!context.mounted) return;
@@ -240,7 +261,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                            color: theme.colorScheme.primary.withValues(
+                              alpha: 0.2,
+                            ),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -266,17 +289,25 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      AuthManager.currentUser?.email ?? 'mannu.sharma@mindspacenlp.com',
+                      AuthManager.currentUser?.email ??
+                          'mannu.sharma@mindspacenlp.com',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
                     ),
                     if (AuthManager.currentUser != null) ...[
                       const SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                          color: theme.colorScheme.primary.withValues(
+                            alpha: 0.1,
+                          ),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -319,7 +350,10 @@ class _ProfilePageState extends State<ProfilePage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(12),
@@ -359,7 +393,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       ElevatedButton(
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Plan upgrade sheet (UI only)')),
+                            const SnackBar(
+                              content: Text('Plan upgrade sheet (UI only)'),
+                            ),
                           );
                         },
                         style: ElevatedButton.styleFrom(
@@ -368,7 +404,10 @@ class _ProfilePageState extends State<ProfilePage> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                           elevation: 0,
                         ),
                         child: const Text(
@@ -390,7 +429,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     borderRadius: BorderRadius.circular(16),
                     color: isDark ? AppColors.surfaceDark : Colors.white,
                     border: Border.all(
-                      color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+                      color: isDark
+                          ? AppColors.dividerDark
+                          : AppColors.dividerLight,
                     ),
                   ),
                   child: Column(
@@ -411,7 +452,9 @@ class _ProfilePageState extends State<ProfilePage> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                         ],
@@ -422,7 +465,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         child: LinearProgressIndicator(
                           value: used / total,
                           color: theme.colorScheme.primary,
-                          backgroundColor: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                          backgroundColor: isDark
+                              ? Colors.white10
+                              : Colors.black.withValues(alpha: 0.05),
                           minHeight: 6,
                         ),
                       ),
@@ -469,7 +514,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       _activeLanguage,
                       style: TextStyle(
                         fontSize: 13,
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
                     ),
                     const Icon(Icons.arrow_drop_down_rounded),
@@ -485,7 +532,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const ReviewsPage()),
+                    MaterialPageRoute(
+                      builder: (context) => const ReviewsPage(),
+                    ),
                   );
                 },
               ),
@@ -496,7 +545,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const PrivacyPermissionsPage()),
+                    MaterialPageRoute(
+                      builder: (context) => const PrivacyPermissionsPage(),
+                    ),
                   );
                 },
               ),
@@ -507,7 +558,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const HelpFaqPage()),
+                    MaterialPageRoute(
+                      builder: (context) => const HelpFaqPage(),
+                    ),
                   );
                 },
               ),
@@ -520,7 +573,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     final token = AuthManager.token ?? '';
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => AdminSendMessagePage(adminToken: token)),
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            AdminSendMessagePage(adminToken: token),
+                      ),
                     );
                   },
                 ),
@@ -532,11 +588,15 @@ class _ProfilePageState extends State<ProfilePage> {
                     value: isAdmin,
                     onChanged: (val) {
                       setState(() {
-                        RoleManager.switchRole(val ? AppRole.admin : AppRole.user);
+                        RoleManager.switchRole(
+                          val ? AppRole.admin : AppRole.user,
+                        );
                       });
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Switched to ${val ? "Admin" : "User"} Mode'),
+                          content: Text(
+                            'Switched to ${val ? "Admin" : "User"} Mode',
+                          ),
                           duration: const Duration(seconds: 1),
                         ),
                       );

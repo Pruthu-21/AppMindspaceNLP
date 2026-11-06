@@ -2,7 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'app_storage.dart';
 
 class LanguageNotifier {
-  static final ValueNotifier<String> language = ValueNotifier('en'); // 'en', 'hi', 'gu'
+  static final ValueNotifier<String> language = ValueNotifier(
+    'en',
+  ); // 'en', 'hi', 'gu'
 
   static final Map<String, Map<String, String>> _localizedValues = {
     'en': {
@@ -100,11 +102,12 @@ class LanguageNotifier {
       'hello': 'નમસ્તે',
       'manage_space': 'તમારી સુરક્ષિત જગ્યાનું સંચાલન કરો',
       'admin_dashboard': 'વહીવટી ડેશબોર્ડ',
-    }
+    },
   };
 
   static String translate(String key) {
-    return _localizedValues[language.value]?[key] ?? _localizedValues['en']![key]!;
+    return _localizedValues[language.value]?[key] ??
+        _localizedValues['en']![key]!;
   }
 
   static Future<void> loadLanguage() async {
@@ -113,13 +116,17 @@ class LanguageNotifier {
       if (lang == 'hi' || lang == 'gu' || lang == 'en') {
         language.value = lang!;
       }
-    } catch (e) { debugPrint('Error: $e'); }
+    } catch (e) {
+      debugPrint('Error: $e');
+    }
   }
 
   static Future<void> setLanguage(String langCode) async {
     language.value = langCode;
     try {
       await AppStorage.write('app_lang', langCode);
-    } catch (e) { debugPrint('Error: $e'); }
+    } catch (e) {
+      debugPrint('Error: $e');
+    }
   }
 }

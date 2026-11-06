@@ -1,6 +1,10 @@
 import 'dart:html' as html;
 
-Future<bool> startPlatformDownload(String url, String fileName, {Function(double progress)? onProgress}) async {
+Future<bool> startPlatformDownload(
+  String url,
+  String fileName, {
+  Function(double progress)? onProgress,
+}) async {
   try {
     if (onProgress != null) onProgress(0.5);
     final anchor = html.AnchorElement(href: url)

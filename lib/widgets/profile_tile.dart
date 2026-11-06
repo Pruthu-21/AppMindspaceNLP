@@ -40,12 +40,16 @@ class ProfileTile extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isDestructive
                     ? AppColors.error.withValues(alpha: 0.1)
-                    : (isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.03)),
+                    : (isDark
+                          ? Colors.white.withValues(alpha: 0.04)
+                          : Colors.black.withValues(alpha: 0.03)),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 icon,
-                color: isDestructive ? AppColors.error : theme.colorScheme.primary,
+                color: isDestructive
+                    ? AppColors.error
+                    : theme.colorScheme.primary,
                 size: 20,
               ),
             ),
@@ -68,7 +72,9 @@ class ProfileTile extends StatelessWidget {
                       subtitle!,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontSize: 11,
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
                     ),
                   ],
@@ -81,7 +87,9 @@ class ProfileTile extends StatelessWidget {
               Icon(
                 Icons.chevron_right_rounded,
                 size: 18,
-                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                color: isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondaryLight,
               ),
           ],
         ),

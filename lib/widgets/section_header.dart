@@ -37,13 +37,18 @@ class SectionHeader extends StatelessWidget {
               style: TextButton.styleFrom(
                 foregroundColor: theme.colorScheme.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: Row(
                 children: [
                   Text(
                     actionText!,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
                   ),
                   const SizedBox(width: 4),
                   const Icon(Icons.chevron_right_rounded, size: 16),

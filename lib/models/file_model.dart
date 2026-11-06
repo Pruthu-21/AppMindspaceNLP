@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
+
 class FileModel {
   final String id;
   final String name;
-  final String format; // 'pdf', 'image', 'video', 'audio', 'doc', 'folder', etc.
+  final String
+  format; // 'pdf', 'image', 'video', 'audio', 'doc', 'folder', etc.
   final int sizeBytes;
   final String? customSizeString;
   final DateTime uploadDate;
@@ -36,10 +38,10 @@ class FileModel {
       final clean = sizeStr.trim().toUpperCase();
       final match = RegExp(r'^([\d\.]+)\s*(B|KB|MB|GB|TB)?$').firstMatch(clean);
       if (match == null) return 0;
-      
+
       final numVal = double.tryParse(match.group(1) ?? '') ?? 0.0;
       final unit = match.group(2);
-      
+
       if (unit == 'KB') return (numVal * 1024).toInt();
       if (unit == 'MB') return (numVal * 1024 * 1024).toInt();
       if (unit == 'GB') return (numVal * 1024 * 1024 * 1024).toInt();
@@ -54,30 +56,40 @@ class FileModel {
 
   static String detectFormat(String name, String? mimeType, bool isFolder) {
     if (isFolder) return 'folder';
-    
+
     final mime = (mimeType ?? '').toLowerCase();
     if (mime.contains('pdf')) return 'pdf';
-    if (mime.contains('audio') || mime.contains('mp3') || mime.contains('wav')) return 'mp3';
-    if (mime.contains('video') || mime.contains('mp4') || mime.contains('mov')) return 'mp4';
+    if (mime.contains('audio') || mime.contains('mp3') || mime.contains('wav'))
+      return 'mp3';
+    if (mime.contains('video') || mime.contains('mp4') || mime.contains('mov'))
+      return 'mp4';
     if (mime.contains('presentation') || mime.contains('ppt')) return 'ppt';
-    if (mime.contains('image') || mime.contains('png') || mime.contains('jpg') || mime.contains('jpeg')) return 'png';
-    
+    if (mime.contains('image') ||
+        mime.contains('png') ||
+        mime.contains('jpg') ||
+        mime.contains('jpeg'))
+      return 'png';
+
     final ext = name.contains('.') ? name.split('.').last.toLowerCase() : '';
     if (['pdf'].contains(ext)) return 'pdf';
     if (['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac'].contains(ext)) return 'mp3';
-    if (['mp4', 'mov', 'mkv', 'webm', 'avi', 'flv', 'wmv'].contains(ext)) return 'mp4';
+    if (['mp4', 'mov', 'mkv', 'webm', 'avi', 'flv', 'wmv'].contains(ext))
+      return 'mp4';
     if (['ppt', 'pptx'].contains(ext)) return 'ppt';
     if (['png', 'jpg', 'jpeg', 'gif', 'webp'].contains(ext)) return 'png';
-    
+
     return 'doc';
   }
 
   String get sizeString {
     if (format == 'folder') return '--';
-    if (customSizeString != null && customSizeString!.isNotEmpty) return customSizeString!;
+    if (customSizeString != null && customSizeString!.isNotEmpty)
+      return customSizeString!;
     if (sizeBytes < 1024) return '$sizeBytes B';
-    if (sizeBytes < 1024 * 1024) return '${(sizeBytes / 1024).toStringAsFixed(1)} KB';
-    if (sizeBytes < 1024 * 1024 * 1024) return '${(sizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    if (sizeBytes < 1024 * 1024)
+      return '${(sizeBytes / 1024).toStringAsFixed(1)} KB';
+    if (sizeBytes < 1024 * 1024 * 1024)
+      return '${(sizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
     return '${(sizeBytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 

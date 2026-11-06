@@ -6,11 +6,7 @@ class ReviewCard extends StatefulWidget {
   final ReviewModel review;
   final VoidCallback? onLikePressed;
 
-  const ReviewCard({
-    super.key,
-    required this.review,
-    this.onLikePressed,
-  });
+  const ReviewCard({super.key, required this.review, this.onLikePressed});
 
   @override
   State<ReviewCard> createState() => _ReviewCardState();
@@ -105,7 +101,9 @@ class _ReviewCardState extends State<ReviewCard> {
                       widget.review.date,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontSize: 11,
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
                     ),
                   ],
@@ -115,13 +113,23 @@ class _ReviewCardState extends State<ReviewCard> {
                 children: List.generate(5, (index) {
                   final fillValue = widget.review.rating - index;
                   if (fillValue >= 1) {
-                    return const Icon(Icons.star_rounded, color: AppColors.warning, size: 16);
+                    return const Icon(
+                      Icons.star_rounded,
+                      color: AppColors.warning,
+                      size: 16,
+                    );
                   } else if (fillValue >= 0.5) {
-                    return const Icon(Icons.star_half_rounded, color: AppColors.warning, size: 16);
+                    return const Icon(
+                      Icons.star_half_rounded,
+                      color: AppColors.warning,
+                      size: 16,
+                    );
                   } else {
                     return Icon(
                       Icons.star_rounded,
-                      color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.08),
+                      color: isDark
+                          ? Colors.white10
+                          : Colors.black.withValues(alpha: 0.08),
                       size: 16,
                     );
                   }
@@ -145,11 +153,16 @@ class _ReviewCardState extends State<ReviewCard> {
                 onTap: _toggleLike,
                 borderRadius: BorderRadius.circular(20),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: _isLiked
                         ? theme.colorScheme.primary.withValues(alpha: 0.08)
-                        : (isDark ? Colors.white.withValues(alpha: 0.02) : Colors.black.withValues(alpha: 0.02)),
+                        : (isDark
+                              ? Colors.white.withValues(alpha: 0.02)
+                              : Colors.black.withValues(alpha: 0.02)),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: _isLiked
@@ -160,9 +173,15 @@ class _ReviewCardState extends State<ReviewCard> {
                   child: Row(
                     children: [
                       Icon(
-                        _isLiked ? Icons.thumb_up_rounded : Icons.thumb_up_alt_outlined,
+                        _isLiked
+                            ? Icons.thumb_up_rounded
+                            : Icons.thumb_up_alt_outlined,
                         size: 14,
-                        color: _isLiked ? theme.colorScheme.primary : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                        color: _isLiked
+                            ? theme.colorScheme.primary
+                            : (isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight),
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -170,7 +189,11 @@ class _ReviewCardState extends State<ReviewCard> {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: _isLiked ? theme.colorScheme.primary : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                          color: _isLiked
+                              ? theme.colorScheme.primary
+                              : (isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight),
                         ),
                       ),
                     ],

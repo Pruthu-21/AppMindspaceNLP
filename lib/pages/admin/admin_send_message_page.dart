@@ -52,7 +52,7 @@ class _AdminSendMessagePageState extends State<AdminSendMessagePage> {
   }
 
   @override
-    @override
+  @override
   void dispose() {
     _titleController.dispose();
     _bodyController.dispose();
@@ -63,9 +63,7 @@ class _AdminSendMessagePageState extends State<AdminSendMessagePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Send Message to Users'),
-      ),
+      appBar: AppBar(title: const Text('Send Message to Users')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(

@@ -10,15 +10,22 @@ import 'download/download_loader.dart';
 
 class DownloadService {
   static const String _catalogFileName = 'offline_catalog.json';
-  static final ValueNotifier<bool> isDownloadingNotifier = ValueNotifier<bool>(false);
-  static final ValueNotifier<double> downloadProgressNotifier = ValueNotifier<double>(0.0);
-  static final ValueNotifier<String?> currentDownloadingFileNameNotifier = ValueNotifier<String?>(null);
-  static final ValueNotifier<String?> downloadErrorNotifier = ValueNotifier<String?>(null);
+  static final ValueNotifier<bool> isDownloadingNotifier = ValueNotifier<bool>(
+    false,
+  );
+  static final ValueNotifier<double> downloadProgressNotifier =
+      ValueNotifier<double>(0.0);
+  static final ValueNotifier<String?> currentDownloadingFileNameNotifier =
+      ValueNotifier<String?>(null);
+  static final ValueNotifier<String?> downloadErrorNotifier =
+      ValueNotifier<String?>(null);
   static VoidCallback? onCancelDownload;
   static final Set<String> _completedFileNames = {};
-  static bool isCompletedInMemory(String fileName) => _completedFileNames.contains(fileName);
+  static bool isCompletedInMemory(String fileName) =>
+      _completedFileNames.contains(fileName);
 
-  static final ValueNotifier<Set<String>> activeDownloadsNotifier = ValueNotifier<Set<String>>({});
+  static final ValueNotifier<Set<String>> activeDownloadsNotifier =
+      ValueNotifier<Set<String>>({});
   static final Map<String, ValueNotifier<double>> progressNotifiers = {};
   static final Map<String, VoidCallback> onCancelDownloadMap = {};
 
@@ -44,29 +51,46 @@ class DownloadService {
     }
   }
 
-  static Future<bool> downloadFile(String url, String fileName, {FileModel? model}) async {
-    debugPrint('MSNLP_DOWNLOAD | REQUEST fileId=${model?.id ?? fileName} fileName=$fileName source=service');
-    debugPrint('MSNLP_DOWNLOAD | DUPLICATE_CHECK fileId=${model?.id ?? fileName} fileName=$fileName');
+  static Future<bool> downloadFile(
+    String url,
+    String fileName, {
+    FileModel? model,
+  }) async {
+    debugPrint(
+      'MSNLP_DOWNLOAD | REQUEST fileId=${model?.id ?? fileName} fileName=$fileName source=service',
+    );
+    debugPrint(
+      'MSNLP_DOWNLOAD | DUPLICATE_CHECK fileId=${model?.id ?? fileName} fileName=$fileName',
+    );
     // PREVENT DUPLICATES
-    if (activeDownloadsNotifier.value.contains(fileName) || isDownloadingNotifier.value && currentDownloadingFileNameNotifier.value == fileName) {
-      debugPrint('MSNLP_DOWNLOAD | DUPLICATE_PREVENTED fileId=${model?.id ?? fileName} fileName=$fileName');
+    if (activeDownloadsNotifier.value.contains(fileName) ||
+        isDownloadingNotifier.value &&
+            currentDownloadingFileNameNotifier.value == fileName) {
+      debugPrint(
+        'MSNLP_DOWNLOAD | DUPLICATE_PREVENTED fileId=${model?.id ?? fileName} fileName=$fileName',
+      );
       return true; // Already actively downloading
     }
 
-    debugPrint('MSNLP_DOWNLOAD | START fileId=${model?.id ?? fileName} fileName=$fileName');
+    debugPrint(
+      'MSNLP_DOWNLOAD | START fileId=${model?.id ?? fileName} fileName=$fileName',
+    );
 
     _completedFileNames.remove(fileName);
-    
+
     // Add to active downloads
-    activeDownloadsNotifier.value = {...activeDownloadsNotifier.value, fileName};
+    activeDownloadsNotifier.value = {
+      ...activeDownloadsNotifier.value,
+      fileName,
+    };
     isDownloadingNotifier.value = true;
-    
+
     // Set current active for the header overlay
     currentDownloadingFileNameNotifier.value = fileName;
-    
+
     final progressNotifier = getProgressNotifierFor(fileName);
     progressNotifier.value = 0.0;
-    
+
     downloadErrorNotifier.value = null;
 
     if (!kIsWeb && model != null) {
@@ -86,7 +110,9 @@ class DownloadService {
         fileName,
         onProgress: (progress) async {
           progressNotifier.value = progress;
-          if (!kIsWeb && model != null && (progress - lastSavedProgress).abs() >= 0.10) {
+          if (!kIsWeb &&
+              model != null &&
+              (progress - lastSavedProgress).abs() >= 0.10) {
             lastSavedProgress = progress;
             final progressModel = model.copyWith(
               isDownloaded: false,
@@ -123,14 +149,16 @@ class DownloadService {
     } catch (e) {
       String errMsg = 'Unknown network error';
       if (e is SocketException) {
-        errMsg = 'No internet connection or server unreachable (SocketException)';
+        errMsg =
+            'No internet connection or server unreachable (SocketException)';
       } else if (e is TimeoutException) {
-        errMsg = 'Download timed out. The file might be too heavy or connection is too slow (TimeoutException)';
+        errMsg =
+            'Download timed out. The file might be too heavy or connection is too slow (TimeoutException)';
       } else if (e is HttpException) {
         errMsg = 'HTTP protocol error: ${e.message}';
-      } else if (e.toString().contains('Software caused connection abort') || 
-                 e.toString().contains('Connection reset') || 
-                 e.toString().contains('Connection closed')) {
+      } else if (e.toString().contains('Software caused connection abort') ||
+          e.toString().contains('Connection reset') ||
+          e.toString().contains('Connection closed')) {
         errMsg = 'Connection lost. The file download was interrupted.';
       } else {
         errMsg = 'Network failure: $e';
@@ -148,20 +176,22 @@ class DownloadService {
       return false;
     } finally {
       // Remove from active downloads
-      activeDownloadsNotifier.value = activeDownloadsNotifier.value.where((n) => n != fileName).toSet();
+      activeDownloadsNotifier.value = activeDownloadsNotifier.value
+          .where((n) => n != fileName)
+          .toSet();
       isDownloadingNotifier.value = activeDownloadsNotifier.value.isNotEmpty;
-      
+
       // Update header overlay current downloading file if needed
       if (currentDownloadingFileNameNotifier.value == fileName) {
-        currentDownloadingFileNameNotifier.value = activeDownloadsNotifier.value.isNotEmpty 
-            ? activeDownloadsNotifier.value.first 
+        currentDownloadingFileNameNotifier.value =
+            activeDownloadsNotifier.value.isNotEmpty
+            ? activeDownloadsNotifier.value.first
             : null;
       }
-      
+
       progressNotifier.value = 0.0;
     }
   }
-
 
   static Future<Set<String>> getDownloadedNames() async {
     if (kIsWeb) return {};
@@ -170,14 +200,17 @@ class DownloadService {
       final dir = Directory(directory.path);
       if (!await dir.exists()) return {};
       final entities = dir.listSync();
-      final fileNames = entities.whereType<File>().map((e) => e.uri.pathSegments.last).toSet();
-      
+      final fileNames = entities
+          .whereType<File>()
+          .map((e) => e.uri.pathSegments.last)
+          .toSet();
+
       final catalogFile = await _getCatalogFile();
       if (!await catalogFile.exists()) return {};
       final content = await catalogFile.readAsString();
       final decoded = jsonDecode(content);
       final List<dynamic> data = decoded is List ? decoded : [];
-      
+
       final validNames = <String>{};
       for (final item in data) {
         if (item is Map<String, dynamic>) {
@@ -200,13 +233,13 @@ class DownloadService {
       final directory = await getApplicationDocumentsDirectory();
       final file = File('${directory.path}/$fileName');
       if (!await file.exists()) return false;
-      
+
       final catalogFile = await _getCatalogFile();
       if (!await catalogFile.exists()) return false;
-      
+
       final content = await catalogFile.readAsString();
       if (content.isEmpty) return false;
-      
+
       final List<dynamic> decoded = jsonDecode(content);
       for (var item in decoded) {
         if (item['name'] == fileName) {
@@ -228,7 +261,9 @@ class DownloadService {
         final directory = await getApplicationDocumentsDirectory();
         return '${directory.path}/$fileName';
       }
-    } catch (e) { debugPrint('Error: $e'); }
+    } catch (e) {
+      debugPrint('Error: $e');
+    }
     return null;
   }
 
@@ -241,7 +276,9 @@ class DownloadService {
         await file.delete();
       }
       await removeOfflineMetadataByFileName(fileName);
-    } catch (e) { debugPrint('Error: $e'); }
+    } catch (e) {
+      debugPrint('Error: $e');
+    }
   }
 
   // --- LOCAL OFFLINE CATALOG MANAGEMENT ---
@@ -269,7 +306,9 @@ class DownloadService {
     if (kIsWeb) return;
     await _synchronized(() async {
       try {
-        debugPrint('MSNLP_FILE | METADATA_SAVE_START fileId=${model.id} fileName=${model.name}');
+        debugPrint(
+          'MSNLP_FILE | METADATA_SAVE_START fileId=${model.id} fileName=${model.name}',
+        );
         final catalogFile = await _getCatalogFile();
         List<Map<String, dynamic>> items = [];
 
@@ -285,7 +324,9 @@ class DownloadService {
               debugPrint('MSNLP_FILE | CATALOG_CORRUPTED $e');
               final corruptFile = File('${catalogFile.path}.corrupt');
               await catalogFile.copy(corruptFile.path);
-              debugPrint('MSNLP_FILE | CATALOG_RECOVERED backed up to ${corruptFile.path}');
+              debugPrint(
+                'MSNLP_FILE | CATALOG_RECOVERED backed up to ${corruptFile.path}',
+              );
               // Reset items to empty to recover safely
               items = [];
             }
@@ -293,7 +334,9 @@ class DownloadService {
         }
 
         // Remove existing item with same ID or name if present
-        items.removeWhere((item) => item['id'] == model.id || item['name'] == model.name);
+        items.removeWhere(
+          (item) => item['id'] == model.id || item['name'] == model.name,
+        );
 
         // Add new item metadata
         items.add({
@@ -315,7 +358,9 @@ class DownloadService {
         await catalogFile.writeAsString(jsonString);
         debugPrint('MSNLP_FILE | CATALOG_WRITE success items=${items.length}');
         debugPrint('MSNLP_FILE | METADATA_SAVE_SUCCESS fileId=${model.id}');
-        debugPrint('MSNLP_FILE | CATALOG_VERIFY fileId=${model.id} present=true');
+        debugPrint(
+          'MSNLP_FILE | CATALOG_VERIFY fileId=${model.id} present=true',
+        );
       } catch (e, stack) {
         debugPrint('MSNLP_ERROR | METADATA_SAVE_FAILED error=$e stack=$stack');
       }
@@ -343,8 +388,10 @@ class DownloadService {
           await catalogFile.writeAsString('[]');
           return;
         }
-        
-        final List<Map<String, dynamic>> items = decoded.map((e) => Map<String, dynamic>.from(e)).toList();
+
+        final List<Map<String, dynamic>> items = decoded
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
         items.removeWhere((item) => item['name'] == fileName);
 
         await catalogFile.writeAsString(jsonEncode(items));
@@ -378,46 +425,53 @@ class DownloadService {
 
         final dir = await getApplicationDocumentsDirectory();
 
-      for (var item in decoded) {
-        final String name = item['name'] ?? 'Untitled';
-        final fileOnDisk = File('${dir.path}/$name');
-        final String status = item['downloadStatus'] ?? 'completed';
-        double progress = (item['downloadProgress'] as num?)?.toDouble() ?? 1.0;
+        for (var item in decoded) {
+          final String name = item['name'] ?? 'Untitled';
+          final fileOnDisk = File('${dir.path}/$name');
+          final String status = item['downloadStatus'] ?? 'completed';
+          double progress =
+              (item['downloadProgress'] as num?)?.toDouble() ?? 1.0;
 
-        String finalStatus = status;
-        if (status == 'downloading') {
-          if (currentDownloadingFileNameNotifier.value != name || !isDownloadingNotifier.value) {
-            finalStatus = 'stopped';
+          String finalStatus = status;
+          if (status == 'downloading') {
+            if (currentDownloadingFileNameNotifier.value != name ||
+                !isDownloadingNotifier.value) {
+              finalStatus = 'stopped';
+            }
+          }
+
+          if (isDownloadingNotifier.value &&
+              currentDownloadingFileNameNotifier.value == name) {
+            finalStatus = 'downloading';
+            progress = downloadProgressNotifier.value;
+          }
+
+          bool isDownloaded = finalStatus == 'completed';
+
+          if ((isDownloaded && await fileOnDisk.exists()) || !isDownloaded) {
+            results.add(
+              FileModel(
+                id: item['id']?.toString() ?? name,
+                name: name,
+                format: item['format'] ?? 'doc',
+                sizeBytes:
+                    (item['sizeBytes'] as int?) ??
+                    (await fileOnDisk.exists() ? await fileOnDisk.length() : 0),
+                customSizeString: item['customSizeString']?.toString(),
+                uploadDate:
+                    DateTime.tryParse(item['uploadDate'] ?? '') ??
+                    DateTime.now(),
+                ownerName: item['ownerName'] ?? 'Downloaded',
+                isPinned: item['isPinned'] ?? false,
+                isFavorite: item['isFavorite'] ?? false,
+                isDownloaded: isDownloaded,
+                previewUrl: isDownloaded ? fileOnDisk.path : item['previewUrl'],
+                downloadProgress: progress,
+                downloadStatus: finalStatus,
+              ),
+            );
           }
         }
-
-        if (isDownloadingNotifier.value && currentDownloadingFileNameNotifier.value == name) {
-          finalStatus = 'downloading';
-          progress = downloadProgressNotifier.value;
-        }
-
-        bool isDownloaded = finalStatus == 'completed';
-
-        if ((isDownloaded && await fileOnDisk.exists()) || !isDownloaded) {
-          results.add(
-            FileModel(
-              id: item['id']?.toString() ?? name,
-              name: name,
-              format: item['format'] ?? 'doc',
-              sizeBytes: (item['sizeBytes'] as int?) ?? (await fileOnDisk.exists() ? await fileOnDisk.length() : 0),
-              customSizeString: item['customSizeString']?.toString(),
-              uploadDate: DateTime.tryParse(item['uploadDate'] ?? '') ?? DateTime.now(),
-              ownerName: item['ownerName'] ?? 'Downloaded',
-              isPinned: item['isPinned'] ?? false,
-              isFavorite: item['isFavorite'] ?? false,
-              isDownloaded: isDownloaded,
-              previewUrl: isDownloaded ? fileOnDisk.path : item['previewUrl'],
-              downloadProgress: progress,
-              downloadStatus: finalStatus,
-            ),
-          );
-        }
-      }
       } catch (e, stack) {
         debugPrint('Error getting offline files: $e stack=$stack');
       }
@@ -434,11 +488,11 @@ class DownloadService {
     int? mediaDuration,
     bool incrementOpen = true,
   }) async {
-    if (AuthManager.token == null || AuthManager.token!.startsWith('google_token_')) return;
+    if (AuthManager.token == null ||
+        AuthManager.token!.startsWith('google_token_'))
+      return;
     try {
-      final Map<String, dynamic> body = {
-        'increment_open': incrementOpen,
-      };
+      final Map<String, dynamic> body = {'increment_open': incrementOpen};
       if (completionPercentage != null) {
         body['completion_percentage'] = completionPercentage;
       }
@@ -449,15 +503,17 @@ class DownloadService {
         body['media_duration'] = mediaDuration;
       }
 
-      await http.post(
-        Uri.parse('https://mindspacenlp.com/api/drive/file/$fileId/access'),
-        headers: {
-          'Authorization': 'Bearer ${AuthManager.token}',
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode(body),
-      ).timeout(const Duration(seconds: 5));
+      await http
+          .post(
+            Uri.parse('https://mindspacenlp.com/api/drive/file/$fileId/access'),
+            headers: {
+              'Authorization': 'Bearer ${AuthManager.token}',
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 5));
     } catch (e) {
       debugPrint('Error: $e');
 

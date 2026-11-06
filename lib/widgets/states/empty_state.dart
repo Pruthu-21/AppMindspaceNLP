@@ -52,10 +52,14 @@ class EmptyWidget extends StatelessWidget {
                   height: 88,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.03)
+                        : Colors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.04),
+                        color: theme.colorScheme.primary.withValues(
+                          alpha: 0.04,
+                        ),
                         blurRadius: 20,
                         offset: const Offset(0, 8),
                       ),
@@ -104,7 +108,10 @@ class EmptyWidget extends StatelessWidget {
                   ),
                   child: Text(
                     actionText!,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ),

@@ -9,7 +9,8 @@ import '../../widgets/custom_audio_player.dart';
 import '../../widgets/custom_video_player.dart';
 
 class FilePreviewerPage extends StatefulWidget {
-  final dynamic file; // Actually FileModel, using dynamic because type check issue might happen if imported wrongly
+  final dynamic
+  file; // Actually FileModel, using dynamic because type check issue might happen if imported wrongly
   final Duration? initialPosition;
   final bool autoPlay;
 
@@ -31,19 +32,30 @@ class _FilePreviewerPageState extends State<FilePreviewerPage> {
   @override
   void initState() {
     super.initState();
-    
+
     final file = widget.file;
     if (file is FileModel) {
-      debugPrint('[ANALYTICS_DEBUG] EVENT=OPEN file_id=${file.id} file_name=${file.name}');
+      debugPrint(
+        '[ANALYTICS_DEBUG] EVENT=OPEN file_id=${file.id} file_name=${file.name}',
+      );
       OfflineAccessTracker.trackAccess(file.id, fileName: file.name);
-      
+
       final String format = file.format.toLowerCase();
-      final bool isMedia = ['mp4', 'video', 'mov', 'mp3', 'audio', 'wav'].contains(format);
-      
+      final bool isMedia = [
+        'mp4',
+        'video',
+        'mov',
+        'mp3',
+        'audio',
+        'wav',
+      ].contains(format);
+
       if (!isMedia && !file.isFolder) {
         _nonMediaStartTime = DateTime.now();
         _previewTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-          final elapsed = DateTime.now().difference(_nonMediaStartTime!).inSeconds;
+          final elapsed = DateTime.now()
+              .difference(_nonMediaStartTime!)
+              .inSeconds;
           OfflineAccessTracker.trackAccess(
             file.id,
             fileName: file.name,
@@ -63,9 +75,18 @@ class _FilePreviewerPageState extends State<FilePreviewerPage> {
     final file = widget.file;
     if (file is FileModel) {
       final String format = file.format.toLowerCase();
-      final bool isMedia = ['mp4', 'video', 'mov', 'mp3', 'audio', 'wav'].contains(format);
+      final bool isMedia = [
+        'mp4',
+        'video',
+        'mov',
+        'mp3',
+        'audio',
+        'wav',
+      ].contains(format);
       if (!isMedia && !file.isFolder && _nonMediaStartTime != null) {
-        final elapsed = DateTime.now().difference(_nonMediaStartTime!).inSeconds;
+        final elapsed = DateTime.now()
+            .difference(_nonMediaStartTime!)
+            .inSeconds;
         if (elapsed > 0) {
           OfflineAccessTracker.trackAccess(
             file.id,
@@ -78,12 +99,13 @@ class _FilePreviewerPageState extends State<FilePreviewerPage> {
     }
     super.dispose();
   }
+
   Future<void> _openExternally(String url) async {
     final Uri uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Could not open file externally"))
+          const SnackBar(content: Text("Could not open file externally")),
         );
       }
     }
@@ -98,28 +120,41 @@ class _FilePreviewerPageState extends State<FilePreviewerPage> {
     final String format = (file is FileModel) ? file.format : 'doc';
     final int fileId = (file is FileModel) ? int.tryParse(file.id) ?? 0 : 0;
 
-    final bool isMedia = ['mp4', 'video', 'mov', 'mp3', 'audio', 'wav'].contains(format);
+    final bool isMedia = [
+      'mp4',
+      'video',
+      'mov',
+      'mp3',
+      'audio',
+      'wav',
+    ].contains(format);
 
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: isMedia ? null : AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(name, style: const TextStyle(color: Colors.white, fontSize: 16)),
-      ),
-      body: Center(
-        child: _buildContent(format, url, name, fileId),
-      ),
+      appBar: isMedia
+          ? null
+          : AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: Text(
+                name,
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
+      body: Center(child: _buildContent(format, url, name, fileId)),
     );
   }
 
   Widget _buildContent(String format, String url, String name, int fileId) {
     if (url.isEmpty) {
-      return const Text("No preview URL available", style: TextStyle(color: Colors.white70));
+      return const Text(
+        "No preview URL available",
+        style: TextStyle(color: Colors.white70),
+      );
     }
 
     if (format == 'pdf') {

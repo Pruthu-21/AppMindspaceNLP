@@ -22,7 +22,9 @@ class ReminderRepository {
 
   Future<void> saveReminders(List<Reminder> reminders) async {
     final prefs = await SharedPreferences.getInstance();
-    final String jsonString = json.encode(reminders.map((r) => r.toJson()).toList());
+    final String jsonString = json.encode(
+      reminders.map((r) => r.toJson()).toList(),
+    );
     await prefs.setString(_key, jsonString);
   }
 

@@ -16,9 +16,9 @@ class LoadingWidget extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             'Syncing drive...',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -42,7 +42,8 @@ class PulseSkeleton extends StatefulWidget {
   State<PulseSkeleton> createState() => _PulseSkeletonState();
 }
 
-class _PulseSkeletonState extends State<PulseSkeleton> with SingleTickerProviderStateMixin {
+class _PulseSkeletonState extends State<PulseSkeleton>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
@@ -75,7 +76,9 @@ class _PulseSkeletonState extends State<PulseSkeleton> with SingleTickerProvider
             width: widget.width,
             height: widget.height,
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.black.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(widget.borderRadius),
             ),
           ),
@@ -145,7 +148,9 @@ class FileGridSkeleton extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Theme.of(context).dividerTheme.color ?? Colors.grey.withValues(alpha: 0.1),
+              color:
+                  Theme.of(context).dividerTheme.color ??
+                  Colors.grey.withValues(alpha: 0.1),
             ),
           ),
           child: const Column(

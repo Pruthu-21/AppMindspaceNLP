@@ -29,9 +29,10 @@ class _NotificationTileState extends State<NotificationTile>
       vsync: this,
       duration: const Duration(milliseconds: 120),
     );
-    _scaleAnim = Tween<double>(begin: 1.0, end: 0.97).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
-    );
+    _scaleAnim = Tween<double>(
+      begin: 1.0,
+      end: 0.97,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
   }
 
   @override
@@ -114,10 +115,8 @@ class _NotificationTileState extends State<NotificationTile>
 
     return AnimatedBuilder(
       animation: _scaleAnim,
-      builder: (context, child) => Transform.scale(
-        scale: _scaleAnim.value,
-        child: child,
-      ),
+      builder: (context, child) =>
+          Transform.scale(scale: _scaleAnim.value, child: child),
       child: GestureDetector(
         onTapDown: (_) {
           _animController.forward();
@@ -140,19 +139,20 @@ class _NotificationTileState extends State<NotificationTile>
                             style.glowColor.withAlpha(22),
                             const Color(0xFF0F0F1A),
                           ]
-                        : [
-                            style.glowColor.withAlpha(10),
-                            Colors.white,
-                          ],
+                        : [style.glowColor.withAlpha(10), Colors.white],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   )
                 : null,
-            color: isUnread ? null : (isDark ? const Color(0xFF0F0F1A) : const Color(0xFFF8F9FD)),
+            color: isUnread
+                ? null
+                : (isDark ? const Color(0xFF0F0F1A) : const Color(0xFFF8F9FD)),
             border: Border.all(
               color: isUnread
                   ? style.glowColor.withAlpha(60)
-                  : (isDark ? Colors.white.withAlpha(12) : Colors.black.withAlpha(10)),
+                  : (isDark
+                        ? Colors.white.withAlpha(12)
+                        : Colors.black.withAlpha(10)),
               width: isUnread ? 1.0 : 0.8,
             ),
             boxShadow: isUnread
@@ -203,9 +203,14 @@ class _NotificationTileState extends State<NotificationTile>
                         children: [
                           // Type badge
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
-                              color: style.glowColor.withAlpha(isDark ? 35 : 20),
+                              color: style.glowColor.withAlpha(
+                                isDark ? 35 : 20,
+                              ),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -252,7 +257,9 @@ class _NotificationTileState extends State<NotificationTile>
                         widget.notification.title,
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
+                          fontWeight: isUnread
+                              ? FontWeight.w700
+                              : FontWeight.w600,
                           color: isDark ? Colors.white : Colors.black87,
                           height: 1.2,
                         ),

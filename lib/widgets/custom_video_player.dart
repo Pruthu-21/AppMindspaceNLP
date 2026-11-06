@@ -48,12 +48,16 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
 
   void _flushRemainingTime() {
     if (_lastPlayStartTime != null) {
-      final diffSeconds = (DateTime.now().difference(_lastPlayStartTime!).inMilliseconds / 1000).round();
+      final diffSeconds =
+          (DateTime.now().difference(_lastPlayStartTime!).inMilliseconds / 1000)
+              .round();
       if (diffSeconds > 0) {
         _sessionRunningTime += diffSeconds;
-        debugPrint('[ANALYTICS_DEBUG] Video flush: +$diffSeconds sec. Total session: $_sessionRunningTime sec');
+        debugPrint(
+          '[ANALYTICS_DEBUG] Video flush: +$diffSeconds sec. Total session: $_sessionRunningTime sec',
+        );
         _lastPlayStartTime = DateTime.now();
-        
+
         if (widget.fileId != null && _controller != null && mounted) {
           OfflineAccessTracker.trackAccess(
             widget.fileId!,
@@ -85,7 +89,10 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
   void _startHideTimer() {
     _hideTimer?.cancel();
     _hideTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted && _showControls && _controller != null && _controller!.value.isPlaying) {
+      if (mounted &&
+          _showControls &&
+          _controller != null &&
+          _controller!.value.isPlaying) {
         setState(() {
           _showControls = false;
         });
@@ -116,41 +123,44 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
       _hasError = false;
     });
 
-    final isNetwork = widget.url.startsWith('http://') || widget.url.startsWith('https://');
+    final isNetwork =
+        widget.url.startsWith('http://') || widget.url.startsWith('https://');
     if (isNetwork) {
       _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
     } else {
       _controller = VideoPlayerController.file(File(widget.url));
     }
     _controller!
-      ..initialize().then((_) {
-        if (mounted) {
-          setState(() {
-            _isInitialized = true;
+      ..initialize()
+          .then((_) {
+            if (mounted) {
+              setState(() {
+                _isInitialized = true;
+              });
+              if (widget.onDurationChanged != null) {
+                widget.onDurationChanged!(_controller!.value.duration);
+              }
+              if (widget.initialPosition != Duration.zero) {
+                _controller!.seekTo(widget.initialPosition);
+              }
+              if (widget.autoPlay) {
+                _controller!.play();
+              }
+              _controller!.addListener(_playerListener);
+            }
+          })
+          .catchError((error) {
+            if (mounted) {
+              setState(() {
+                _hasError = true;
+              });
+            }
           });
-          if (widget.onDurationChanged != null) {
-            widget.onDurationChanged!(_controller!.value.duration);
-          }
-          if (widget.initialPosition != Duration.zero) {
-            _controller!.seekTo(widget.initialPosition);
-          }
-          if (widget.autoPlay) {
-            _controller!.play();
-          }
-          _controller!.addListener(_playerListener);
-        }
-      }).catchError((error) {
-        if (mounted) {
-          setState(() {
-            _hasError = true;
-          });
-        }
-      });
   }
 
   void _playerListener() {
     if (!mounted || _controller == null) return;
-    
+
     if (widget.onPositionChanged != null) {
       widget.onPositionChanged!(_controller!.value.position);
     }
@@ -158,8 +168,7 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
     if (widget.onPlayingChanged != null) {
       widget.onPlayingChanged!(_controller!.value.isPlaying);
     }
-    
-    
+
     final isPlaying = _controller!.value.isPlaying;
     if (isPlaying != _wasPlayingForTracking) {
       _wasPlayingForTracking = isPlaying;
@@ -174,7 +183,7 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
         _stopTrackingTimer();
       }
     }
-    
+
     setState(() {});
   }
 
@@ -190,12 +199,13 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
   }
 
   String _formatDuration(Duration duration) {
-    final hasHours = _controller != null && _controller!.value.duration.inHours > 0;
-    
+    final hasHours =
+        _controller != null && _controller!.value.duration.inHours > 0;
+
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     final seconds = twoDigits(duration.inSeconds.remainder(60));
     final minutes = twoDigits(duration.inMinutes.remainder(60));
-    
+
     if (hasHours) {
       final hours = duration.inHours.toString();
       return "$hours:$minutes:$seconds";
@@ -215,11 +225,19 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 40),
+              const Icon(
+                Icons.error_outline_rounded,
+                color: AppColors.error,
+                size: 40,
+              ),
               const SizedBox(height: 12),
               const Text(
                 'Failed to stream video',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
               ),
               const SizedBox(height: 8),
               TextButton(
@@ -290,13 +308,13 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
             ),
             // Controls Overlay
             if (_showControls) ...[
-              Container(
-                color: Colors.black38,
-              ),
+              Container(color: Colors.black38),
               // Play/Pause Button
               IconButton(
                 icon: Icon(
-                  value.isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_filled_rounded,
+                  value.isPlaying
+                      ? Icons.pause_circle_filled_rounded
+                      : Icons.play_circle_filled_rounded,
                   color: Colors.white,
                   size: 56,
                 ),
@@ -317,7 +335,11 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
                   children: [
                     Text(
                       _formatDuration(position),
-                      style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     Expanded(
                       child: SliderTheme(
@@ -326,21 +348,34 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
                           inactiveTrackColor: Colors.white30,
                           thumbColor: theme.colorScheme.primary,
                           trackHeight: 2.0,
-                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5.0),
-                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 10.0),
+                          thumbShape: const RoundSliderThumbShape(
+                            enabledThumbRadius: 5.0,
+                          ),
+                          overlayShape: const RoundSliderOverlayShape(
+                            overlayRadius: 10.0,
+                          ),
                         ),
                         child: Slider(
-                          value: position.inMilliseconds.toDouble().clamp(0, duration.inMilliseconds.toDouble()),
+                          value: position.inMilliseconds.toDouble().clamp(
+                            0,
+                            duration.inMilliseconds.toDouble(),
+                          ),
                           max: duration.inMilliseconds.toDouble(),
                           onChanged: (val) {
-                            _controller!.seekTo(Duration(milliseconds: val.toInt()));
+                            _controller!.seekTo(
+                              Duration(milliseconds: val.toInt()),
+                            );
                           },
                         ),
                       ),
                     ),
                     Text(
                       _formatDuration(duration),
-                      style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -366,12 +401,12 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
                 child: VideoPlayer(_controller!),
               ),
             ),
-            
+
             // Premium control overlay
             if (_showControls) ...[
               // Backdrop shadow
               Container(color: Colors.black45),
-              
+
               // Top Bar with back button and file name
               Positioned(
                 top: 0,
@@ -379,11 +414,17 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
                 right: 0,
                 child: SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0,
+                      vertical: 8.0,
+                    ),
                     child: Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: Colors.white,
+                          ),
                           onPressed: () {
                             Navigator.pop(context, {
                               'position': position,
@@ -415,11 +456,17 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.replay_10_rounded, color: Colors.white, size: 36),
+                    icon: const Icon(
+                      Icons.replay_10_rounded,
+                      color: Colors.white,
+                      size: 36,
+                    ),
                     onPressed: () {
                       _startHideTimer();
                       final newPos = position - const Duration(seconds: 10);
-                      _controller!.seekTo(newPos < Duration.zero ? Duration.zero : newPos);
+                      _controller!.seekTo(
+                        newPos < Duration.zero ? Duration.zero : newPos,
+                      );
                     },
                   ),
                   const SizedBox(width: 32),
@@ -432,7 +479,9 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
                     ),
                     child: IconButton(
                       icon: Icon(
-                        value.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                        value.isPlaying
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
                         color: Colors.white,
                         size: 40,
                       ),
@@ -448,16 +497,22 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
                   ),
                   const SizedBox(width: 32),
                   IconButton(
-                    icon: const Icon(Icons.forward_10_rounded, color: Colors.white, size: 36),
+                    icon: const Icon(
+                      Icons.forward_10_rounded,
+                      color: Colors.white,
+                      size: 36,
+                    ),
                     onPressed: () {
                       _startHideTimer();
                       final newPos = position + const Duration(seconds: 10);
-                      _controller!.seekTo(newPos > duration ? duration : newPos);
+                      _controller!.seekTo(
+                        newPos > duration ? duration : newPos,
+                      );
                     },
                   ),
                 ],
               ),
-              
+
               // Bottom Progress Bar & Time Labels
               Positioned(
                 bottom: 24,
@@ -474,15 +529,24 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
                           inactiveTrackColor: Colors.white24,
                           thumbColor: theme.colorScheme.primary,
                           trackHeight: 4.0,
-                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8.0),
-                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 16.0),
+                          thumbShape: const RoundSliderThumbShape(
+                            enabledThumbRadius: 8.0,
+                          ),
+                          overlayShape: const RoundSliderOverlayShape(
+                            overlayRadius: 16.0,
+                          ),
                         ),
                         child: Slider(
-                          value: position.inMilliseconds.toDouble().clamp(0, duration.inMilliseconds.toDouble()),
+                          value: position.inMilliseconds.toDouble().clamp(
+                            0,
+                            duration.inMilliseconds.toDouble(),
+                          ),
                           max: duration.inMilliseconds.toDouble(),
                           onChanged: (val) {
                             _startHideTimer();
-                            _controller!.seekTo(Duration(milliseconds: val.toInt()));
+                            _controller!.seekTo(
+                              Duration(milliseconds: val.toInt()),
+                            );
                           },
                         ),
                       ),
@@ -494,11 +558,19 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
                           children: [
                             Text(
                               _formatDuration(position),
-                              style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             Text(
                               _formatDuration(duration),
-                              style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),

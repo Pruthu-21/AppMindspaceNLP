@@ -57,9 +57,16 @@ Widget buildPlatformImage(String url) {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.broken_image_rounded, size: 48, color: Colors.grey),
+              const Icon(
+                Icons.broken_image_rounded,
+                size: 48,
+                color: Colors.grey,
+              ),
               const SizedBox(height: 12),
-              const Text('Failed to load image', style: TextStyle(color: Colors.grey)),
+              const Text(
+                'Failed to load image',
+                style: TextStyle(color: Colors.grey),
+              ),
             ],
           ),
         );
@@ -74,9 +81,16 @@ Widget buildPlatformImage(String url) {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.broken_image_rounded, size: 48, color: Colors.grey),
+              const Icon(
+                Icons.broken_image_rounded,
+                size: 48,
+                color: Colors.grey,
+              ),
               const SizedBox(height: 12),
-              const Text('Failed to load offline image', style: TextStyle(color: Colors.grey)),
+              const Text(
+                'Failed to load offline image',
+                style: TextStyle(color: Colors.grey),
+              ),
             ],
           ),
         );
@@ -90,7 +104,11 @@ Widget buildPlatformImage(String url) {
 class NativePdfViewer extends StatefulWidget {
   final String url;
   final bool isNetwork;
-  const NativePdfViewer({super.key, required this.url, required this.isNetwork});
+  const NativePdfViewer({
+    super.key,
+    required this.url,
+    required this.isNetwork,
+  });
 
   @override
   State<NativePdfViewer> createState() => _NativePdfViewerState();
@@ -134,7 +152,10 @@ class _NativePdfViewerState extends State<NativePdfViewer> {
     final httpClient = HttpClient();
     final request = await httpClient.getUrl(Uri.parse(url));
     final response = await request.close();
-    final bytes = await response.fold<List<int>>([], (acc, chunk) => acc..addAll(chunk));
+    final bytes = await response.fold<List<int>>(
+      [],
+      (acc, chunk) => acc..addAll(chunk),
+    );
     return Uint8List.fromList(bytes);
   }
 
@@ -172,7 +193,11 @@ class _NativePdfViewerState extends State<NativePdfViewer> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.picture_as_pdf_rounded, size: 48, color: Colors.redAccent),
+              const Icon(
+                Icons.picture_as_pdf_rounded,
+                size: 48,
+                color: Colors.redAccent,
+              ),
               const SizedBox(height: 12),
               Text(
                 _errorMessage!,

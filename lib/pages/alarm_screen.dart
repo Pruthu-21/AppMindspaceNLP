@@ -11,11 +11,7 @@ class AlarmScreen extends StatefulWidget {
   final int reminderId;
   final String title;
 
-  const AlarmScreen({
-    super.key,
-    required this.reminderId,
-    required this.title,
-  });
+  const AlarmScreen({super.key, required this.reminderId, required this.title});
 
   @override
   State<AlarmScreen> createState() => _AlarmScreenState();
@@ -25,7 +21,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
   static const _channel = MethodChannel('mindspace/app');
   final AudioPlayer _player = AudioPlayer();
   final ReminderRepository _repo = ReminderRepository();
-  
+
   late String _targetCode;
   String _enteredCode = '';
   List<int> _keypad = [];
@@ -58,16 +54,18 @@ class _AlarmScreenState extends State<AlarmScreen> {
   }
 
   Future<void> _playAlarm() async {
-    await _player.setAudioContext(AudioContext(
-      android: const AudioContextAndroid(
-        usageType: AndroidUsageType.alarm,
-        contentType: AndroidContentType.music,
+    await _player.setAudioContext(
+      AudioContext(
+        android: const AudioContextAndroid(
+          usageType: AndroidUsageType.alarm,
+          contentType: AndroidContentType.music,
+        ),
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.playback,
+          options: const {AVAudioSessionOptions.mixWithOthers},
+        ),
       ),
-      iOS: AudioContextIOS(
-        category: AVAudioSessionCategory.playback,
-        options: const {AVAudioSessionOptions.mixWithOthers},
-      ),
-    ));
+    );
     await _player.setReleaseMode(ReleaseMode.loop);
     await _player.play(AssetSource('audio/mindspace_reminder.mp3'));
   }
@@ -111,10 +109,14 @@ class _AlarmScreenState extends State<AlarmScreen> {
 
   Future<void> _checkCode() async {
     if (_enteredCode == _targetCode) {
-      debugPrint('MSNLP_REMINDER: correct code entered for id ${widget.reminderId}');
+      debugPrint(
+        'MSNLP_REMINDER: correct code entered for id ${widget.reminderId}',
+      );
       await _stopAndDismiss(disableIfOnce: true);
     } else {
-      debugPrint('MSNLP_REMINDER: wrong code entered for id ${widget.reminderId}');
+      debugPrint(
+        'MSNLP_REMINDER: wrong code entered for id ${widget.reminderId}',
+      );
       setState(() {
         _wrongCode = true;
       });
@@ -133,7 +135,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
     debugPrint('MSNLP_REMINDER: snooze pressed for id ${widget.reminderId}');
     _snoozeCount++;
     await NotificationService().cancelReminder(widget.reminderId);
-    
+
     // schedule one-off
     final snoozeTime = DateTime.now().add(const Duration(minutes: 10));
     // We just use zonedSchedule with absoluteTime
@@ -148,7 +150,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
       createdAt: DateTime.now(),
     );
     await NotificationService().scheduleReminderModel(reminder);
-    
+
     await _stopAndDismiss(disableIfOnce: false);
   }
 
@@ -168,7 +170,9 @@ class _AlarmScreenState extends State<AlarmScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final h = _now.hour == 0 ? 12 : (_now.hour > 12 ? _now.hour - 12 : _now.hour);
+    final h = _now.hour == 0
+        ? 12
+        : (_now.hour > 12 ? _now.hour - 12 : _now.hour);
     final amPm = _now.hour >= 12 ? 'PM' : 'AM';
     final m = _now.minute.toString().padLeft(2, '0');
 
@@ -187,20 +191,30 @@ class _AlarmScreenState extends State<AlarmScreen> {
                     children: [
                       Text(
                         widget.title,
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
                       Text(
                         '$h:$m $amPm',
-                        style: const TextStyle(fontSize: 64, fontWeight: FontWeight.w900),
+                        style: const TextStyle(
+                          fontSize: 64,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                       const SizedBox(height: 32),
                       const Text('Enter code to dismiss:'),
                       const SizedBox(height: 8),
                       Text(
                         _targetCode,
-                        style: const TextStyle(fontSize: 32, letterSpacing: 8, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 32,
+                          letterSpacing: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Row(
@@ -229,12 +243,13 @@ class _AlarmScreenState extends State<AlarmScreen> {
                       GridView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          childAspectRatio: 1.5,
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              childAspectRatio: 1.5,
+                              crossAxisSpacing: 8,
+                              mainAxisSpacing: 8,
+                            ),
                         itemCount: 12,
                         itemBuilder: (ctx, index) {
                           if (index == 9) return const SizedBox.shrink();
@@ -250,7 +265,9 @@ class _AlarmScreenState extends State<AlarmScreen> {
                               ),
                             );
                           }
-                          final digit = index == 10 ? _keypad[9] : _keypad[index];
+                          final digit = index == 10
+                              ? _keypad[9]
+                              : _keypad[index];
                           return Semantics(
                             label: 'Digit $digit',
                             child: ElevatedButton(

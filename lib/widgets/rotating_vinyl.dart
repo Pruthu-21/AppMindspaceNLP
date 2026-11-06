@@ -9,7 +9,8 @@ class RotatingVinyl extends StatefulWidget {
   State<RotatingVinyl> createState() => _RotatingVinylState();
 }
 
-class _RotatingVinylState extends State<RotatingVinyl> with SingleTickerProviderStateMixin {
+class _RotatingVinylState extends State<RotatingVinyl>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override

@@ -24,7 +24,12 @@ class AppToast {
     );
   }
 
-  static void showInfo(BuildContext context, String message, {String? actionLabel, VoidCallback? onAction}) {
+  static void showInfo(
+    BuildContext context,
+    String message, {
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
     _showOverlay(
       context,
       message: message,
@@ -65,7 +70,9 @@ class AppToast {
           onDismiss: () {
             try {
               entry.remove();
-            } catch (e) { debugPrint('Error: $e'); }
+            } catch (e) {
+              debugPrint('Error: $e');
+            }
             if (_currentEntry == entry) {
               _currentEntry = null;
             }
@@ -104,7 +111,8 @@ class _ToastWidget extends StatefulWidget {
   State<_ToastWidget> createState() => _ToastWidgetState();
 }
 
-class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderStateMixin {
+class _ToastWidgetState extends State<_ToastWidget>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Offset> _offsetAnim;
   late Animation<double> _fadeAnim;
@@ -162,7 +170,10 @@ class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderSta
                 });
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   color: widget.isDark ? const Color(0xFF1E1E2E) : Colors.white,
                   borderRadius: BorderRadius.circular(16),
@@ -183,21 +194,28 @@ class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderSta
                         color: widget.iconColor.withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(widget.icon, color: widget.iconColor, size: 22),
+                      child: Icon(
+                        widget.icon,
+                        color: widget.iconColor,
+                        size: 22,
+                      ),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Text(
                         widget.message,
                         style: TextStyle(
-                          color: widget.isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                          color: widget.isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimaryLight,
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           height: 1.3,
                         ),
                       ),
                     ),
-                    if (widget.actionLabel != null && widget.onAction != null) ...[
+                    if (widget.actionLabel != null &&
+                        widget.onAction != null) ...[
                       const SizedBox(width: 8),
                       TextButton(
                         onPressed: () {
@@ -208,7 +226,10 @@ class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderSta
                         },
                         style: TextButton.styleFrom(
                           foregroundColor: widget.iconColor,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),

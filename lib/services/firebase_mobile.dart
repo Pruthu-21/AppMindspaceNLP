@@ -14,9 +14,11 @@ import 'package:url_launcher/url_launcher.dart';
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  if (message.notification == null && message.data['link'] != null && message.data['link'].toString().isNotEmpty) {
+  if (message.notification == null &&
+      message.data['link'] != null &&
+      message.data['link'].toString().isNotEmpty) {
     final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-    
+
     // Minimal init for background
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -30,7 +32,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
     final title = message.data['title'] ?? 'New Message';
     final body = message.data['body'] ?? '';
-    
+
     final payloadData = Map<String, dynamic>.from(message.data);
 
     final androidPlatformChannelSpecifics = AndroidNotificationDetails(
@@ -53,7 +55,9 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       ],
     );
 
-    final platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
+    final platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+    );
 
     await flutterLocalNotificationsPlugin.show(
       message.hashCode,
@@ -72,14 +76,17 @@ Future<void> initFirebaseOnly() async {
   } catch (_) {}
 }
 
-Future<void> setupFirebase(MessageService messageService, String? userToken) async {
+Future<void> setupFirebase(
+  MessageService messageService,
+  String? userToken,
+) async {
   if (kIsWeb) return;
-  
+
   try {
     await Firebase.initializeApp();
   } catch (_) {}
   await FirebaseMessaging.instance.requestPermission();
-  
+
   // Set iOS foreground notification presentation options
   await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
     alert: true,
@@ -89,7 +96,7 @@ Future<void> setupFirebase(MessageService messageService, String? userToken) asy
 
   final fcmToken = await FirebaseMessaging.instance.getToken();
   debugPrint('Your Device FCM Token is: $fcmToken');
-  
+
   if (userToken != null && fcmToken != null) {
     await messageService.updateFcmToken(userToken, fcmToken);
   }
@@ -103,22 +110,23 @@ Future<void> setupFirebase(MessageService messageService, String? userToken) asy
   // Handle foreground notifications using AppToast instead of outside notification
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     debugPrint('Foreground notification received: ${message.messageId}');
-    
+
     final context = navigatorKey.currentState?.context;
     if (context == null || !context.mounted) return;
-    
+
     // Play a basic system sound (since we are bypassing the local notification)
     SystemSound.play(SystemSoundType.click);
-    
+
     if (message.notification != null) {
       final title = message.notification?.title ?? 'Notification';
       final body = message.notification?.body ?? '';
       AppToast.showInfo(context, '$title\n$body');
-    } else if (message.data['link'] != null && message.data['link'].toString().isNotEmpty) {
+    } else if (message.data['link'] != null &&
+        message.data['link'].toString().isNotEmpty) {
       final title = message.data['title'] ?? 'New Message';
       final body = message.data['body'] ?? '';
       final link = message.data['link'].toString();
-      
+
       AppToast.showInfo(
         context,
         '$title\n$body',
@@ -132,7 +140,7 @@ Future<void> setupFirebase(MessageService messageService, String? userToken) asy
               debugPrint('Error launching url from in-app toast: $e');
             }
           }
-        }
+        },
       );
     }
   });

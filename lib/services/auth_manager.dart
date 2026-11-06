@@ -32,8 +32,10 @@ class AuthManager {
 
   // Google Client IDs from Google Cloud Console
   // Android client ID is matched automatically by SHA-1 + package name — do NOT pass it as clientId
-  static const String googleAndroidClientId = '691958183695-nmunvqg3rn3upfeniqqt3rpkvfkle53o.apps.googleusercontent.com';
-  static const String googleWebClientId = '691958183695-ttg8pgkls57ktf6n0gjh8rfhgo06vibt.apps.googleusercontent.com';
+  static const String googleAndroidClientId =
+      '691958183695-nmunvqg3rn3upfeniqqt3rpkvfkle53o.apps.googleusercontent.com';
+  static const String googleWebClientId =
+      '691958183695-ttg8pgkls57ktf6n0gjh8rfhgo06vibt.apps.googleusercontent.com';
 
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
     // On Android: clientId and serverClientId must NOT be set — Android resolves the OAuth
@@ -53,12 +55,9 @@ class AuthManager {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'User-Agent': 'MindspaceNLPApp/1.0'
+          'User-Agent': 'MindspaceNLPApp/1.0',
         },
-        body: jsonEncode({
-          'email': cleanedEmail,
-          'password': password,
-        }),
+        body: jsonEncode({'email': cleanedEmail, 'password': password}),
       );
 
       final contentType = response.headers['content-type'] ?? '';
@@ -68,19 +67,21 @@ class AuthManager {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         token = data['access_token'];
-        
+
         var userData = Map<String, dynamic>.from(data['user'] ?? {});
-        
+
         // Fetch full user profile to get role and permissions
         try {
-          final userResp = await http.get(
-            Uri.parse('$_baseUrl/user'),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Accept': 'application/json'
-            },
-          ).timeout(const Duration(seconds: 10));
-          
+          final userResp = await http
+              .get(
+                Uri.parse('$_baseUrl/user'),
+                headers: {
+                  'Authorization': 'Bearer $token',
+                  'Accept': 'application/json',
+                },
+              )
+              .timeout(const Duration(seconds: 10));
+
           if (userResp.statusCode == 200) {
             final fullUser = jsonDecode(userResp.body);
             final profile = fullUser['user'] ?? fullUser['data'] ?? fullUser;
@@ -97,7 +98,13 @@ class AuthManager {
         final roleStr = userData['role']?.toString().toLowerCase() ?? '';
         final role = (roleStr == 'admin') ? AppRole.admin : AppRole.user;
 
-        final initials = name.trim().split(' ').map((s) => s.isNotEmpty ? s[0] : '').take(2).join().toUpperCase();
+        final initials = name
+            .trim()
+            .split(' ')
+            .map((s) => s.isNotEmpty ? s[0] : '')
+            .take(2)
+            .join()
+            .toUpperCase();
 
         currentUser = MockUser(
           id: userId,
@@ -107,27 +114,37 @@ class AuthManager {
           initials: initials.isEmpty ? 'U' : initials,
         );
 
-        RoleManager.switchRole(role);
+        await RoleManager.resolveInitialRole(role);
         await SessionStorage.save(token!, userId, name, userEmail, roleStr);
         return true;
       } else {
         if (contentType.contains('application/json')) {
-          lastLoginError = jsonDecode(response.body)['message'] ?? 'Login failed (${response.statusCode})';
+          lastLoginError =
+              jsonDecode(response.body)['message'] ??
+              'Login failed (${response.statusCode})';
         } else {
-          debugPrint('LOGIN_HTTP_ERROR status=${response.statusCode} contentType=$contentType');
-          lastLoginError = 'Login failed with unexpected response (${response.statusCode})';
+          debugPrint(
+            'LOGIN_HTTP_ERROR status=${response.statusCode} contentType=$contentType',
+          );
+          lastLoginError =
+              'Login failed with unexpected response (${response.statusCode})';
         }
       }
     } catch (e) {
       debugPrint('Login API error: $e');
-      lastLoginError = e.toString().contains('XMLHttpRequest') 
-          ? 'CORS Error: The server blocked the request. Are you running on Web?' 
+      lastLoginError = e.toString().contains('XMLHttpRequest')
+          ? 'CORS Error: The server blocked the request. Are you running on Web?'
           : 'Network error: $e';
     }
     return false;
   }
 
-  static Future<bool> register(String name, String email, String password, {String? mobileNo}) async {
+  static Future<bool> register(
+    String name,
+    String email,
+    String password, {
+    String? mobileNo,
+  }) async {
     final cleanedEmail = email.trim().toLowerCase();
     final cleanedMobile = mobileNo?.trim();
 
@@ -136,12 +153,14 @@ class AuthManager {
         Uri.parse('$_baseUrl/register'),
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
         },
         body: jsonEncode({
           'name': name,
           'email': cleanedEmail.isEmpty ? null : cleanedEmail,
-          'mobile_no': cleanedMobile == null || cleanedMobile.isEmpty ? null : cleanedMobile,
+          'mobile_no': cleanedMobile == null || cleanedMobile.isEmpty
+              ? null
+              : cleanedMobile,
           'password': password,
           'password_confirmation': password,
         }),
@@ -150,10 +169,11 @@ class AuthManager {
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = jsonDecode(response.body);
         token = data['access_token'];
-        
+
         final userData = data['user'] ?? {};
         final String userId = userData['id']?.toString() ?? '1';
-        final returnedEmail = userData['email'] ?? userData['mobile_no'] ?? cleanedEmail;
+        final returnedEmail =
+            userData['email'] ?? userData['mobile_no'] ?? cleanedEmail;
 
         currentUser = MockUser(
           id: userId,
@@ -178,17 +198,24 @@ class AuthManager {
   static Future<bool> sendResetLink(String email) async {
     lastForgotError = null;
     try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/forgot-password'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
-        body: jsonEncode({'email': email.trim().toLowerCase()}),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/forgot-password'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({'email': email.trim().toLowerCase()}),
+          )
+          .timeout(const Duration(seconds: 10));
 
       final Map<String, dynamic> body = jsonDecode(response.body);
       if (response.statusCode == 200) {
         return true;
       } else {
-        lastForgotError = body['message']?.toString() ?? 'Unable to send reset link (${response.statusCode})';
+        lastForgotError =
+            body['message']?.toString() ??
+            'Unable to send reset link (${response.statusCode})';
       }
     } catch (e) {
       debugPrint('Forgot password API error: $e');
@@ -204,11 +231,13 @@ class AuthManager {
 
       // null = user cancelled picker or Play Services could not complete sign-in
       if (googleUser == null) {
-        lastGoogleError = 'Sign-in was cancelled or no Google account was selected.';
+        lastGoogleError =
+            'Sign-in was cancelled or no Google account was selected.';
         return false;
       }
 
-      final userName = (googleUser.displayName != null && googleUser.displayName!.isNotEmpty)
+      final userName =
+          (googleUser.displayName != null && googleUser.displayName!.isNotEmpty)
           ? googleUser.displayName!
           : 'Google User';
       final userEmail = googleUser.email;
@@ -229,20 +258,22 @@ class AuthManager {
 
       // Call backend to exchange Google credentials for Laravel API token
       try {
-        final response = await http.post(
-          Uri.parse('$_baseUrl/auth/google'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: jsonEncode({
-            'token': idToken ?? '',
-            'access_token': accessToken ?? '',
-            'google_id': userId,
-            'name': userName,
-            'email': userEmail,
-          }),
-        ).timeout(const Duration(seconds: 10));
+        final response = await http
+            .post(
+              Uri.parse('$_baseUrl/auth/google'),
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+              body: jsonEncode({
+                'token': idToken ?? '',
+                'access_token': accessToken ?? '',
+                'google_id': userId,
+                'name': userName,
+                'email': userEmail,
+              }),
+            )
+            .timeout(const Duration(seconds: 10));
 
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
@@ -252,11 +283,18 @@ class AuthManager {
           final userData = data['user'] ?? data['data'] ?? {};
           final String backendId = userData['id']?.toString() ?? userId;
           final String backendName = userData['name']?.toString() ?? userName;
-          final String backendEmail = userData['email']?.toString() ?? userEmail;
+          final String backendEmail =
+              userData['email']?.toString() ?? userEmail;
           final roleStr = userData['role']?.toString().toLowerCase() ?? 'user';
           final role = (roleStr == 'admin') ? AppRole.admin : AppRole.user;
 
-          final initials = backendName.trim().split(' ').map((s) => s.isNotEmpty ? s[0] : '').take(2).join().toUpperCase();
+          final initials = backendName
+              .trim()
+              .split(' ')
+              .map((s) => s.isNotEmpty ? s[0] : '')
+              .take(2)
+              .join()
+              .toUpperCase();
 
           currentUser = MockUser(
             id: backendId,
@@ -266,12 +304,19 @@ class AuthManager {
             initials: initials.isEmpty ? 'G' : initials,
           );
 
-          RoleManager.switchRole(role);
-          await SessionStorage.save(token!, backendId, backendName, backendEmail, roleStr);
+          await RoleManager.resolveInitialRole(role);
+          await SessionStorage.save(
+            token!,
+            backendId,
+            backendName,
+            backendEmail,
+            roleStr,
+          );
           return true;
         } else {
           // Show exact backend response so we can debug
-          lastGoogleError = 'Backend /api/auth/google returned ${response.statusCode}: ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}';
+          lastGoogleError =
+              'Backend /api/auth/google returned ${response.statusCode}: ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}';
           await _googleSignIn.signOut();
           return false;
         }
@@ -291,10 +336,12 @@ class AuthManager {
   static Future<void> logout() async {
     try {
       await _googleSignIn.signOut();
-    } catch (e) { debugPrint('Error: $e'); }
+    } catch (e) {
+      debugPrint('Error: $e');
+    }
     currentUser = null;
     token = null;
-    RoleManager.switchRole(AppRole.user);
+    await RoleManager.switchRole(AppRole.user, persist: false);
     await SessionStorage.clear();
   }
 
@@ -303,16 +350,22 @@ class AuthManager {
       final session = await SessionStorage.load();
       if (session != null) {
         token = session['token'];
-        
+
         final userData = session['user'];
         final String userId = userData['id']?.toString() ?? '1';
         final name = userData['name'] ?? 'User';
         final email = userData['email'] ?? '';
-        
+
         final roleStr = userData['role']?.toString().toLowerCase() ?? '';
         final role = roleStr == 'admin' ? AppRole.admin : AppRole.user;
-        
-        final initials = name.trim().split(' ').map((s) => s.isNotEmpty ? s[0] : '').take(2).join().toUpperCase();
+
+        final initials = name
+            .trim()
+            .split(' ')
+            .map((s) => s.isNotEmpty ? s[0] : '')
+            .take(2)
+            .join()
+            .toUpperCase();
 
         currentUser = MockUser(
           id: userId,
@@ -322,7 +375,7 @@ class AuthManager {
           initials: initials.isEmpty ? 'U' : initials,
         );
 
-        RoleManager.switchRole(role);
+        await RoleManager.resolveInitialRole(role);
         return true;
       }
     } catch (e) {
@@ -333,13 +386,14 @@ class AuthManager {
 }
 
 class SessionStorage {
-  static Future<void> save(String token, String userId, String name, String email, String role) async {
-    final userMap = {
-      'id': userId,
-      'name': name,
-      'email': email,
-      'role': role,
-    };
+  static Future<void> save(
+    String token,
+    String userId,
+    String name,
+    String email,
+    String role,
+  ) async {
+    final userMap = {'id': userId, 'name': name, 'email': email, 'role': role};
     try {
       await AppStorage.write('auth_token', token);
       await AppStorage.write('auth_user', jsonEncode(userMap));
@@ -352,11 +406,11 @@ class SessionStorage {
     try {
       final token = await AppStorage.read('auth_token');
       final userStr = await AppStorage.read('auth_user');
-      if (token != null && token.isNotEmpty && userStr != null && userStr.isNotEmpty) {
-        return {
-          'token': token,
-          'user': jsonDecode(userStr),
-        };
+      if (token != null &&
+          token.isNotEmpty &&
+          userStr != null &&
+          userStr.isNotEmpty) {
+        return {'token': token, 'user': jsonDecode(userStr)};
       }
     } catch (e) {
       debugPrint('Session load error: $e');

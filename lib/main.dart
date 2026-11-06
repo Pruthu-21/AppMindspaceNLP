@@ -15,7 +15,9 @@ import 'services/message_service.dart';
 
 import 'services/notification_service.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'services/firebase_stub.dart' if (dart.library.io) 'services/firebase_mobile.dart' as fb;
+import 'services/firebase_stub.dart'
+    if (dart.library.io) 'services/firebase_mobile.dart'
+    as fb;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/messages_page.dart';
 
@@ -30,7 +32,8 @@ Future<void> openUrlOrFallback(String link) async {
     bool nativeSuccess = false;
     const platform = MethodChannel('mindspace/app');
     try {
-      nativeSuccess = await platform.invokeMethod('openUrl', {'url': link}) ?? false;
+      nativeSuccess =
+          await platform.invokeMethod('openUrl', {'url': link}) ?? false;
       debugPrint('MSNLP_NOTIF: openUrl result: $nativeSuccess for $link');
       if (nativeSuccess) {
         await Future.delayed(const Duration(milliseconds: 400));
@@ -39,9 +42,11 @@ Future<void> openUrlOrFallback(String link) async {
     } catch (e) {
       debugPrint('Error invoking native openUrl: $e');
     }
-    
+
     if (!nativeSuccess) {
-      debugPrint('MSNLP_NOTIF: native openUrl failed, falling back to launchUrl for $link');
+      debugPrint(
+        'MSNLP_NOTIF: native openUrl failed, falling back to launchUrl for $link',
+      );
       try {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
         await Future.delayed(const Duration(milliseconds: 400));
@@ -56,11 +61,16 @@ Future<void> openUrlOrFallback(String link) async {
 }
 
 void openMessagesFromNotification(Map<String, dynamic> data) {
-  debugPrint('MSNLP_NOTIF: openMessagesFromNotification called with data: $data, navigatorKey.currentState is ${navigatorKey.currentState}');
+  debugPrint(
+    'MSNLP_NOTIF: openMessagesFromNotification called with data: $data, navigatorKey.currentState is ${navigatorKey.currentState}',
+  );
   final link = data['link'];
   final actionId = data['actionId'];
-  
-  if (actionId == 'open_link' && link != null && link is String && link.isNotEmpty) {
+
+  if (actionId == 'open_link' &&
+      link != null &&
+      link is String &&
+      link.isNotEmpty) {
     debugPrint('MSNLP_NOTIF: actionId is open_link, parsing link: $link');
     openUrlOrFallback(link);
     return; // Do NOT navigate to MessagesPage
@@ -68,26 +78,30 @@ void openMessagesFromNotification(Map<String, dynamic> data) {
 
   final nav = navigatorKey.currentState;
   final token = AuthManager.token;
-  
+
   // If navigator is not ready, or token is null (not logged in yet)
   if (nav == null || token == null) {
-    debugPrint('MSNLP_NOTIF: nav or token is null, storing pendingNotificationTarget');
+    debugPrint(
+      'MSNLP_NOTIF: nav or token is null, storing pendingNotificationTarget',
+    );
     pendingNotificationTarget = data;
     return;
   }
-  
+
   MessageService().checkUnreadMessages(token);
 
   final type = data['type'];
   if (type == 'reminder' || actionId == 'stop_id') {
     final reminderId = data['id'] as int? ?? 0;
     final title = data['title'] as String? ?? 'Mindspace Reminder';
-    
+
     debugPrint('MSNLP_NOTIF: Pushing AlarmScreen for id $reminderId');
-    nav.push(MaterialPageRoute(
-      settings: const RouteSettings(name: '/alarm'),
-      builder: (_) => AlarmScreen(reminderId: reminderId, title: title),
-    ));
+    nav.push(
+      MaterialPageRoute(
+        settings: const RouteSettings(name: '/alarm'),
+        builder: (_) => AlarmScreen(reminderId: reminderId, title: title),
+      ),
+    );
     return;
   }
 
@@ -101,15 +115,16 @@ void openMessagesFromNotification(Map<String, dynamic> data) {
 
   if (!isMessagesTop) {
     debugPrint('MSNLP_NOTIF: Pushing MessagesPage');
-    nav.push(MaterialPageRoute(
-      settings: const RouteSettings(name: '/messages'),
-      builder: (_) => MessagesPage(userToken: token),
-    ));
+    nav.push(
+      MaterialPageRoute(
+        settings: const RouteSettings(name: '/messages'),
+        builder: (_) => MessagesPage(userToken: token),
+      ),
+    );
   } else {
     debugPrint('MSNLP_NOTIF: MessagesPage is already top');
   }
 }
-
 
 // Removed globalGifCodecFuture
 late Future<bool> globalSessionCheckFuture;
@@ -214,7 +229,9 @@ Future<void> main() async {
     }
   });
 
-  debugPrint('MSNLP_SPLASH: Time before runApp: ${stopwatch.elapsedMilliseconds}ms');
+  debugPrint(
+    'MSNLP_SPLASH: Time before runApp: ${stopwatch.elapsedMilliseconds}ms',
+  );
   runApp(MindSpaceDriveApp(skipSplash: false, stopwatch: stopwatch));
 }
 
@@ -223,7 +240,11 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 class MindSpaceDriveApp extends StatelessWidget {
   final bool skipSplash;
   final Stopwatch stopwatch;
-  const MindSpaceDriveApp({super.key, this.skipSplash = false, required this.stopwatch});
+  const MindSpaceDriveApp({
+    super.key,
+    this.skipSplash = false,
+    required this.stopwatch,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -240,7 +261,9 @@ class MindSpaceDriveApp extends StatelessWidget {
               theme: AppTheme.lightTheme,
               darkTheme: AppTheme.darkTheme,
               themeMode: currentThemeMode,
-              home: skipSplash ? AppStartupHelper(stopwatch: stopwatch) : SplashPage(stopwatch: stopwatch),
+              home: skipSplash
+                  ? AppStartupHelper(stopwatch: stopwatch)
+                  : SplashPage(stopwatch: stopwatch),
             );
           },
         );
@@ -257,7 +280,8 @@ class AppStartupHelper extends StatefulWidget {
   State<AppStartupHelper> createState() => _AppStartupHelperState();
 }
 
-class _AppStartupHelperState extends State<AppStartupHelper> with WidgetsBindingObserver {
+class _AppStartupHelperState extends State<AppStartupHelper>
+    with WidgetsBindingObserver {
   bool _isLoading = true;
   bool _isLoggedIn = false;
   final MessageService _messageService = MessageService();
@@ -283,14 +307,15 @@ class _AppStartupHelperState extends State<AppStartupHelper> with WidgetsBinding
 
     if (state == AppLifecycleState.resumed) {
       _messageService.updateOnlineStatus(token, true);
-    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
       _messageService.updateOnlineStatus(token, false);
     }
   }
 
   Future<void> _checkSession() async {
     final loggedIn = await globalSessionCheckFuture;
-    
+
     OfflineAccessTracker.syncPendingLogs();
 
     if (mounted) {
@@ -299,7 +324,9 @@ class _AppStartupHelperState extends State<AppStartupHelper> with WidgetsBinding
         _isLoading = false;
       });
       if (widget.stopwatch != null) {
-        debugPrint('MSNLP_SPLASH: First usable screen visible at ${widget.stopwatch!.elapsedMilliseconds}ms');
+        debugPrint(
+          'MSNLP_SPLASH: First usable screen visible at ${widget.stopwatch!.elapsedMilliseconds}ms',
+        );
       }
     }
 
@@ -328,11 +355,7 @@ class _AppStartupHelperState extends State<AppStartupHelper> with WidgetsBinding
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return _isLoggedIn ? const NavigationShell() : const LoginPage();
   }

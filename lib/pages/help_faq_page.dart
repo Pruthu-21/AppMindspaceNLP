@@ -33,13 +33,13 @@ class HelpFaqPage extends StatelessWidget {
             children: [
               // Search Header Box
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 24,
+                ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      AppColors.primary,
-                      AppColors.secondary,
-                    ],
+                    colors: [AppColors.primary, AppColors.secondary],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -71,7 +71,9 @@ class HelpFaqPage extends StatelessWidget {
 
               Text(
                 'Frequently Asked Questions',
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 12),
 
@@ -79,31 +81,36 @@ class HelpFaqPage extends StatelessWidget {
               _buildFaqItem(
                 context,
                 question: 'How do I make a file available offline?',
-                answer: 'Navigate to any file details page and click the "Save Offline" button. The app will download the file to your secure local cache. Alternatively, tap the three dots next to any file in your lists and choose "Make Offline". Once saved, a green badge appears on the file.',
+                answer:
+                    'Navigate to any file details page and click the "Save Offline" button. The app will download the file to your secure local cache. Alternatively, tap the three dots next to any file in your lists and choose "Make Offline". Once saved, a green badge appears on the file.',
               ),
               const SizedBox(height: 12),
               _buildFaqItem(
                 context,
                 question: 'How does background synchronization work?',
-                answer: 'If you open a document while offline, the app records an access log on your device. The moment your device goes back online, a background timer automatically detects internet access and uploads these pending logs to the servers, ensuring analytics and file progress indicators stay up-to-date silently.',
+                answer:
+                    'If you open a document while offline, the app records an access log on your device. The moment your device goes back online, a background timer automatically detects internet access and uploads these pending logs to the servers, ensuring analytics and file progress indicators stay up-to-date silently.',
               ),
               const SizedBox(height: 12),
               _buildFaqItem(
                 context,
                 question: 'How do I share files with other users?',
-                answer: 'If you are an Administrator, you can share files with other team members. Click the three-dot action menu on any file card, choose "Share", and select the target users from your group list to grant them access instantly.',
+                answer:
+                    'If you are an Administrator, you can share files with other team members. Click the three-dot action menu on any file card, choose "Share", and select the target users from your group list to grant them access instantly.',
               ),
               const SizedBox(height: 12),
               _buildFaqItem(
                 context,
                 question: 'How do I remove an offline copy from my phone?',
-                answer: 'Simply tap the red "Delete Offline File" button on the file details page or select the red "Delete Offline File" option in the three-dot bottom popup menu. This will safely wipe the cached file from your storage and free up space.',
+                answer:
+                    'Simply tap the red "Delete Offline File" button on the file details page or select the red "Delete Offline File" option in the three-dot bottom popup menu. This will safely wipe the cached file from your storage and free up space.',
               ),
               const SizedBox(height: 12),
               _buildFaqItem(
                 context,
                 question: 'Why does Google Login fail sometimes?',
-                answer: 'Make sure your Android or iOS device is connected to the internet and Google Play Services are running properly. Google signatures require package registration in Google Console. If issues persist, try standard email login.',
+                answer:
+                    'Make sure your Android or iOS device is connected to the internet and Google Play Services are running properly. Google signatures require package registration in Google Console. If issues persist, try standard email login.',
               ),
               const SizedBox(height: 28),
 
@@ -114,24 +121,35 @@ class HelpFaqPage extends StatelessWidget {
                   color: isDark ? AppColors.surfaceDark : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+                    color: isDark
+                        ? AppColors.dividerDark
+                        : AppColors.dividerLight,
                     width: 1.5,
                   ),
                 ),
                 child: Column(
                   children: [
-                    const Icon(Icons.forum_rounded, color: AppColors.primary, size: 36),
+                    const Icon(
+                      Icons.forum_rounded,
+                      color: AppColors.primary,
+                      size: 36,
+                    ),
                     const SizedBox(height: 12),
                     const Text(
                       'Still need help?',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       'If you could not find the answers to your questions, please drop our operations team a message.',
                       style: TextStyle(
                         fontSize: 13,
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -150,14 +168,18 @@ class HelpFaqPage extends StatelessWidget {
                           } else {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Could not open phone dialer.')),
+                                const SnackBar(
+                                  content: Text('Could not open phone dialer.'),
+                                ),
                               );
                             }
                           }
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error launching dialer: $e')),
+                              SnackBar(
+                                content: Text('Error launching dialer: $e'),
+                              ),
                             );
                           }
                         }
@@ -174,7 +196,11 @@ class HelpFaqPage extends StatelessWidget {
     );
   }
 
-  Widget _buildFaqItem(BuildContext context, {required String question, required String answer}) {
+  Widget _buildFaqItem(
+    BuildContext context, {
+    required String question,
+    required String answer,
+  }) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -193,10 +219,7 @@ class HelpFaqPage extends StatelessWidget {
           collapsedIconColor: isDark ? Colors.white60 : Colors.black45,
           title: Text(
             question,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
           children: [
             Padding(
@@ -205,7 +228,9 @@ class HelpFaqPage extends StatelessWidget {
                 answer,
                 style: TextStyle(
                   fontSize: 13,
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
                   height: 1.5,
                 ),
               ),

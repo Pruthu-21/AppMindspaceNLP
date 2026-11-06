@@ -34,7 +34,8 @@ class CustomAudioPlayer extends StatefulWidget {
   State<CustomAudioPlayer> createState() => _CustomAudioPlayerState();
 }
 
-class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTickerProviderStateMixin {
+class _CustomAudioPlayerState extends State<CustomAudioPlayer>
+    with SingleTickerProviderStateMixin {
   VideoPlayerController? _controller;
   late AnimationController _rotationController;
   bool _isInitialized = false;
@@ -48,12 +49,16 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
 
   void _flushRemainingTime() {
     if (_lastPlayStartTime != null) {
-      final diffSeconds = (DateTime.now().difference(_lastPlayStartTime!).inMilliseconds / 1000).round();
+      final diffSeconds =
+          (DateTime.now().difference(_lastPlayStartTime!).inMilliseconds / 1000)
+              .round();
       if (diffSeconds > 0) {
         _sessionRunningTime += diffSeconds;
-        debugPrint('[ANALYTICS_DEBUG] Audio flush: +$diffSeconds sec. Total session: $_sessionRunningTime sec');
+        debugPrint(
+          '[ANALYTICS_DEBUG] Audio flush: +$diffSeconds sec. Total session: $_sessionRunningTime sec',
+        );
         _lastPlayStartTime = DateTime.now();
-        
+
         if (widget.fileId != null && _controller != null && mounted) {
           OfflineAccessTracker.trackAccess(
             widget.fileId!,
@@ -85,7 +90,10 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
   void _startHideTimer() {
     _hideTimer?.cancel();
     _hideTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted && _showControls && _controller != null && _controller!.value.isPlaying) {
+      if (mounted &&
+          _showControls &&
+          _controller != null &&
+          _controller!.value.isPlaying) {
         setState(() {
           _showControls = false;
         });
@@ -121,41 +129,44 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
       _hasError = false;
     });
 
-    final isNetwork = widget.url.startsWith('http://') || widget.url.startsWith('https://');
+    final isNetwork =
+        widget.url.startsWith('http://') || widget.url.startsWith('https://');
     if (isNetwork) {
       _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
     } else {
       _controller = VideoPlayerController.file(File(widget.url));
     }
     _controller!
-      ..initialize().then((_) {
-        if (mounted) {
-          setState(() {
-            _isInitialized = true;
+      ..initialize()
+          .then((_) {
+            if (mounted) {
+              setState(() {
+                _isInitialized = true;
+              });
+              if (widget.onDurationChanged != null) {
+                widget.onDurationChanged!(_controller!.value.duration);
+              }
+              if (widget.initialPosition != Duration.zero) {
+                _controller!.seekTo(widget.initialPosition);
+              }
+              if (widget.autoPlay) {
+                _controller!.play();
+              }
+              _controller!.addListener(_playerListener);
+            }
+          })
+          .catchError((error) {
+            if (mounted) {
+              setState(() {
+                _hasError = true;
+              });
+            }
           });
-          if (widget.onDurationChanged != null) {
-            widget.onDurationChanged!(_controller!.value.duration);
-          }
-          if (widget.initialPosition != Duration.zero) {
-            _controller!.seekTo(widget.initialPosition);
-          }
-          if (widget.autoPlay) {
-            _controller!.play();
-          }
-          _controller!.addListener(_playerListener);
-        }
-      }).catchError((error) {
-        if (mounted) {
-          setState(() {
-            _hasError = true;
-          });
-        }
-      });
   }
 
   void _playerListener() {
     if (!mounted || _controller == null) return;
-    
+
     // Sync vinyl rotation animation with player playing state
     if (_controller!.value.isPlaying) {
       if (!_rotationController.isAnimating) {
@@ -166,7 +177,7 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
         _rotationController.stop();
       }
     }
-    
+
     if (widget.onPositionChanged != null) {
       widget.onPositionChanged!(_controller!.value.position);
     }
@@ -174,8 +185,7 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
     if (widget.onPlayingChanged != null) {
       widget.onPlayingChanged!(_controller!.value.isPlaying);
     }
-    
-    
+
     final isPlaying = _controller!.value.isPlaying;
     if (isPlaying != _wasPlayingForTracking) {
       _wasPlayingForTracking = isPlaying;
@@ -190,7 +200,7 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
         _stopTrackingTimer();
       }
     }
-    
+
     setState(() {});
   }
 
@@ -207,12 +217,13 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
   }
 
   String _formatDuration(Duration duration) {
-    final hasHours = _controller != null && _controller!.value.duration.inHours > 0;
-    
+    final hasHours =
+        _controller != null && _controller!.value.duration.inHours > 0;
+
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     final seconds = twoDigits(duration.inSeconds.remainder(60));
     final minutes = twoDigits(duration.inMinutes.remainder(60));
-    
+
     if (hasHours) {
       final hours = duration.inHours.toString();
       return "$hours:$minutes:$seconds";
@@ -231,7 +242,11 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 40),
+            const Icon(
+              Icons.error_outline_rounded,
+              color: AppColors.error,
+              size: 40,
+            ),
             const SizedBox(height: 12),
             const Text(
               'Failed to stream audio track',
@@ -296,7 +311,9 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
                       color: isDark ? Colors.black87 : Colors.grey.shade900,
                       boxShadow: [
                         BoxShadow(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.15),
+                          color: theme.colorScheme.primary.withValues(
+                            alpha: 0.15,
+                          ),
                           blurRadius: 12,
                         ),
                       ],
@@ -339,7 +356,9 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
                       Text(
                         value.isPlaying ? 'Now Playing...' : 'Paused',
                         style: TextStyle(
-                          color: value.isPlaying ? theme.colorScheme.primary : Colors.grey,
+                          color: value.isPlaying
+                              ? theme.colorScheme.primary
+                              : Colors.grey,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
@@ -350,7 +369,9 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
                 // Compact Controls
                 IconButton(
                   icon: Icon(
-                    value.isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_filled_rounded,
+                    value.isPlaying
+                        ? Icons.pause_circle_filled_rounded
+                        : Icons.play_circle_filled_rounded,
                     color: theme.colorScheme.primary,
                     size: 38,
                   ),
@@ -376,17 +397,28 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
                   child: SliderTheme(
                     data: SliderTheme.of(context).copyWith(
                       activeTrackColor: theme.colorScheme.primary,
-                      inactiveTrackColor: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                      inactiveTrackColor: isDark
+                          ? Colors.white10
+                          : Colors.black.withValues(alpha: 0.05),
                       thumbColor: theme.colorScheme.primary,
                       trackHeight: 3.0,
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6.0),
-                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 12.0),
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 6.0,
+                      ),
+                      overlayShape: const RoundSliderOverlayShape(
+                        overlayRadius: 12.0,
+                      ),
                     ),
                     child: Slider(
-                      value: position.inMilliseconds.toDouble().clamp(0, duration.inMilliseconds.toDouble()),
+                      value: position.inMilliseconds.toDouble().clamp(
+                        0,
+                        duration.inMilliseconds.toDouble(),
+                      ),
                       max: duration.inMilliseconds.toDouble(),
                       onChanged: (val) {
-                        _controller!.seekTo(Duration(milliseconds: val.toInt()));
+                        _controller!.seekTo(
+                          Duration(milliseconds: val.toInt()),
+                        );
                       },
                     ),
                   ),
@@ -414,11 +446,9 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
           children: [
             // Ambient Backdrop Shadow (always visible)
             Positioned.fill(
-              child: Container(
-                color: isDark ? Colors.black45 : Colors.white12,
-              ),
+              child: Container(color: isDark ? Colors.black45 : Colors.white12),
             ),
-            
+
             // Large spinning vinyl (always visible)
             Center(
               child: RotationTransition(
@@ -467,12 +497,12 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
                 ),
               ),
             ),
-            
+
             // Premium control overlay
             if (_showControls) ...[
               // Dark backdrop cover when controls are active
               Container(color: Colors.black26),
-              
+
               // Top Bar with back button and file name
               Positioned(
                 top: 0,
@@ -480,11 +510,17 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
                 right: 0,
                 child: SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0,
+                      vertical: 8.0,
+                    ),
                     child: Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: Colors.white,
+                          ),
                           onPressed: () {
                             Navigator.pop(context, {
                               'position': position,
@@ -527,19 +563,28 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
                           inactiveTrackColor: Colors.white30,
                           thumbColor: theme.colorScheme.primary,
                           trackHeight: 4.0,
-                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8.0),
-                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 16.0),
+                          thumbShape: const RoundSliderThumbShape(
+                            enabledThumbRadius: 8.0,
+                          ),
+                          overlayShape: const RoundSliderOverlayShape(
+                            overlayRadius: 16.0,
+                          ),
                         ),
                         child: Slider(
-                          value: position.inMilliseconds.toDouble().clamp(0, duration.inMilliseconds.toDouble()),
+                          value: position.inMilliseconds.toDouble().clamp(
+                            0,
+                            duration.inMilliseconds.toDouble(),
+                          ),
                           max: duration.inMilliseconds.toDouble(),
                           onChanged: (val) {
                             _startHideTimer();
-                            _controller!.seekTo(Duration(milliseconds: val.toInt()));
+                            _controller!.seekTo(
+                              Duration(milliseconds: val.toInt()),
+                            );
                           },
                         ),
                       ),
-                      
+
                       // Labels
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -566,17 +611,24 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
                         ),
                       ),
                       const SizedBox(height: 24),
-                      
+
                       // Audio controllers
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.replay_10_rounded, size: 30, color: Colors.white),
+                            icon: const Icon(
+                              Icons.replay_10_rounded,
+                              size: 30,
+                              color: Colors.white,
+                            ),
                             onPressed: () {
                               _startHideTimer();
-                              final newPos = position - const Duration(seconds: 10);
-                              _controller!.seekTo(newPos < Duration.zero ? Duration.zero : newPos);
+                              final newPos =
+                                  position - const Duration(seconds: 10);
+                              _controller!.seekTo(
+                                newPos < Duration.zero ? Duration.zero : newPos,
+                              );
                             },
                           ),
                           const SizedBox(width: 32),
@@ -584,12 +636,17 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
                             decoration: const BoxDecoration(
                               shape: BoxShape.circle,
                               gradient: LinearGradient(
-                                colors: [AppColors.primary, AppColors.secondary],
+                                colors: [
+                                  AppColors.primary,
+                                  AppColors.secondary,
+                                ],
                               ),
                             ),
                             child: IconButton(
                               icon: Icon(
-                                value.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                                value.isPlaying
+                                    ? Icons.pause_rounded
+                                    : Icons.play_arrow_rounded,
                                 color: Colors.white,
                                 size: 36,
                               ),
@@ -605,11 +662,18 @@ class _CustomAudioPlayerState extends State<CustomAudioPlayer> with SingleTicker
                           ),
                           const SizedBox(width: 32),
                           IconButton(
-                            icon: const Icon(Icons.forward_10_rounded, size: 30, color: Colors.white),
+                            icon: const Icon(
+                              Icons.forward_10_rounded,
+                              size: 30,
+                              color: Colors.white,
+                            ),
                             onPressed: () {
                               _startHideTimer();
-                              final newPos = position + const Duration(seconds: 10);
-                              _controller!.seekTo(newPos > duration ? duration : newPos);
+                              final newPos =
+                                  position + const Duration(seconds: 10);
+                              _controller!.seekTo(
+                                newPos > duration ? duration : newPos,
+                              );
                             },
                           ),
                         ],

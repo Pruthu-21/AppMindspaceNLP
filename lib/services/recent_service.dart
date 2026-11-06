@@ -18,7 +18,8 @@ class RecentService {
             format: item['format'] ?? 'doc',
             sizeBytes: item['sizeBytes'] ?? 0,
             customSizeString: item['customSizeString'],
-            uploadDate: DateTime.tryParse(item['uploadDate'] ?? '') ?? DateTime.now(),
+            uploadDate:
+                DateTime.tryParse(item['uploadDate'] ?? '') ?? DateTime.now(),
             ownerName: item['ownerName'] ?? 'Unknown',
             isPinned: item['isPinned'] == true,
             isFavorite: item['isFavorite'] == true,
@@ -27,7 +28,9 @@ class RecentService {
           );
         }).toList();
       }
-    } catch (e) { debugPrint('Error: $e'); }
+    } catch (e) {
+      debugPrint('Error: $e');
+    }
     return [];
   }
 
@@ -35,34 +38,40 @@ class RecentService {
     if (file.isFolder) return;
     try {
       final currentList = await getRecentFiles();
-      
+
       // Remove if already exists to push to top of stack
       currentList.removeWhere((f) => f.id == file.id);
-      
+
       // Insert at index 0 (newest recent)
       currentList.insert(0, file);
-      
+
       // Limit size of recent stack to 20 files
       if (currentList.length > 20) {
         currentList.removeLast();
       }
-      
+
       // Serialize list
-      final serialized = currentList.map((f) => {
-        'id': f.id,
-        'name': f.name,
-        'format': f.format,
-        'sizeBytes': f.sizeBytes,
-        'customSizeString': f.customSizeString,
-        'uploadDate': f.uploadDate.toIso8601String(),
-        'ownerName': f.ownerName,
-        'isPinned': f.isPinned,
-        'isFavorite': f.isFavorite,
-        'isDownloaded': f.isDownloaded,
-        'previewUrl': f.previewUrl,
-      }).toList();
-      
+      final serialized = currentList
+          .map(
+            (f) => {
+              'id': f.id,
+              'name': f.name,
+              'format': f.format,
+              'sizeBytes': f.sizeBytes,
+              'customSizeString': f.customSizeString,
+              'uploadDate': f.uploadDate.toIso8601String(),
+              'ownerName': f.ownerName,
+              'isPinned': f.isPinned,
+              'isFavorite': f.isFavorite,
+              'isDownloaded': f.isDownloaded,
+              'previewUrl': f.previewUrl,
+            },
+          )
+          .toList();
+
       await AppStorage.write(_storageKey, jsonEncode(serialized));
-    } catch (e) { debugPrint('Error: $e'); }
+    } catch (e) {
+      debugPrint('Error: $e');
+    }
   }
 }

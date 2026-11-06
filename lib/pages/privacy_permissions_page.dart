@@ -36,10 +36,7 @@ class PrivacyPermissionsPage extends StatelessWidget {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      AppColors.primary,
-                      AppColors.secondary,
-                    ],
+                    colors: [AppColors.primary, AppColors.secondary],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -47,7 +44,11 @@ class PrivacyPermissionsPage extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    const Icon(Icons.shield_rounded, size: 48, color: Colors.white),
+                    const Icon(
+                      Icons.shield_rounded,
+                      size: 48,
+                      color: Colors.white,
+                    ),
                     const SizedBox(height: 12),
                     const Text(
                       'Your Privacy is Our Priority',
@@ -75,14 +76,17 @@ class PrivacyPermissionsPage extends StatelessWidget {
               // Permissions Section
               Text(
                 'Device Permissions',
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 12),
               _buildPermissionTile(
                 context,
                 icon: Icons.storage_rounded,
                 title: 'Storage & Caching Access',
-                description: 'Used to store and preview downloaded documents, PDFs, audio tracks, and videos locally on your device for offline reading.',
+                description:
+                    'Used to store and preview downloaded documents, PDFs, audio tracks, and videos locally on your device for offline reading.',
                 status: 'Granted',
                 statusColor: AppColors.success,
               ),
@@ -91,7 +95,8 @@ class PrivacyPermissionsPage extends StatelessWidget {
                 context,
                 icon: Icons.account_circle_rounded,
                 title: 'Google OAuth Sign-In',
-                description: 'We authenticate via Google Secure Authentication. We only access your basic profile info (email and display name) for credentials.',
+                description:
+                    'We authenticate via Google Secure Authentication. We only access your basic profile info (email and display name) for credentials.',
                 status: 'Active',
                 statusColor: AppColors.info,
               ),
@@ -100,7 +105,9 @@ class PrivacyPermissionsPage extends StatelessWidget {
               // Privacy Policy details
               Text(
                 'Data Security & Analytics',
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 12),
               Container(
@@ -109,7 +116,9 @@ class PrivacyPermissionsPage extends StatelessWidget {
                   color: isDark ? AppColors.surfaceDark : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+                    color: isDark
+                        ? AppColors.dividerDark
+                        : AppColors.dividerLight,
                   ),
                 ),
                 child: Column(
@@ -117,19 +126,22 @@ class PrivacyPermissionsPage extends StatelessWidget {
                     _buildDataRow(
                       context,
                       title: 'End-to-End Encryption',
-                      desc: 'All file uploads, transfers, and metadata are securely encrypted in transit using SSL/TLS and stored on protected cloud servers.',
+                      desc:
+                          'All file uploads, transfers, and metadata are securely encrypted in transit using SSL/TLS and stored on protected cloud servers.',
                     ),
                     const Divider(height: 24),
                     _buildDataRow(
                       context,
                       title: 'Offline Usage Logs',
-                      desc: 'We track file open events and duration of usage locally. Once internet connectivity is restored, logs automatically sync to our servers.',
+                      desc:
+                          'We track file open events and duration of usage locally. Once internet connectivity is restored, logs automatically sync to our servers.',
                     ),
                     const Divider(height: 24),
                     _buildDataRow(
                       context,
                       title: 'Zero Third-Party Sharing',
-                      desc: 'Mindspace NLP does not sell, lease, or distribute your private documents, storage directories, or emails to third parties.',
+                      desc:
+                          'Mindspace NLP does not sell, lease, or distribute your private documents, storage directories, or emails to third parties.',
                     ),
                   ],
                 ),
@@ -143,7 +155,9 @@ class PrivacyPermissionsPage extends StatelessWidget {
                   color: isDark ? AppColors.surfaceDark : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+                    color: isDark
+                        ? AppColors.dividerDark
+                        : AppColors.dividerLight,
                     width: 1.5,
                   ),
                 ),
@@ -155,19 +169,28 @@ class PrivacyPermissionsPage extends StatelessWidget {
                         color: AppColors.primary.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.support_agent_rounded, color: AppColors.primary, size: 28),
+                      child: const Icon(
+                        Icons.support_agent_rounded,
+                        color: AppColors.primary,
+                        size: 28,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     const Text(
                       'Have privacy concerns?',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       'Reach out directly to our security and operations team for any queries regarding data storage or compliance.',
                       style: TextStyle(
                         fontSize: 13,
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -186,14 +209,18 @@ class PrivacyPermissionsPage extends StatelessWidget {
                           } else {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Could not open phone dialer.')),
+                                const SnackBar(
+                                  content: Text('Could not open phone dialer.'),
+                                ),
                               );
                             }
                           }
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error launching dialer: $e')),
+                              SnackBar(
+                                content: Text('Error launching dialer: $e'),
+                              ),
                             );
                           }
                         }
@@ -249,10 +276,16 @@ class PrivacyPermissionsPage extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(6),
@@ -273,7 +306,9 @@ class PrivacyPermissionsPage extends StatelessWidget {
                   description,
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
                     height: 1.4,
                   ),
                 ),
@@ -285,7 +320,11 @@ class PrivacyPermissionsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildDataRow(BuildContext context, {required String title, required String desc}) {
+  Widget _buildDataRow(
+    BuildContext context, {
+    required String title,
+    required String desc,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,7 +338,9 @@ class PrivacyPermissionsPage extends StatelessWidget {
           desc,
           style: TextStyle(
             fontSize: 12,
-            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            color: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondaryLight,
             height: 1.4,
           ),
         ),

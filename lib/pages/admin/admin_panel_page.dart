@@ -44,16 +44,20 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
   }
 
   Future<void> _fetchAdminUsers() async {
-    if (AuthManager.token == null || AuthManager.token!.startsWith('google_token_')) return;
+    if (AuthManager.token == null ||
+        AuthManager.token!.startsWith('google_token_'))
+      return;
 
     try {
-      final response = await http.get(
-        Uri.parse('https://mindspacenlp.com/api/admin/users'),
-        headers: {
-          'Authorization': 'Bearer ${AuthManager.token}',
-          'Accept': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            Uri.parse('https://mindspacenlp.com/api/admin/users'),
+            headers: {
+              'Authorization': 'Bearer ${AuthManager.token}',
+              'Accept': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
@@ -62,13 +66,21 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
           final String name = (item['name'] ?? 'User').toString();
           final String email = (item['email'] ?? '').toString();
           final String roleStr = (item['role'] ?? 'user').toString();
-          final initials = name.trim().split(' ').map((s) => s.isNotEmpty ? s[0] : '').take(2).join().toUpperCase();
+          final initials = name
+              .trim()
+              .split(' ')
+              .map((s) => s.isNotEmpty ? s[0] : '')
+              .take(2)
+              .join()
+              .toUpperCase();
 
           return AdminUser(
             id: (item['id'] ?? '1').toString(),
             name: name,
             email: email,
-            role: roleStr.toLowerCase() == 'admin' ? 'Administrator' : 'Standard User',
+            role: roleStr.toLowerCase() == 'admin'
+                ? 'Administrator'
+                : 'Standard User',
             initials: initials.isEmpty ? 'U' : initials,
           );
         }).toList();
@@ -79,7 +91,8 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
             _onSearchChanged(_searchQuery);
             if (body['stats'] != null) {
               final stats = body['stats'];
-              _totalUsersCount = (stats['total_users'] ?? loaded.length).toString();
+              _totalUsersCount = (stats['total_users'] ?? loaded.length)
+                  .toString();
               _totalFilesCount = (stats['total_files'] ?? '0').toString();
               _totalStorageUsed = (stats['total_storage'] ?? '0 B').toString();
             } else {
@@ -87,9 +100,10 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
             }
           });
         }
-      } else {
-      }
-    } catch (e) { debugPrint('Error: $e'); }
+      } else {}
+    } catch (e) {
+      debugPrint('Error: $e');
+    }
   }
 
   void _onSearchChanged(String query) {
@@ -99,8 +113,11 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
         _filteredUsers = _users;
       } else {
         _filteredUsers = _users
-            .where((u) => u.name.toLowerCase().contains(query.toLowerCase()) ||
-                          u.email.toLowerCase().contains(query.toLowerCase()))
+            .where(
+              (u) =>
+                  u.name.toLowerCase().contains(query.toLowerCase()) ||
+                  u.email.toLowerCase().contains(query.toLowerCase()),
+            )
             .toList();
       }
     });
@@ -123,7 +140,9 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
           builder: (context, setModalState) {
             return AlertDialog(
               backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
               title: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -136,7 +155,9 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                     'For: ${user.name}',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontSize: 12,
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
                     ),
                   ),
                 ],
@@ -151,7 +172,10 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                       const SizedBox(height: 8),
                       Text(
                         'New Password',
-                        style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 12),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       TextFormField(
@@ -168,10 +192,15 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                         },
                         decoration: InputDecoration(
                           hintText: 'Enter new password',
-                          prefixIcon: const Icon(Icons.lock_outline_rounded, size: 18),
+                          prefixIcon: const Icon(
+                            Icons.lock_outline_rounded,
+                            size: 18,
+                          ),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              obscureNewPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                              obscureNewPassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
                               size: 18,
                             ),
                             onPressed: () {
@@ -185,7 +214,10 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                       const SizedBox(height: 16),
                       Text(
                         'Confirm Password',
-                        style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 12),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       TextFormField(
@@ -202,15 +234,21 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                         },
                         decoration: InputDecoration(
                           hintText: 'Re-enter new password',
-                          prefixIcon: const Icon(Icons.lock_outline_rounded, size: 18),
+                          prefixIcon: const Icon(
+                            Icons.lock_outline_rounded,
+                            size: 18,
+                          ),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                              obscureConfirmPassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
                               size: 18,
                             ),
                             onPressed: () {
                               setModalState(() {
-                                obscureConfirmPassword = !obscureConfirmPassword;
+                                obscureConfirmPassword =
+                                    !obscureConfirmPassword;
                               });
                             },
                           ),
@@ -225,7 +263,9 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                   onPressed: () => Navigator.pop(context),
                   child: Text(
                     'Cancel',
-                    style: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
+                    style: TextStyle(
+                      color: isDark ? Colors.white60 : Colors.black54,
+                    ),
                   ),
                 ),
                 TextButton(
@@ -234,7 +274,9 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                       final newPassword = passwordController.text.trim();
                       try {
                         final res = await http.post(
-                          Uri.parse('https://mindspacenlp.com/api/admin/users/${user.id}/change-password'),
+                          Uri.parse(
+                            'https://mindspacenlp.com/api/admin/users/${user.id}/change-password',
+                          ),
                           headers: {
                             'Authorization': 'Bearer ${AuthManager.token}',
                             'Content-Type': 'application/json',
@@ -249,7 +291,9 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Password updated successfully for ${user.name}.'),
+                                content: Text(
+                                  'Password updated successfully for ${user.name}.',
+                                ),
                                 backgroundColor: AppColors.success,
                               ),
                             );
@@ -258,7 +302,9 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Could not update password (${res.statusCode})'),
+                                content: Text(
+                                  'Could not update password (${res.statusCode})',
+                                ),
                                 backgroundColor: AppColors.error,
                               ),
                             );
@@ -277,7 +323,10 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                       }
                     }
                   },
-                  child: const Text('Update', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Update',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             );
@@ -291,7 +340,7 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
   }
 
   @override
-    Widget build(BuildContext context) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -329,10 +378,30 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                 mainAxisSpacing: 12,
                 childAspectRatio: 1.5,
                 children: [
-                  _buildStatCard('Active Users', _totalUsersCount, Icons.people_outline_rounded, AppColors.primary),
-                  _buildStatCard('Total Files', _totalFilesCount, Icons.insert_drive_file_outlined, AppColors.secondary),
-                  _buildStatCard('Total Storage', _totalStorageUsed, Icons.storage_rounded, AppColors.accent),
-                  _buildStatCard('Server Status', 'Operational', Icons.dns_outlined, AppColors.success),
+                  _buildStatCard(
+                    'Active Users',
+                    _totalUsersCount,
+                    Icons.people_outline_rounded,
+                    AppColors.primary,
+                  ),
+                  _buildStatCard(
+                    'Total Files',
+                    _totalFilesCount,
+                    Icons.insert_drive_file_outlined,
+                    AppColors.secondary,
+                  ),
+                  _buildStatCard(
+                    'Total Storage',
+                    _totalStorageUsed,
+                    Icons.storage_rounded,
+                    AppColors.accent,
+                  ),
+                  _buildStatCard(
+                    'Server Status',
+                    'Operational',
+                    Icons.dns_outlined,
+                    AppColors.success,
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
@@ -347,16 +416,26 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                 children: [
                   Text(
                     'User Accounts (${_filteredUsers.length})',
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   TextButton.icon(
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Provision user triggered (UI only)')),
+                        const SnackBar(
+                          content: Text('Provision user triggered (UI only)'),
+                        ),
                       );
                     },
                     icon: const Icon(Icons.person_add_rounded, size: 16),
-                    label: const Text('Add User', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    label: const Text(
+                      'Add User',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -394,16 +473,24 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                         color: isDark ? AppColors.surfaceDark : Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+                          color: isDark
+                              ? AppColors.dividerDark
+                              : AppColors.dividerLight,
                         ),
                       ),
                       child: Row(
                         children: [
                           CircleAvatar(
-                            backgroundColor: avatarColor.withValues(alpha: 0.12),
+                            backgroundColor: avatarColor.withValues(
+                              alpha: 0.12,
+                            ),
                             child: Text(
                               user.initials,
-                              style: TextStyle(color: avatarColor, fontWeight: FontWeight.bold, fontSize: 14),
+                              style: TextStyle(
+                                color: avatarColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 14),
@@ -415,15 +502,25 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                                   children: [
                                     Text(
                                       user.name,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
                                     ),
                                     if (user.role != 'Standard User') ...[
                                       const SizedBox(width: 8),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: AppColors.primary.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(6),
+                                          color: AppColors.primary.withValues(
+                                            alpha: 0.1,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
                                         ),
                                         child: const Text(
                                           'ADMIN',
@@ -440,7 +537,9 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                                 const SizedBox(height: 2),
                                 Text(
                                   user.email,
-                                  style: theme.textTheme.bodyMedium?.copyWith(fontSize: 11),
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontSize: 11,
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -448,7 +547,11 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                             ),
                           ),
                           IconButton(
-                            icon: Icon(Icons.key_rounded, color: theme.colorScheme.primary, size: 20),
+                            icon: Icon(
+                              Icons.key_rounded,
+                              color: theme.colorScheme.primary,
+                              size: 20,
+                            ),
                             tooltip: 'Reset Password',
                             onPressed: () => _showChangePasswordDialog(user),
                           ),
@@ -464,7 +567,12 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color accentColor) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color accentColor,
+  ) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -541,14 +649,21 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Text(
                   '+12.4% vs last week',
-                  style: TextStyle(color: AppColors.accent, fontSize: 10, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: AppColors.accent,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -570,7 +685,9 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                       child: Container(
                         width: 14,
                         decoration: BoxDecoration(
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(6),
+                          ),
                           gradient: LinearGradient(
                             colors: [
                               theme.colorScheme.primary,
@@ -588,7 +705,9 @@ class _AdminPanelPageState extends State<AdminPanelPage> {
                       days[idx],
                       style: TextStyle(
                         fontSize: 10,
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
                     ),
                   ],

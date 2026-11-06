@@ -6,19 +6,21 @@ class MoveDialog extends StatefulWidget {
   final List<FileModel> availableFolders;
 
   const MoveDialog({
-    super.key, 
-    required this.itemCount, 
+    super.key,
+    required this.itemCount,
     required this.availableFolders,
   });
 
   /// Returns folder ID. Returns -1 for Root. Returns null if canceled.
-  static Future<int?> show(BuildContext context, int itemCount, List<FileModel> availableFolders) {
+  static Future<int?> show(
+    BuildContext context,
+    int itemCount,
+    List<FileModel> availableFolders,
+  ) {
     return showDialog<int>(
       context: context,
-      builder: (context) => MoveDialog(
-        itemCount: itemCount,
-        availableFolders: availableFolders,
-      ),
+      builder: (context) =>
+          MoveDialog(itemCount: itemCount, availableFolders: availableFolders),
     );
   }
 
@@ -40,9 +42,19 @@ class _MoveDialogState extends State<MoveDialog> {
         child: ListView(
           children: [
             ListTile(
-              leading: const Icon(Icons.folder_special_rounded, color: Colors.blue, size: 28),
-              title: const Text('Root Directory ( / )', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-              subtitle: const Text('Main location', style: TextStyle(fontSize: 12)),
+              leading: const Icon(
+                Icons.folder_special_rounded,
+                color: Colors.blue,
+                size: 28,
+              ),
+              title: const Text(
+                'Root Directory ( / )',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              subtitle: const Text(
+                'Main location',
+                style: TextStyle(fontSize: 12),
+              ),
               trailing: _selectedTargetFolderId == null
                   ? const Icon(Icons.check_circle_rounded, color: Colors.blue)
                   : const Icon(Icons.circle_outlined, color: Colors.grey),
@@ -56,17 +68,37 @@ class _MoveDialogState extends State<MoveDialog> {
             if (widget.availableFolders.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(16.0),
-                child: Text('No other folders available.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                child: Text(
+                  'No other folders available.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
+                ),
               )
             else
               ...widget.availableFolders.map((folder) {
                 final isSelected = _selectedTargetFolderId == folder.id;
                 return ListTile(
-                  leading: Icon(Icons.folder_rounded, color: Colors.amber.shade600, size: 28),
-                  title: Text(folder.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                  subtitle: const Text('Folder', style: TextStyle(fontSize: 12)),
+                  leading: Icon(
+                    Icons.folder_rounded,
+                    color: Colors.amber.shade600,
+                    size: 28,
+                  ),
+                  title: Text(
+                    folder.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'Folder',
+                    style: TextStyle(fontSize: 12),
+                  ),
                   trailing: isSelected
-                      ? const Icon(Icons.check_circle_rounded, color: Colors.blue)
+                      ? const Icon(
+                          Icons.check_circle_rounded,
+                          color: Colors.blue,
+                        )
                       : const Icon(Icons.circle_outlined, color: Colors.grey),
                   onTap: () {
                     setState(() {
@@ -88,7 +120,10 @@ class _MoveDialogState extends State<MoveDialog> {
             if (_selectedTargetFolderId == null) {
               Navigator.pop(context, -1); // -1 signifies Root
             } else {
-              Navigator.pop(context, int.tryParse(_selectedTargetFolderId!) ?? -1);
+              Navigator.pop(
+                context,
+                int.tryParse(_selectedTargetFolderId!) ?? -1,
+              );
             }
           },
           child: const Text('Move'),

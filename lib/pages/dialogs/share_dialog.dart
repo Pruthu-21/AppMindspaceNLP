@@ -53,7 +53,9 @@ class _ShareDialogState extends State<ShareDialog> {
     if (widget.fileIds.isNotEmpty) {
       futures.add(
         http.get(
-          Uri.parse('https://mindspacenlp.com/api/drive/file/${widget.fileIds.first}/shared-users'),
+          Uri.parse(
+            'https://mindspacenlp.com/api/drive/file/${widget.fileIds.first}/shared-users',
+          ),
           headers: {
             'Authorization': 'Bearer ${AuthManager.token}',
             'Accept': 'application/json',
@@ -120,8 +122,13 @@ class _ShareDialogState extends State<ShareDialog> {
               decoration: InputDecoration(
                 hintText: 'Search user by name or email...',
                 prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -129,32 +136,37 @@ class _ShareDialogState extends State<ShareDialog> {
               child: _isFetchingUsers
                   ? const Center(child: CircularProgressIndicator())
                   : (filteredUsers.isEmpty
-                      ? const Center(child: Text('No matching users found.'))
-                      : ListView.builder(
-                          itemCount: filteredUsers.length,
-                          itemBuilder: (context, idx) {
-                            final u = filteredUsers[idx];
-                            final int uId = int.tryParse(u['id']?.toString() ?? '') ?? 0;
-                            final bool isChecked = _selectedUserIds.contains(uId);
+                        ? const Center(child: Text('No matching users found.'))
+                        : ListView.builder(
+                            itemCount: filteredUsers.length,
+                            itemBuilder: (context, idx) {
+                              final u = filteredUsers[idx];
+                              final int uId =
+                                  int.tryParse(u['id']?.toString() ?? '') ?? 0;
+                              final bool isChecked = _selectedUserIds.contains(
+                                uId,
+                              );
 
-                            return CheckboxListTile(
-                              title: Text(u['name'] ?? 'Unknown User'),
-                              subtitle: Text(u['email'] ?? ''),
-                              value: isChecked,
-                              activeColor: Theme.of(context).colorScheme.primary,
-                              onChanged: (val) {
-                                if (val == null) return;
-                                setState(() {
-                                  if (val) {
-                                    _selectedUserIds.add(uId);
-                                  } else {
-                                    _selectedUserIds.remove(uId);
-                                  }
-                                });
-                              },
-                            );
-                          },
-                        )),
+                              return CheckboxListTile(
+                                title: Text(u['name'] ?? 'Unknown User'),
+                                subtitle: Text(u['email'] ?? ''),
+                                value: isChecked,
+                                activeColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary,
+                                onChanged: (val) {
+                                  if (val == null) return;
+                                  setState(() {
+                                    if (val) {
+                                      _selectedUserIds.add(uId);
+                                    } else {
+                                      _selectedUserIds.remove(uId);
+                                    }
+                                  });
+                                },
+                              );
+                            },
+                          )),
             ),
           ],
         ),

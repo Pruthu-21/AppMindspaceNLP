@@ -43,19 +43,49 @@ class _DownloadsPageState extends State<DownloadsPage> {
 
     if (_activeCategoryFilter != 'All') {
       if (_activeCategoryFilter == 'PDFs') {
-        offline = offline.where((f) => f.format.toLowerCase() == 'pdf').toList();
+        offline = offline
+            .where((f) => f.format.toLowerCase() == 'pdf')
+            .toList();
       } else if (_activeCategoryFilter == 'Images') {
-        offline = offline.where((f) => ['png', 'jpg', 'jpeg', 'gif', 'webp', 'image'].contains(f.format.toLowerCase())).toList();
+        offline = offline
+            .where(
+              (f) => [
+                'png',
+                'jpg',
+                'jpeg',
+                'gif',
+                'webp',
+                'image',
+              ].contains(f.format.toLowerCase()),
+            )
+            .toList();
       } else if (_activeCategoryFilter == 'Videos') {
-        offline = offline.where((f) => ['mp4', 'video', 'mov'].contains(f.format.toLowerCase())).toList();
+        offline = offline
+            .where(
+              (f) => ['mp4', 'video', 'mov'].contains(f.format.toLowerCase()),
+            )
+            .toList();
       } else if (_activeCategoryFilter == 'Docs') {
-        offline = offline.where((f) => ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].contains(f.format.toLowerCase())).toList();
+        offline = offline
+            .where(
+              (f) => [
+                'doc',
+                'docx',
+                'ppt',
+                'pptx',
+                'xls',
+                'xlsx',
+              ].contains(f.format.toLowerCase()),
+            )
+            .toList();
       }
     }
 
     if (_searchQuery.trim().isNotEmpty) {
       offline = offline
-          .where((f) => f.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+          .where(
+            (f) => f.name.toLowerCase().contains(_searchQuery.toLowerCase()),
+          )
           .toList();
     }
     if (mounted) {
@@ -76,7 +106,8 @@ class _DownloadsPageState extends State<DownloadsPage> {
   String _formatSize(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    if (bytes < 1024 * 1024 * 1024)
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 
@@ -97,12 +128,18 @@ class _DownloadsPageState extends State<DownloadsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Resuming download for "${file.name}"...')),
       );
-      final success = await DownloadService.downloadFile(url, file.name, model: file);
+      final success = await DownloadService.downloadFile(
+        url,
+        file.name,
+        model: file,
+      );
       if (!success && mounted) {
-        final error = DownloadService.downloadErrorNotifier.value ?? 'Download failed. Please check internet connection.';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error)),
-        );
+        final error =
+            DownloadService.downloadErrorNotifier.value ??
+            'Download failed. Please check internet connection.';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error)));
       }
       _loadOfflineFiles();
     }
@@ -122,7 +159,9 @@ class _DownloadsPageState extends State<DownloadsPage> {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.surfaceDark : Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -141,13 +180,17 @@ class _DownloadsPageState extends State<DownloadsPage> {
                   const SizedBox(height: 20),
                   Text(
                     'Filter Offline Files',
-                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: ['All', 'PDFs', 'Images', 'Videos', 'Docs'].map((cat) {
+                    children: ['All', 'PDFs', 'Images', 'Videos', 'Docs'].map((
+                      cat,
+                    ) {
                       final isSelected = _activeCategoryFilter == cat;
                       return ChoiceChip(
                         label: Text(cat),
@@ -167,7 +210,10 @@ class _DownloadsPageState extends State<DownloadsPage> {
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Apply Filter', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'Apply Filter',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
@@ -204,7 +250,9 @@ class _DownloadsPageState extends State<DownloadsPage> {
                   ),
                   IconButton(
                     icon: Icon(
-                      _isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
+                      _isGridView
+                          ? Icons.view_list_rounded
+                          : Icons.grid_view_rounded,
                       color: theme.colorScheme.primary,
                     ),
                     onPressed: () {
@@ -224,7 +272,9 @@ class _DownloadsPageState extends State<DownloadsPage> {
                   borderRadius: BorderRadius.circular(16),
                   color: isDark ? AppColors.surfaceDark : Colors.white,
                   border: Border.all(
-                    color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+                    color: isDark
+                        ? AppColors.dividerDark
+                        : AppColors.dividerLight,
                   ),
                 ),
                 child: Row(
@@ -301,12 +351,13 @@ class _DownloadsPageState extends State<DownloadsPage> {
                                   shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
                                   itemCount: _offlineFiles.length,
-                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    crossAxisSpacing: 12,
-                                    mainAxisSpacing: 12,
-                                    childAspectRatio: 1.1,
-                                  ),
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2,
+                                        crossAxisSpacing: 12,
+                                        mainAxisSpacing: 12,
+                                        childAspectRatio: 1.1,
+                                      ),
                                   itemBuilder: (context, index) {
                                     final file = _offlineFiles[index];
                                     return FileCard(
@@ -316,13 +367,15 @@ class _DownloadsPageState extends State<DownloadsPage> {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) => FileDetailsPage(file: file),
+                                            builder: (context) =>
+                                                FileDetailsPage(file: file),
                                           ),
                                         );
                                       },
                                       onMenuSelected: (action) {
                                         if (action == 'download') {
-                                          if (file.downloadStatus == 'stopped') {
+                                          if (file.downloadStatus ==
+                                              'stopped') {
                                             _handleResumeDownload(file);
                                           } else {
                                             _handleRemoveOffline(file);
@@ -347,13 +400,15 @@ class _DownloadsPageState extends State<DownloadsPage> {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) => FileDetailsPage(file: file),
+                                            builder: (context) =>
+                                                FileDetailsPage(file: file),
                                           ),
                                         );
                                       },
                                       onMenuSelected: (action) {
                                         if (action == 'download') {
-                                          if (file.downloadStatus == 'stopped') {
+                                          if (file.downloadStatus ==
+                                              'stopped') {
                                             _handleResumeDownload(file);
                                           } else {
                                             _handleRemoveOffline(file);

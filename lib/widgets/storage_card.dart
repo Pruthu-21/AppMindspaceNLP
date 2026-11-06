@@ -5,10 +5,7 @@ import '../constants/mock_data.dart';
 class StorageCard extends StatelessWidget {
   final VoidCallback? onUpgradePressed;
 
-  const StorageCard({
-    super.key,
-    this.onUpgradePressed,
-  });
+  const StorageCard({super.key, this.onUpgradePressed});
 
   @override
   Widget build(BuildContext context) {
@@ -29,10 +26,7 @@ class StorageCard extends StatelessWidget {
                   AppColors.surfaceDark,
                   AppColors.surfaceDark.withValues(alpha: 0.8),
                 ]
-              : [
-                  Colors.white,
-                  Colors.white.withValues(alpha: 0.9),
-                ],
+              : [Colors.white, Colors.white.withValues(alpha: 0.9)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -68,13 +62,18 @@ class StorageCard extends StatelessWidget {
                   Text(
                     '${used.toStringAsFixed(1)} GB of ${total.toStringAsFixed(0)} GB used',
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
                     ),
                   ),
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -121,7 +120,9 @@ class StorageCard extends StatelessWidget {
                   Expanded(
                     flex: ((total - used) * 10).toInt(),
                     child: Container(
-                      color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.08)
+                          : Colors.black.withValues(alpha: 0.05),
                     ),
                   ),
                 ],
@@ -133,10 +134,30 @@ class StorageCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildCategoryDot(context, 'Documents', AppColors.primary, '${MockData.documentsGB} GB'),
-              _buildCategoryDot(context, 'Media', AppColors.accent, '${MockData.mediaGB} GB'),
-              _buildCategoryDot(context, 'Backups', AppColors.secondary, '${MockData.backupsGB} GB'),
-              _buildCategoryDot(context, 'Others', AppColors.warning, '${MockData.othersGB} GB'),
+              _buildCategoryDot(
+                context,
+                'Documents',
+                AppColors.primary,
+                '${MockData.documentsGB} GB',
+              ),
+              _buildCategoryDot(
+                context,
+                'Media',
+                AppColors.accent,
+                '${MockData.mediaGB} GB',
+              ),
+              _buildCategoryDot(
+                context,
+                'Backups',
+                AppColors.secondary,
+                '${MockData.backupsGB} GB',
+              ),
+              _buildCategoryDot(
+                context,
+                'Others',
+                AppColors.warning,
+                '${MockData.othersGB} GB',
+              ),
             ],
           ),
           if (onUpgradePressed != null) ...[
@@ -180,7 +201,9 @@ class StorageCard extends StatelessWidget {
                   Icon(
                     Icons.arrow_forward_ios_rounded,
                     size: 14,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
                   ),
                 ],
               ),
@@ -191,7 +214,12 @@ class StorageCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCategoryDot(BuildContext context, String title, Color color, String amount) {
+  Widget _buildCategoryDot(
+    BuildContext context,
+    String title,
+    Color color,
+    String amount,
+  ) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     return Column(
@@ -202,17 +230,16 @@ class StorageCard extends StatelessWidget {
             Container(
               width: 8,
               height: 8,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
             const SizedBox(width: 6),
             Text(
               title,
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontSize: 11,
-                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                color: isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondaryLight,
               ),
             ),
           ],

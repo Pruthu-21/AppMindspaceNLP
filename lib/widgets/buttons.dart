@@ -18,22 +18,24 @@ class PrimaryButton extends StatefulWidget {
   State<PrimaryButton> createState() => _PrimaryButtonState();
 }
 
-class _PrimaryButtonState extends State<PrimaryButton> with SingleTickerProviderStateMixin {
+class _PrimaryButtonState extends State<PrimaryButton>
+    with SingleTickerProviderStateMixin {
   double _scale = 1.0;
   late AnimationController _controller;
 
   @override
   void initState() {
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-      lowerBound: 0.95,
-      upperBound: 1.0,
-    )..addListener(() {
-        setState(() {
-          _scale = _controller.value;
+    _controller =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 100),
+          lowerBound: 0.95,
+          upperBound: 1.0,
+        )..addListener(() {
+          setState(() {
+            _scale = _controller.value;
+          });
         });
-      });
     super.initState();
   }
 
@@ -60,10 +62,7 @@ class _PrimaryButtonState extends State<PrimaryButton> with SingleTickerProvider
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             gradient: LinearGradient(
-              colors: [
-                theme.colorScheme.primary,
-                theme.colorScheme.secondary,
-              ],
+              colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -127,22 +126,24 @@ class SecondaryButton extends StatefulWidget {
   State<SecondaryButton> createState() => _SecondaryButtonState();
 }
 
-class _SecondaryButtonState extends State<SecondaryButton> with SingleTickerProviderStateMixin {
+class _SecondaryButtonState extends State<SecondaryButton>
+    with SingleTickerProviderStateMixin {
   double _scale = 1.0;
   late AnimationController _controller;
 
   @override
   void initState() {
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-      lowerBound: 0.96,
-      upperBound: 1.0,
-    )..addListener(() {
-        setState(() {
-          _scale = _controller.value;
+    _controller =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 100),
+          lowerBound: 0.96,
+          upperBound: 1.0,
+        )..addListener(() {
+          setState(() {
+            _scale = _controller.value;
+          });
         });
-      });
     super.initState();
   }
 
@@ -171,7 +172,9 @@ class _SecondaryButtonState extends State<SecondaryButton> with SingleTickerProv
             borderRadius: BorderRadius.circular(16),
             color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
             border: Border.all(
-              color: isDark ? Colors.white.withValues(alpha: 0.1) : theme.colorScheme.outline.withValues(alpha: 0.15),
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : theme.colorScheme.outline.withValues(alpha: 0.15),
               width: 1.5,
             ),
           ),
@@ -189,13 +192,19 @@ class _SecondaryButtonState extends State<SecondaryButton> with SingleTickerProv
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       if (widget.icon != null) ...[
-                        Icon(widget.icon, color: theme.colorScheme.primary, size: 20),
+                        Icon(
+                          widget.icon,
+                          color: theme.colorScheme.primary,
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                       ],
                       Text(
                         widget.text,
                         style: theme.textTheme.titleMedium?.copyWith(
-                          color: isDark ? Colors.white : theme.colorScheme.primary,
+                          color: isDark
+                              ? Colors.white
+                              : theme.colorScheme.primary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -226,22 +235,24 @@ class DangerButton extends StatefulWidget {
   State<DangerButton> createState() => _DangerButtonState();
 }
 
-class _DangerButtonState extends State<DangerButton> with SingleTickerProviderStateMixin {
+class _DangerButtonState extends State<DangerButton>
+    with SingleTickerProviderStateMixin {
   double _scale = 1.0;
   late AnimationController _controller;
 
   @override
   void initState() {
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-      lowerBound: 0.96,
-      upperBound: 1.0,
-    )..addListener(() {
-        setState(() {
-          _scale = _controller.value;
+    _controller =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 100),
+          lowerBound: 0.96,
+          upperBound: 1.0,
+        )..addListener(() {
+          setState(() {
+            _scale = _controller.value;
+          });
         });
-      });
     super.initState();
   }
 
@@ -270,7 +281,9 @@ class _DangerButtonState extends State<DangerButton> with SingleTickerProviderSt
           height: 56,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            color: isDark ? dangerColor.withValues(alpha: 0.08) : dangerColor.withValues(alpha: 0.04),
+            color: isDark
+                ? dangerColor.withValues(alpha: 0.08)
+                : dangerColor.withValues(alpha: 0.04),
             border: Border.all(
               color: dangerColor.withValues(alpha: 0.3),
               width: 1.5,
@@ -308,4 +321,3 @@ class _DangerButtonState extends State<DangerButton> with SingleTickerProviderSt
     );
   }
 }
-

@@ -164,8 +164,9 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final currentBg = Theme.of(context).scaffoldBackgroundColor;
-    final statusIconBrightness =
-        isDarkMode ? Brightness.light : Brightness.dark;
+    final statusIconBrightness = isDarkMode
+        ? Brightness.light
+        : Brightness.dark;
     final statusBrightness = isDarkMode ? Brightness.dark : Brightness.light;
 
     return PopScope(

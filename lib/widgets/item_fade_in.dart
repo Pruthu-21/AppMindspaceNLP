@@ -14,7 +14,8 @@ class ItemFadeIn extends StatefulWidget {
   State<ItemFadeIn> createState() => _ItemFadeInState();
 }
 
-class _ItemFadeInState extends State<ItemFadeIn> with SingleTickerProviderStateMixin {
+class _ItemFadeInState extends State<ItemFadeIn>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
@@ -22,10 +23,10 @@ class _ItemFadeInState extends State<ItemFadeIn> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this, duration: widget.duration);
-    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    ));
+    _animation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
     _controller.forward();
   }
 
@@ -37,9 +38,6 @@ class _ItemFadeInState extends State<ItemFadeIn> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _animation,
-      child: widget.child,
-    );
+    return FadeTransition(opacity: _animation, child: widget.child);
   }
 }

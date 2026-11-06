@@ -43,9 +43,9 @@ class _MessagesPageState extends State<MessagesPage> {
     }
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not open $urlString')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not open $urlString')));
       }
     }
   }
@@ -124,8 +124,14 @@ class _MessagesPageState extends State<MessagesPage> {
                           if (!outerContext.mounted) return;
                           ScaffoldMessenger.of(outerContext).showSnackBar(
                             SnackBar(
-                              content: Text(success ? 'Issue reported successfully!' : 'Failed to report issue'),
-                              backgroundColor: success ? Colors.green : Colors.red,
+                              content: Text(
+                                success
+                                    ? 'Issue reported successfully!'
+                                    : 'Failed to report issue',
+                              ),
+                              backgroundColor: success
+                                  ? Colors.green
+                                  : Colors.red,
                             ),
                           );
                         },
@@ -133,7 +139,7 @@ class _MessagesPageState extends State<MessagesPage> {
                       ),
               ],
             );
-          }
+          },
         );
       },
     ).then((_) {
@@ -143,11 +149,9 @@ class _MessagesPageState extends State<MessagesPage> {
   }
 
   @override
-    Widget build(BuildContext context) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Messages'),
-      ),
+      appBar: AppBar(title: const Text('Messages')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showReportIssueDialog,
         icon: const Icon(Icons.bug_report),
@@ -185,7 +189,8 @@ class _MessagesPageState extends State<MessagesPage> {
                       ),
                       const SizedBox(height: 8),
                       LinkifiedText(text: msg.body, onLaunch: _launchUrl),
-                      if (msg.attachmentUrl != null && msg.attachmentUrl!.isNotEmpty) ...[
+                      if (msg.attachmentUrl != null &&
+                          msg.attachmentUrl!.isNotEmpty) ...[
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
                           onPressed: () => _launchUrl(msg.attachmentUrl!),
@@ -196,7 +201,10 @@ class _MessagesPageState extends State<MessagesPage> {
                       const SizedBox(height: 12),
                       Text(
                         '${msg.createdAt.year}-${msg.createdAt.month.toString().padLeft(2, '0')}-${msg.createdAt.day.toString().padLeft(2, '0')}',
-                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -239,9 +247,12 @@ class _LinkifiedTextState extends State<LinkifiedText> {
 
   void _parseText() {
     _spans.clear();
-    final RegExp urlRegex = RegExp(r'(https?:\/\/[^\s]+)', caseSensitive: false);
+    final RegExp urlRegex = RegExp(
+      r'(https?:\/\/[^\s]+)',
+      caseSensitive: false,
+    );
     final matches = urlRegex.allMatches(widget.text);
-    
+
     int currentPosition = 0;
     for (final match in matches) {
       if (match.start > currentPosition) {
@@ -250,7 +261,7 @@ class _LinkifiedTextState extends State<LinkifiedText> {
       _spans.add(Uri.parse(match.group(0)!));
       currentPosition = match.end;
     }
-    
+
     if (currentPosition < widget.text.length) {
       _spans.add(widget.text.substring(currentPosition));
     }
@@ -262,7 +273,10 @@ class _LinkifiedTextState extends State<LinkifiedText> {
       TextSpan(
         children: _spans.map((span) {
           if (span is String) {
-            return TextSpan(text: span, style: DefaultTextStyle.of(context).style);
+            return TextSpan(
+              text: span,
+              style: DefaultTextStyle.of(context).style,
+            );
           } else if (span is Uri) {
             final urlString = span.toString();
             return WidgetSpan(

@@ -26,6 +26,8 @@ import '../../services/recent_service.dart';
 import '../../services/message_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'messages_page.dart';
+import '../../widgets/expandable_fab_menu.dart';
+import '../features/spiritual_places/screens/spiritual_places_map_screen.dart';
 
 List<Map<String, dynamic>> parseFileListResponse(String responseBody) {
   try {
@@ -71,6 +73,7 @@ class _HomePageState extends State<HomePage> {
   List<FileModel> _sharedWithMeFiles = [];
   bool _isLoading = false;
   bool _isOffline = false;
+  bool _isFabMenuOpen = false;
 
   bool _isSelectionMode = false;
   final Set<String> _selectedFileIds = {};
@@ -92,6 +95,7 @@ class _HomePageState extends State<HomePage> {
   void _enterSelectionMode(FileModel file) {
     if (!RoleManager.isAdmin) return;
     setState(() {
+      _isFabMenuOpen = false;
       _isSelectionMode = true;
       _selectedFileIds.add(file.id);
       NavigationShell.hideBottomNavNotifier.value = true;
@@ -100,6 +104,7 @@ class _HomePageState extends State<HomePage> {
 
   void _clearSelection() {
     setState(() {
+      _isFabMenuOpen = false;
       _isSelectionMode = false;
       _selectedFileIds.clear();
       NavigationShell.hideBottomNavNotifier.value = false;
@@ -119,29 +124,53 @@ class _HomePageState extends State<HomePage> {
 
   Future<List<FileModel>> _parseFileList(String responseBody) async {
     try {
-      final List<Map<String, dynamic>> data = await compute(parseFileListResponse, responseBody);
+      final List<Map<String, dynamic>> data = await compute(
+        parseFileListResponse,
+        responseBody,
+      );
 
       return data.map((item) {
-        final isFolder = item['is_folder'] == true || item['mime_type'] == 'folder' || item['type'] == 'folder';
-        final String name = (item['name'] ?? item['title'] ?? 'Untitled').toString();
+        final isFolder =
+            item['is_folder'] == true ||
+            item['mime_type'] == 'folder' ||
+            item['type'] == 'folder';
+        final String name = (item['name'] ?? item['title'] ?? 'Untitled')
+            .toString();
         final mime = (item['mime_type'] ?? item['type'] ?? '').toString();
         final format = FileModel.detectFormat(name, mime, isFolder);
 
-        String? fileUrl = (item['url'] ?? item['file_url'] ?? item['download_url'] ?? item['path'] ?? item['link'])?.toString();
+        String? fileUrl =
+            (item['url'] ??
+                    item['file_url'] ??
+                    item['download_url'] ??
+                    item['path'] ??
+                    item['link'])
+                ?.toString();
         if (fileUrl != null && fileUrl.isNotEmpty) {
-          if (!fileUrl.startsWith('http://') && !fileUrl.startsWith('https://')) {
+          if (!fileUrl.startsWith('http://') &&
+              !fileUrl.startsWith('https://')) {
             if (!fileUrl.startsWith('/')) fileUrl = '/$fileUrl';
-            if (!fileUrl.startsWith('/storage/') && fileUrl.startsWith('/drive/')) {
+            if (!fileUrl.startsWith('/storage/') &&
+                fileUrl.startsWith('/drive/')) {
               fileUrl = '/storage$fileUrl';
             }
             fileUrl = 'https://mindspacenlp.com$fileUrl';
           }
         }
 
-        final owner = (item['owner'] ?? item['owner_name'] ?? item['uploaded_by'] ?? 'Unknown').toString();
+        final owner =
+            (item['owner'] ??
+                    item['owner_name'] ??
+                    item['uploaded_by'] ??
+                    'Unknown')
+                .toString();
 
         final customSize = (item['size'] ?? item['file_size'])?.toString();
-        final rawBytes = item['size_bytes'] ?? item['bytes'] ?? item['file_size_bytes'] ?? item['size_in_bytes'];
+        final rawBytes =
+            item['size_bytes'] ??
+            item['bytes'] ??
+            item['file_size_bytes'] ??
+            item['size_in_bytes'];
         int parsedBytes = 0;
         if (rawBytes != null) {
           parsedBytes = int.tryParse(rawBytes.toString()) ?? 0;
@@ -151,12 +180,20 @@ class _HomePageState extends State<HomePage> {
         }
 
         return FileModel(
-          id: (item['id'] ?? item['_id'] ?? DateTime.now().millisecondsSinceEpoch).toString(),
+          id:
+              (item['id'] ??
+                      item['_id'] ??
+                      DateTime.now().millisecondsSinceEpoch)
+                  .toString(),
           name: name,
           format: format,
           sizeBytes: parsedBytes,
           customSizeString: customSize,
-          uploadDate: DateTime.tryParse((item['created_at'] ?? item['uploaded_at'] ?? '').toString()) ?? DateTime.now(),
+          uploadDate:
+              DateTime.tryParse(
+                (item['created_at'] ?? item['uploaded_at'] ?? '').toString(),
+              ) ??
+              DateTime.now(),
           ownerName: owner,
           previewUrl: fileUrl,
         );
@@ -169,11 +206,17 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _fetchSharedFiles() async {
-    if (AuthManager.token == null || AuthManager.token!.startsWith('google_token_')) {
+    if (AuthManager.token == null ||
+        AuthManager.token!.startsWith('google_token_')) {
       if (mounted) {
-        AppToast.showError(context, 'Login incomplete — could not get session token. Please log out and sign in again.');
+        AppToast.showError(
+          context,
+          'Login incomplete — could not get session token. Please log out and sign in again.',
+        );
       }
-      setState(() { _isLoading = false; });
+      setState(() {
+        _isLoading = false;
+      });
       return;
     }
 
@@ -192,20 +235,32 @@ class _HomePageState extends State<HomePage> {
       bool sharedFailed = false;
 
       final results = await Future.wait([
-        http.get(
-          Uri.parse('https://mindspacenlp.com/api/drive/my-drive'),
-          headers: {'Authorization': 'Bearer ${AuthManager.token}', 'Accept': 'application/json'},
-        ).timeout(const Duration(seconds: 10)).catchError((e) {
-          debugPrint(e.toString());
-          return http.Response('', 500);
-        }),
-        http.get(
-          Uri.parse('https://mindspacenlp.com/api/drive/shared-with-me'),
-          headers: {'Authorization': 'Bearer ${AuthManager.token}', 'Accept': 'application/json'},
-        ).timeout(const Duration(seconds: 10)).catchError((e) {
-          debugPrint(e.toString());
-          return http.Response('', 500);
-        }),
+        http
+            .get(
+              Uri.parse('https://mindspacenlp.com/api/drive/my-drive'),
+              headers: {
+                'Authorization': 'Bearer ${AuthManager.token}',
+                'Accept': 'application/json',
+              },
+            )
+            .timeout(const Duration(seconds: 10))
+            .catchError((e) {
+              debugPrint(e.toString());
+              return http.Response('', 500);
+            }),
+        http
+            .get(
+              Uri.parse('https://mindspacenlp.com/api/drive/shared-with-me'),
+              headers: {
+                'Authorization': 'Bearer ${AuthManager.token}',
+                'Accept': 'application/json',
+              },
+            )
+            .timeout(const Duration(seconds: 10))
+            .catchError((e) {
+              debugPrint(e.toString());
+              return http.Response('', 500);
+            }),
       ]);
 
       final resMy = results[0];
@@ -234,18 +289,25 @@ class _HomePageState extends State<HomePage> {
           MockData.files.addAll(offlineFiles);
           _filteredMyDriveFiles = List<FileModel>.from(_myDriveFiles);
           _filteredSharedWithMeFiles = List<FileModel>.from(_sharedWithMeFiles);
-          _cachedFolders = _filteredMyDriveFiles.where((f) => f.isFolder).toList();
-          _cachedFilesOnly = _filteredMyDriveFiles.where((f) => !f.isFolder).toList();
+          _cachedFolders = _filteredMyDriveFiles
+              .where((f) => f.isFolder)
+              .toList();
+          _cachedFilesOnly = _filteredMyDriveFiles
+              .where((f) => !f.isFolder)
+              .toList();
           _isLoading = false;
           _isOffline = true;
         });
         return;
       } else if (myDriveFailed || sharedFailed) {
-        if (mounted) AppToast.showError(context, 'Some data could not be loaded');
+        if (mounted)
+          AppToast.showError(context, 'Some data could not be loaded');
       }
 
-       final sharedIds = shared.map((s) => s.id).toSet();
-      final cleanMyDrive = myDrive.where((f) => !sharedIds.contains(f.id)).toList();
+      final sharedIds = shared.map((s) => s.id).toSet();
+      final cleanMyDrive = myDrive
+          .where((f) => !sharedIds.contains(f.id))
+          .toList();
 
       Future<List<FileModel>> updateOfflineStatus(List<FileModel> list) async {
         debugPrint('MSNLP_HOME | OFFLINE_SCAN started');
@@ -254,26 +316,32 @@ class _HomePageState extends State<HomePage> {
         for (var file in list) {
           final isDl = downloadedNames.contains(file.name);
           if (isDl) {
-            debugPrint('MSNLP_HOME | FILE_DETECTED fileId=${file.id} exists=true');
+            debugPrint(
+              'MSNLP_HOME | FILE_DETECTED fileId=${file.id} exists=true',
+            );
             final localPath = await DownloadService.getLocalFilePath(file.name);
-            updated.add(FileModel(
-              id: file.id,
-              name: file.name,
-              format: file.format,
-              sizeBytes: file.sizeBytes,
-              customSizeString: file.customSizeString,
-              uploadDate: file.uploadDate,
-              ownerName: file.ownerName,
-              isPinned: file.isPinned,
-              isFavorite: file.isFavorite,
-              isDownloaded: true,
-              previewUrl: localPath ?? file.previewUrl,
-            ));
+            updated.add(
+              FileModel(
+                id: file.id,
+                name: file.name,
+                format: file.format,
+                sizeBytes: file.sizeBytes,
+                customSizeString: file.customSizeString,
+                uploadDate: file.uploadDate,
+                ownerName: file.ownerName,
+                isPinned: file.isPinned,
+                isFavorite: file.isFavorite,
+                isDownloaded: true,
+                previewUrl: localPath ?? file.previewUrl,
+              ),
+            );
           } else {
             updated.add(file);
           }
         }
-        debugPrint('MSNLP_HOME | OFFLINE_SCAN filesFound=${updated.where((f) => f.isDownloaded).length}');
+        debugPrint(
+          'MSNLP_HOME | OFFLINE_SCAN filesFound=${updated.where((f) => f.isDownloaded).length}',
+        );
         return updated;
       }
 
@@ -292,7 +360,6 @@ class _HomePageState extends State<HomePage> {
         _isLoading = false;
         _isOffline = false;
       });
-
     } catch (e) {
       debugPrint('MSNLP_HOME | unexpected error: $e');
     }
@@ -315,17 +382,73 @@ class _HomePageState extends State<HomePage> {
           myDrive = myDrive.where((f) => f.isFolder).toList();
           shared = shared.where((f) => f.isFolder).toList();
         } else if (_activeCategoryFilter == 'PDFs') {
-          myDrive = myDrive.where((f) => f.format.toLowerCase() == 'pdf').toList();
-          shared = shared.where((f) => f.format.toLowerCase() == 'pdf').toList();
+          myDrive = myDrive
+              .where((f) => f.format.toLowerCase() == 'pdf')
+              .toList();
+          shared = shared
+              .where((f) => f.format.toLowerCase() == 'pdf')
+              .toList();
         } else if (_activeCategoryFilter == 'Images') {
-          myDrive = myDrive.where((f) => ['png', 'jpg', 'jpeg', 'gif', 'webp', 'image'].contains(f.format.toLowerCase())).toList();
-          shared = shared.where((f) => ['png', 'jpg', 'jpeg', 'gif', 'webp', 'image'].contains(f.format.toLowerCase())).toList();
+          myDrive = myDrive
+              .where(
+                (f) => [
+                  'png',
+                  'jpg',
+                  'jpeg',
+                  'gif',
+                  'webp',
+                  'image',
+                ].contains(f.format.toLowerCase()),
+              )
+              .toList();
+          shared = shared
+              .where(
+                (f) => [
+                  'png',
+                  'jpg',
+                  'jpeg',
+                  'gif',
+                  'webp',
+                  'image',
+                ].contains(f.format.toLowerCase()),
+              )
+              .toList();
         } else if (_activeCategoryFilter == 'Videos') {
-          myDrive = myDrive.where((f) => ['mp4', 'video', 'mov'].contains(f.format.toLowerCase())).toList();
-          shared = shared.where((f) => ['mp4', 'video', 'mov'].contains(f.format.toLowerCase())).toList();
+          myDrive = myDrive
+              .where(
+                (f) => ['mp4', 'video', 'mov'].contains(f.format.toLowerCase()),
+              )
+              .toList();
+          shared = shared
+              .where(
+                (f) => ['mp4', 'video', 'mov'].contains(f.format.toLowerCase()),
+              )
+              .toList();
         } else if (_activeCategoryFilter == 'Docs') {
-          myDrive = myDrive.where((f) => ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].contains(f.format.toLowerCase())).toList();
-          shared = shared.where((f) => ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].contains(f.format.toLowerCase())).toList();
+          myDrive = myDrive
+              .where(
+                (f) => [
+                  'doc',
+                  'docx',
+                  'ppt',
+                  'pptx',
+                  'xls',
+                  'xlsx',
+                ].contains(f.format.toLowerCase()),
+              )
+              .toList();
+          shared = shared
+              .where(
+                (f) => [
+                  'doc',
+                  'docx',
+                  'ppt',
+                  'pptx',
+                  'xls',
+                  'xlsx',
+                ].contains(f.format.toLowerCase()),
+              )
+              .toList();
         }
       }
 
@@ -340,11 +463,19 @@ class _HomePageState extends State<HomePage> {
 
       // Apply sorting
       if (_sortBy == 'Name') {
-        _filteredMyDriveFiles.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-        _filteredSharedWithMeFiles.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        _filteredMyDriveFiles.sort(
+          (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+        );
+        _filteredSharedWithMeFiles.sort(
+          (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+        );
       } else if (_sortBy == 'Size') {
-        _filteredMyDriveFiles.sort((a, b) => b.sizeBytes.compareTo(a.sizeBytes));
-        _filteredSharedWithMeFiles.sort((a, b) => b.sizeBytes.compareTo(a.sizeBytes));
+        _filteredMyDriveFiles.sort(
+          (a, b) => b.sizeBytes.compareTo(a.sizeBytes),
+        );
+        _filteredSharedWithMeFiles.sort(
+          (a, b) => b.sizeBytes.compareTo(a.sizeBytes),
+        );
       } else {
         // Default sort: Favorites to top
         _filteredMyDriveFiles.sort((a, b) {
@@ -376,7 +507,9 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.surfaceDark : Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -395,33 +528,53 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 20),
                   Text(
                     'Filter & Sort Files',
-                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 16),
-                  Text('Filter by Type', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                  Text(
+                    'Filter by Type',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: ['All', 'Folders', 'PDFs', 'Images', 'Videos', 'Docs'].map((cat) {
-                      final isSelected = _activeCategoryFilter == cat;
-                      return ChoiceChip(
-                        label: Text(cat),
-                        selected: isSelected,
-                        onSelected: (val) {
-                          if (val) {
-                            setState(() {
-                              _activeCategoryFilter = cat;
-                              _onSearchChanged(_searchQuery);
-                            });
-                            setSheetState(() {});
-                          }
-                        },
-                      );
-                    }).toList(),
+                    children:
+                        [
+                          'All',
+                          'Folders',
+                          'PDFs',
+                          'Images',
+                          'Videos',
+                          'Docs',
+                        ].map((cat) {
+                          final isSelected = _activeCategoryFilter == cat;
+                          return ChoiceChip(
+                            label: Text(cat),
+                            selected: isSelected,
+                            onSelected: (val) {
+                              if (val) {
+                                setState(() {
+                                  _activeCategoryFilter = cat;
+                                  _onSearchChanged(_searchQuery);
+                                });
+                                setSheetState(() {});
+                              }
+                            },
+                          );
+                        }).toList(),
                   ),
                   const SizedBox(height: 16),
-                  Text('Sort by', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                  Text(
+                    'Sort by',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -445,7 +598,10 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Apply Filter', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'Apply Filter',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
@@ -457,7 +613,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _handleRealFileUpload() async {
-    if (AuthManager.token == null || AuthManager.token!.startsWith('google_token_')) {
+    if (AuthManager.token == null ||
+        AuthManager.token!.startsWith('google_token_')) {
       AppToast.showError(context, 'Please sign in to upload files.');
       return;
     }
@@ -469,18 +626,32 @@ class _HomePageState extends State<HomePage> {
       );
 
       if (result != null && result.files.isNotEmpty) {
-        if (mounted) AppToast.showInfo(context, 'Uploading ${result.files.length} file(s)...');
+        if (mounted)
+          AppToast.showInfo(
+            context,
+            'Uploading ${result.files.length} file(s)...',
+          );
 
-        final uri = Uri.parse('https://mindspacenlp.com/api/admin/drive/upload');
+        final uri = Uri.parse(
+          'https://mindspacenlp.com/api/admin/drive/upload',
+        );
         final request = http.MultipartRequest('POST', uri);
         request.headers['Authorization'] = 'Bearer ${AuthManager.token}';
         request.headers['Accept'] = 'application/json';
 
         for (var picked in result.files) {
           if (picked.path != null) {
-            request.files.add(await http.MultipartFile.fromPath('files[]', picked.path!));
+            request.files.add(
+              await http.MultipartFile.fromPath('files[]', picked.path!),
+            );
           } else if (picked.bytes != null) {
-            request.files.add(http.MultipartFile.fromBytes('files[]', picked.bytes!, filename: picked.name));
+            request.files.add(
+              http.MultipartFile.fromBytes(
+                'files[]',
+                picked.bytes!,
+                filename: picked.name,
+              ),
+            );
           }
         }
 
@@ -488,14 +659,20 @@ class _HomePageState extends State<HomePage> {
         final response = await http.Response.fromStream(streamedResponse);
 
         if (response.statusCode == 200 || response.statusCode == 201) {
-          if (mounted) AppToast.showSuccess(context, 'File(s) uploaded successfully!');
+          if (mounted)
+            AppToast.showSuccess(context, 'File(s) uploaded successfully!');
           await _fetchSharedFiles();
         } else {
-          if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
+          if (mounted)
+            AppToast.showError(
+              context,
+              ErrorHelper.getFriendlyMessage(null, response.statusCode),
+            );
         }
       }
     } catch (e) {
-      if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
+      if (mounted)
+        AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
     }
   }
 
@@ -534,7 +711,9 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 24),
               Text(
                 'Create New',
-                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 20),
               Row(
@@ -581,25 +760,34 @@ class _HomePageState extends State<HomePage> {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
           },
-          body: jsonEncode({
-            'name': folderName,
-          }),
+          body: jsonEncode({'name': folderName}),
         );
 
         if (response.statusCode == 200 || response.statusCode == 201) {
-          if (mounted) AppToast.showSuccess(context, 'Folder "$folderName" created!');
+          if (mounted)
+            AppToast.showSuccess(context, 'Folder "$folderName" created!');
           await _fetchSharedFiles();
         } else {
-          if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
+          if (mounted)
+            AppToast.showError(
+              context,
+              ErrorHelper.getFriendlyMessage(null, response.statusCode),
+            );
         }
       } catch (e) {
-        if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
+        if (mounted)
+          AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
       }
     }
   }
 
   Widget _buildSheetItem(
-      BuildContext context, IconData icon, String label, Color color, VoidCallback onTap) {
+    BuildContext context,
+    IconData icon,
+    String label,
+    Color color,
+    VoidCallback onTap,
+  ) {
     final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
@@ -632,9 +820,7 @@ class _HomePageState extends State<HomePage> {
     if (_isLoading) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 60),
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
+        child: Center(child: CircularProgressIndicator()),
       );
     }
     if (_isOffline) {
@@ -676,14 +862,16 @@ class _HomePageState extends State<HomePage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.colorScheme.primary,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ],
         ),
       );
     }
-    
+
     // Data not found / Empty state
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 16),
@@ -741,472 +929,672 @@ class _HomePageState extends State<HomePage> {
         final isAdmin = currentRole == AppRole.admin;
 
         return PopScope(
-          canPop: !_isSelectionMode,
+          canPop: !_isSelectionMode && !_isFabMenuOpen,
           onPopInvokedWithResult: (didPop, result) {
+            if (_isFabMenuOpen) {
+              setState(() {
+                _isFabMenuOpen = false;
+              });
+              return;
+            }
             if (_isSelectionMode) {
               _clearSelection();
             }
           },
           child: Scaffold(
-          body: SafeArea(
-            child: RefreshIndicator(
-              onRefresh: () async {
-                await _fetchSharedFiles();
-              },
-              child: ListView(
-                physics: const BouncingScrollPhysics(),
-                padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.paddingOf(context).bottom + 160), // Extra bottom padding so FAB never overlaps file cards
-                children: [
-                  // Greeting Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${LanguageNotifier.translate('hello')}, ${AuthManager.currentUser?.name.split(' ').first ?? 'Guest'}',
-                            style: theme.textTheme.headlineMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
+            body: Stack(
+              children: [
+                SafeArea(
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      await _fetchSharedFiles();
+                    },
+                    child: ListView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        16,
+                        16,
+                        MediaQuery.paddingOf(context).bottom + 160,
+                      ), // Extra bottom padding so FAB never overlaps file cards
+                      children: [
+                        // Greeting Header
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${LanguageNotifier.translate('hello')}, ${AuthManager.currentUser?.name.split(' ').first ?? 'Guest'}',
+                                  style: theme.textTheme.headlineMedium
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  isAdmin
+                                      ? LanguageNotifier.translate(
+                                          'admin_dashboard',
+                                        )
+                                      : LanguageNotifier.translate(
+                                          'manage_space',
+                                        ),
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            isAdmin 
-                                ? LanguageNotifier.translate('admin_dashboard') 
-                                : LanguageNotifier.translate('manage_space'),
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          ValueListenableBuilder<bool>(
-                            valueListenable: DownloadService.isDownloadingNotifier,
-                            builder: (context, isDl, child) {
-                              if (!isDl) return const SizedBox.shrink();
-                              return ValueListenableBuilder<String?>(
-                                valueListenable: DownloadService.currentDownloadingFileNameNotifier,
-                                builder: (context, fileName, child) {
-                                  return Container(
-                                    margin: const EdgeInsets.only(right: 8),
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primary.withValues(alpha: 0.18),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const SizedBox(
-                                          width: 14,
-                                          height: 14,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                            Row(
+                              children: [
+                                ValueListenableBuilder<bool>(
+                                  valueListenable:
+                                      DownloadService.isDownloadingNotifier,
+                                  builder: (context, isDl, child) {
+                                    if (!isDl) return const SizedBox.shrink();
+                                    return ValueListenableBuilder<String?>(
+                                      valueListenable: DownloadService
+                                          .currentDownloadingFileNameNotifier,
+                                      builder: (context, fileName, child) {
+                                        return Container(
+                                          margin: const EdgeInsets.only(
+                                            right: 8,
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primary.withValues(
+                                              alpha: 0.18,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                            border: Border.all(
+                                              color: AppColors.primary
+                                                  .withValues(alpha: 0.4),
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const SizedBox(
+                                                width: 14,
+                                                height: 14,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation<
+                                                        Color
+                                                      >(AppColors.primary),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              ValueListenableBuilder<double>(
+                                                valueListenable:
+                                                    DownloadService.getProgressNotifierFor(
+                                                      fileName ?? '',
+                                                    ),
+                                                builder:
+                                                    (context, progress, child) {
+                                                      final pct =
+                                                          (progress * 100)
+                                                              .toStringAsFixed(
+                                                                1,
+                                                              );
+                                                      final label = progress > 0
+                                                          ? 'Saving $pct%'
+                                                          : 'Saving...';
+                                                      return Text(
+                                                        label,
+                                                        style: TextStyle(
+                                                          fontSize: 11,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: isDark
+                                                              ? Colors.white
+                                                              : Colors.black87,
+                                                        ),
+                                                      );
+                                                    },
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                                ValueListenableBuilder<bool>(
+                                  valueListenable:
+                                      DownloadService.isDownloadingNotifier,
+                                  builder: (context, isDl, child) {
+                                    if (isDl) return const SizedBox.shrink();
+                                    return ValueListenableBuilder<bool>(
+                                      valueListenable:
+                                          MessageService.hasUnreadMessages,
+                                      builder: (context, hasUnread, child) {
+                                        return IconButton(
+                                          tooltip: 'Notifications',
+                                          icon: Badge(
+                                            isLabelVisible: hasUnread,
+                                            backgroundColor: Colors.red,
+                                            child: const Icon(
+                                              Icons.notifications_rounded,
+                                              size: 28,
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            if (AuthManager.token != null) {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) => MessagesPage(
+                                                    userToken:
+                                                        AuthManager.token!,
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                                const SizedBox(width: 8),
+                                Tooltip(
+                                  message: 'Profile',
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      NavigationShell.navigationNotifier.value =
+                                          4; // Navigate to Profile Tab
+                                    },
+                                    child: Container(
+                                      width: 48,
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: const LinearGradient(
+                                          colors: [
+                                            AppColors.primary,
+                                            AppColors.secondary,
+                                          ],
+                                        ),
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          AuthManager.currentUser?.initials ??
+                                              'MS',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
                                           ),
                                         ),
-                                        const SizedBox(width: 6),
-                                        ValueListenableBuilder<double>(
-                                          valueListenable: DownloadService.getProgressNotifierFor(fileName ?? ''),
-                                          builder: (context, progress, child) {
-                                            final pct = (progress * 100).toStringAsFixed(1);
-                                            final label = progress > 0 ? 'Saving $pct%' : 'Saving...';
-                                            return Text(
-                                              label,
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                                color: isDark ? Colors.white : Colors.black87,
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ],
+                                      ),
                                     ),
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                          ValueListenableBuilder<bool>(
-                            valueListenable: DownloadService.isDownloadingNotifier,
-                            builder: (context, isDl, child) {
-                              if (isDl) return const SizedBox.shrink();
-                              return ValueListenableBuilder<bool>(
-                                valueListenable: MessageService.hasUnreadMessages,
-                                builder: (context, hasUnread, child) {
-                                  return IconButton(
-                                    tooltip: 'Notifications',
-                                    icon: Badge(
-                                      isLabelVisible: hasUnread,
-                                      backgroundColor: Colors.red,
-                                      child: const Icon(Icons.notifications_rounded, size: 28),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Search Bar
+                        SearchBarWidget(
+                          hintText: 'Search files and folders',
+                          onChanged: _onSearchChanged,
+                          onFilterPressed: () => _showFilterSheet(context),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Recents Section (On top of Home Page)
+                        if (_recentFiles.isNotEmpty) ...[
+                          const SectionHeader(title: 'Recent Files'),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: MediaQuery.textScalerOf(context).scale(110),
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: _recentFiles.length,
+                              itemBuilder: (context, index) {
+                                final file = _recentFiles[index];
+                                return Container(
+                                  width: 140,
+                                  margin: const EdgeInsets.only(right: 12),
+                                  child: FileCard(
+                                    file: file,
+                                    isGrid: true,
+                                    isSelectionMode: _isSelectionMode,
+                                    isSelected: _selectedFileIds.contains(
+                                      file.id,
                                     ),
-                                    onPressed: () {
-                                      if (AuthManager.token != null) {
+                                    onLongPress: () =>
+                                        _enterSelectionMode(file),
+                                    onTap: () {
+                                      if (_isSelectionMode) {
+                                        _toggleSelection(file);
+                                      } else {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (_) => MessagesPage(userToken: AuthManager.token!),
+                                            builder: (context) =>
+                                                FileDetailsPage(file: file),
                                           ),
                                         );
                                       }
                                     },
-                                  );
-                                },
-                              );
-                            },
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                          const SizedBox(width: 8),
-                          Tooltip(
-                            message: 'Profile',
-                            child: GestureDetector(
-                              onTap: () {
-                              NavigationShell.navigationNotifier.value = 4; // Navigate to Profile Tab
-                            },
-                            child: Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: const LinearGradient(
-                                  colors: [AppColors.primary, AppColors.secondary],
-                                ),
-                                border: Border.all(color: Colors.white, width: 2),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  AuthManager.currentUser?.initials ?? 'MS',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
+                          const SizedBox(height: 24),
+                        ],
+
+                        // Quick Actions (Admin Only)
+                        if (isAdmin) ...[
+                          const SectionHeader(title: 'Quick Actions'),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () => _showUploadBottomSheet(context),
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: theme.colorScheme.primary
+                                          .withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: theme.colorScheme.primary
+                                            .withValues(alpha: 0.15),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.add_rounded,
+                                          color: theme.colorScheme.primary,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Add File',
+                                          style: TextStyle(
+                                            color: theme.colorScheme.primary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ),),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: InkWell(
+                                  onTap: _showCreateFolderDialog,
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isDark
+                                          ? AppColors.surfaceDark
+                                          : Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: isDark
+                                            ? AppColors.dividerDark
+                                            : AppColors.dividerLight,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.folder_open_rounded,
+                                          color: isDark
+                                              ? Colors.white60
+                                              : Colors.black54,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'New Folder',
+                                          style: TextStyle(
+                                            color: isDark
+                                                ? Colors.white70
+                                                : Colors.black87,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
                         ],
+
+                        // My Uploaded Files Section (Admin Only)
+                        if (isAdmin &&
+                            (filesOnly.isNotEmpty || folders.isNotEmpty)) ...[
+                          SectionHeader(
+                            title: 'My Uploaded Files',
+                            trailing: IconButton(
+                              icon: Icon(
+                                _isGridView
+                                    ? Icons.view_list_rounded
+                                    : Icons.grid_view_rounded,
+                                size: 20,
+                                color: theme.colorScheme.primary,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isGridView = !_isGridView;
+                                });
+                              },
+                            ),
+                          ),
+                          if (folders.isNotEmpty) ...[
+                            _isGridView
+                                ? GridView.builder(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: folders.length,
+                                    gridDelegate:
+                                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                                          maxCrossAxisExtent: 180,
+                                          crossAxisSpacing: 12,
+                                          mainAxisSpacing: 12,
+                                          childAspectRatio: 1.5,
+                                        ),
+                                    itemBuilder: (context, index) {
+                                      final folder = folders[index];
+                                      return RepaintBoundary(
+                                        child: FileCard(
+                                          file: folder,
+                                          isGrid: true,
+                                          isSelectionMode: _isSelectionMode,
+                                          isSelected: _selectedFileIds.contains(
+                                            folder.id,
+                                          ),
+                                          onLongPress: () =>
+                                              _enterSelectionMode(folder),
+                                          onTap: () {
+                                            if (_isSelectionMode) {
+                                              _toggleSelection(folder);
+                                            } else {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      FolderViewPage(
+                                                        folder: folder,
+                                                      ),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : ListView.builder(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: folders.length,
+                                    itemBuilder: (context, index) {
+                                      final folder = folders[index];
+                                      return RepaintBoundary(
+                                        child: FileCard(
+                                          file: folder,
+                                          isGrid: false,
+                                          isSelectionMode: _isSelectionMode,
+                                          isSelected: _selectedFileIds.contains(
+                                            folder.id,
+                                          ),
+                                          onLongPress: () =>
+                                              _enterSelectionMode(folder),
+                                          onTap: () {
+                                            if (_isSelectionMode) {
+                                              _toggleSelection(folder);
+                                            } else {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      FolderViewPage(
+                                                        folder: folder,
+                                                      ),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                        ),
+                                      );
+                                    },
+                                  ),
+                            const SizedBox(height: 16),
+                          ],
+                          if (filesOnly.isNotEmpty) ...[
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: filesOnly.length,
+                              itemBuilder: (context, index) {
+                                final file = filesOnly[index];
+                                return RepaintBoundary(
+                                  child: FileCard(
+                                    file: file,
+                                    isGrid: false,
+                                    isSelectionMode: _isSelectionMode,
+                                    isSelected: _selectedFileIds.contains(
+                                      file.id,
+                                    ),
+                                    onLongPress: () =>
+                                        _enterSelectionMode(file),
+                                    onTap: () {
+                                      if (_isSelectionMode) {
+                                        _toggleSelection(file);
+                                      } else {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                FileDetailsPage(file: file),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    onMenuSelected: (action) {
+                                      _handleFileAction(file, action);
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                          const SizedBox(height: 24),
+                        ],
+
+                        // Shared With Me Section (For all users / admins)
+                        if (_filteredSharedWithMeFiles.isNotEmpty) ...[
+                          const SectionHeader(title: 'Shared With Me'),
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _filteredSharedWithMeFiles.length,
+                            itemBuilder: (context, index) {
+                              final file = _filteredSharedWithMeFiles[index];
+                              return RepaintBoundary(
+                                child: FileCard(
+                                  file: file,
+                                  isGrid: false,
+                                  isSelectionMode: _isSelectionMode,
+                                  isSelected: _selectedFileIds.contains(
+                                    file.id,
+                                  ),
+                                  onLongPress: () => _enterSelectionMode(file),
+                                  onTap: () {
+                                    if (_isSelectionMode) {
+                                      _toggleSelection(file);
+                                    } else {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              FileDetailsPage(file: file),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  onMenuSelected: (action) {
+                                    _handleFileAction(file, action);
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+
+                        // Empty Search Result / Offline / Empty Drive
+                        if (_filteredMyDriveFiles.isEmpty &&
+                            _filteredSharedWithMeFiles.isEmpty) ...[
+                          if (_searchQuery.trim().isEmpty)
+                            _buildEmptyOrOfflineState(theme, isDark)
+                          else
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 60.0),
+                              child: Center(
+                                child: Text(
+                                  'No files match your search query.',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                if (_isFabMenuOpen)
+                  Positioned.fill(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        setState(() {
+                          _isFabMenuOpen = false;
+                        });
+                      },
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.25),
                       ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 24),
-
-                  // Search Bar
-                  SearchBarWidget(
-                    hintText: 'Search files and folders',
-                    onChanged: _onSearchChanged,
-                    onFilterPressed: () => _showFilterSheet(context),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Recents Section (On top of Home Page)
-                  if (_recentFiles.isNotEmpty) ...[
-                    const SectionHeader(title: 'Recent Files'),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: MediaQuery.textScalerOf(context).scale(110),
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        itemCount: _recentFiles.length,
-                        itemBuilder: (context, index) {
-                          final file = _recentFiles[index];
-                          return Container(
-                            width: 140,
-                            margin: const EdgeInsets.only(right: 12),
-                            child: FileCard(
-                              file: file,
-                              isGrid: true,
-                              isSelectionMode: _isSelectionMode,
-                              isSelected: _selectedFileIds.contains(file.id),
-                              onLongPress: () => _enterSelectionMode(file),
-                              onTap: () {
-                                if (_isSelectionMode) {
-                                  _toggleSelection(file);
-                                } else {
+              ],
+            ),
+            bottomNavigationBar: _isSelectionMode
+                ? _buildMultiSelectBottomBar(context, theme, isDark)
+                : null,
+            floatingActionButton: !_isSelectionMode
+                ? Padding(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.paddingOf(context).bottom + 80.0,
+                    ),
+                    child: isAdmin
+                        ? ExpandableFabMenu(
+                            isOpen: _isFabMenuOpen,
+                            onToggle: () {
+                              setState(() {
+                                _isFabMenuOpen = !_isFabMenuOpen;
+                              });
+                            },
+                            onClose: () {
+                              setState(() {
+                                _isFabMenuOpen = false;
+                              });
+                            },
+                            items: [
+                              FabMenuItem(
+                                label: 'Add / Upload',
+                                icon: Icons.add_to_photos_rounded,
+                                onTap: () {
+                                  setState(() => _isFabMenuOpen = false);
+                                  _showUploadBottomSheet(context);
+                                },
+                              ),
+                              FabMenuItem(
+                                label: 'Spiritual Places',
+                                icon: Icons.location_on_rounded,
+                                onTap: () {
+                                  setState(() => _isFabMenuOpen = false);
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => FileDetailsPage(file: file),
+                                      builder: (context) =>
+                                          const SpiritualPlacesMapScreen(),
                                     ),
                                   );
-                                }
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // Quick Actions (Admin Only)
-                  if (isAdmin) ...[
-                    const SectionHeader(title: 'Quick Actions'),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => _showUploadBottomSheet(context),
-                            borderRadius: BorderRadius.circular(16),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary.withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: theme.colorScheme.primary.withValues(alpha: 0.15),
-                                ),
+                                },
                               ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.add_rounded, color: theme.colorScheme.primary, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Add File',
-                                    style: TextStyle(
-                                      color: theme.colorScheme.primary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: InkWell(
-                            onTap: _showCreateFolderDialog,
-                            borderRadius: BorderRadius.circular(16),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              decoration: BoxDecoration(
-                                color: isDark ? AppColors.surfaceDark : Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.folder_open_rounded,
-                                    color: isDark ? Colors.white60 : Colors.black54,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'New Folder',
-                                    style: TextStyle(
-                                      color: isDark ? Colors.white70 : Colors.black87,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // My Uploaded Files Section (Admin Only)
-                  if (isAdmin && (filesOnly.isNotEmpty || folders.isNotEmpty)) ...[
-                    SectionHeader(
-                      title: 'My Uploaded Files',
-                      trailing: IconButton(
-                        icon: Icon(
-                          _isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
-                          size: 20,
-                          color: theme.colorScheme.primary,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _isGridView = !_isGridView;
-                          });
-                        },
-                      ),
-                    ),
-                    if (folders.isNotEmpty) ...[
-                      _isGridView
-                          ? GridView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: folders.length,
-                              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                                maxCrossAxisExtent: 180,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
-                                childAspectRatio: 1.5,
-                              ),
-                              itemBuilder: (context, index) {
-                                final folder = folders[index];
-                                return RepaintBoundary(child: FileCard(
-                                  file: folder,
-                                  isGrid: true,
-                                  isSelectionMode: _isSelectionMode,
-                                  isSelected: _selectedFileIds.contains(folder.id),
-                                  onLongPress: () => _enterSelectionMode(folder),
-                                  onTap: () {
-                                    if (_isSelectionMode) {
-                                      _toggleSelection(folder);
-                                    } else {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => FolderViewPage(folder: folder),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                ));
-                              },
-                            )
-                          : ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: folders.length,
-                              itemBuilder: (context, index) {
-                                final folder = folders[index];
-                                return RepaintBoundary(child: FileCard(
-                                  file: folder,
-                                  isGrid: false,
-                                  isSelectionMode: _isSelectionMode,
-                                  isSelected: _selectedFileIds.contains(folder.id),
-                                  onLongPress: () => _enterSelectionMode(folder),
-                                  onTap: () {
-                                    if (_isSelectionMode) {
-                                      _toggleSelection(folder);
-                                    } else {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => FolderViewPage(folder: folder),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                ));
-                              },
-                            ),
-                      const SizedBox(height: 16),
-                    ],
-                    if (filesOnly.isNotEmpty) ...[
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: filesOnly.length,
-                        itemBuilder: (context, index) {
-                          final file = filesOnly[index];
-                          return RepaintBoundary(child: FileCard(
-                            file: file,
-                            isGrid: false,
-                            isSelectionMode: _isSelectionMode,
-                            isSelected: _selectedFileIds.contains(file.id),
-                            onLongPress: () => _enterSelectionMode(file),
-                            onTap: () {
-                              if (_isSelectionMode) {
-                                _toggleSelection(file);
-                              } else {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => FileDetailsPage(file: file),
-                                  ),
-                                );
-                              }
-                            },
-                            onMenuSelected: (action) {
-                              _handleFileAction(file, action);
-                            },
-                          ));
-                        },
-                      ),
-                    ],
-                    const SizedBox(height: 24),
-                  ],
-
-                  // Shared With Me Section (For all users / admins)
-                  if (_filteredSharedWithMeFiles.isNotEmpty) ...[
-                    const SectionHeader(title: 'Shared With Me'),
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _filteredSharedWithMeFiles.length,
-                      itemBuilder: (context, index) {
-                        final file = _filteredSharedWithMeFiles[index];
-                        return RepaintBoundary(child: FileCard(
-                          file: file,
-                          isGrid: false,
-                          isSelectionMode: _isSelectionMode,
-                          isSelected: _selectedFileIds.contains(file.id),
-                          onLongPress: () => _enterSelectionMode(file),
-                          onTap: () {
-                            if (_isSelectionMode) {
-                              _toggleSelection(file);
-                            } else {
+                            ],
+                          )
+                        : FloatingActionButton(
+                            heroTag: 'user_location_fab',
+                            onPressed: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => FileDetailsPage(file: file),
+                                  builder: (context) =>
+                                      const SpiritualPlacesMapScreen(),
                                 ),
                               );
-                            }
-                          },
-                          onMenuSelected: (action) {
-                            _handleFileAction(file, action);
-                          },
-                        ));
-                      },
-                    ),
-                  ],
-
-                  // Empty Search Result / Offline / Empty Drive
-                  if (_filteredMyDriveFiles.isEmpty && _filteredSharedWithMeFiles.isEmpty) ...[
-                    if (_searchQuery.trim().isEmpty)
-                      _buildEmptyOrOfflineState(theme, isDark)
-                    else
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 60.0),
-                        child: Center(
-                          child: Text('No files match your search query.', style: TextStyle(color: Colors.grey)),
-                        ),
-                      ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          bottomNavigationBar: _isSelectionMode
-              ? _buildMultiSelectBottomBar(context, theme, isDark)
-              : null,
-          floatingActionButton: (isAdmin && !_isSelectionMode)
-              ? Padding(
-                  padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom + 80.0),
-                  child: FloatingActionButton(
-                    onPressed: () => _showUploadBottomSheet(context),
-                    backgroundColor: theme.colorScheme.primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
-                  ),
-                )
-              : null,
+                            },
+                            backgroundColor: theme.colorScheme.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            tooltip: 'Spiritual Places',
+                            child: const Icon(
+                              Icons.location_on_rounded,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                          ),
+                  )
+                : null,
           ),
         );
       },
     );
   }
 
-  Widget _buildMultiSelectBottomBar(BuildContext context, ThemeData theme, bool isDark) {
+  Widget _buildMultiSelectBottomBar(
+    BuildContext context,
+    ThemeData theme,
+    bool isDark,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -1240,7 +1628,10 @@ class _HomePageState extends State<HomePage> {
               onPressed: _batchShare,
             ),
             IconButton(
-              icon: const Icon(Icons.drive_file_move_rounded, color: Colors.amber),
+              icon: const Icon(
+                Icons.drive_file_move_rounded,
+                color: Colors.amber,
+              ),
               tooltip: 'Move',
               onPressed: _batchMove,
             ),
@@ -1275,7 +1666,14 @@ class _HomePageState extends State<HomePage> {
     for (var id in ids) {
       final match = [..._myDriveFiles, ..._sharedWithMeFiles].firstWhere(
         (f) => f.id == id,
-        orElse: () => FileModel(id: id, name: '', format: '', sizeBytes: 0, uploadDate: DateTime.now(), ownerName: ''),
+        orElse: () => FileModel(
+          id: id,
+          name: '',
+          format: '',
+          sizeBytes: 0,
+          uploadDate: DateTime.now(),
+          ownerName: '',
+        ),
       );
       if (match.isFolder) {
         folderIds.add(id);
@@ -1290,12 +1688,20 @@ class _HomePageState extends State<HomePage> {
       builder: (dialogCtx) => AlertDialog(
         backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Items', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Text('Are you sure you want to permanently delete these ${ids.length} item(s)?'),
+        title: const Text(
+          'Delete Items',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Are you sure you want to permanently delete these ${ids.length} item(s)?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
-            child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white60 : Colors.black54)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
+            ),
           ),
           TextButton(
             onPressed: () async {
@@ -1317,16 +1723,34 @@ class _HomePageState extends State<HomePage> {
                 );
 
                 if (response.statusCode == 200) {
-                  if (mounted) AppToast.showSuccess(context, 'Items deleted successfully.');
+                  if (mounted)
+                    AppToast.showSuccess(
+                      context,
+                      'Items deleted successfully.',
+                    );
                   await _fetchSharedFiles();
                 } else {
-                  if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
+                  if (mounted)
+                    AppToast.showError(
+                      context,
+                      ErrorHelper.getFriendlyMessage(null, response.statusCode),
+                    );
                 }
               } catch (e) {
-                if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
+                if (mounted)
+                  AppToast.showError(
+                    context,
+                    ErrorHelper.getFriendlyMessage(e),
+                  );
               }
             },
-            child: const Text('Delete', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(
+                color: AppColors.error,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -1354,7 +1778,10 @@ class _HomePageState extends State<HomePage> {
           AppToast.showSuccess(context, 'Renamed to "$newName"');
           await _fetchSharedFiles();
         } else {
-          AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
+          AppToast.showError(
+            context,
+            ErrorHelper.getFriendlyMessage(null, response.statusCode),
+          );
         }
       } catch (e) {
         if (!mounted) return;
@@ -1375,17 +1802,17 @@ class _HomePageState extends State<HomePage> {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
           },
-          body: jsonEncode({
-            'file_ids': fileIds,
-            'user_ids': selectedUserIds,
-          }),
+          body: jsonEncode({'file_ids': fileIds, 'user_ids': selectedUserIds}),
         );
         if (!mounted) return;
         if (response.statusCode == 200) {
           AppToast.showSuccess(context, 'Shared successfully!');
           await _fetchSharedFiles();
         } else {
-          AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
+          AppToast.showError(
+            context,
+            ErrorHelper.getFriendlyMessage(null, response.statusCode),
+          );
         }
       } catch (e) {
         if (!mounted) return;
@@ -1403,7 +1830,14 @@ class _HomePageState extends State<HomePage> {
     for (var id in selectedIds) {
       final match = [..._myDriveFiles, ..._sharedWithMeFiles].firstWhere(
         (f) => f.id == id,
-        orElse: () => FileModel(id: id, name: '', format: '', sizeBytes: 0, uploadDate: DateTime.now(), ownerName: ''),
+        orElse: () => FileModel(
+          id: id,
+          name: '',
+          format: '',
+          sizeBytes: 0,
+          uploadDate: DateTime.now(),
+          ownerName: '',
+        ),
       );
       if (match.isFolder) {
         folderIdsToMove.add(id);
@@ -1412,10 +1846,16 @@ class _HomePageState extends State<HomePage> {
       }
     }
 
-    final availableFolders = _myDriveFiles.where((f) => f.isFolder && !folderIdsToMove.contains(f.id)).toList();
+    final availableFolders = _myDriveFiles
+        .where((f) => f.isFolder && !folderIdsToMove.contains(f.id))
+        .toList();
 
-    final targetFolderId = await MoveDialog.show(context, selectedIds.length, availableFolders);
-    
+    final targetFolderId = await MoveDialog.show(
+      context,
+      selectedIds.length,
+      availableFolders,
+    );
+
     if (targetFolderId != null) {
       _clearSelection();
       try {
@@ -1438,7 +1878,10 @@ class _HomePageState extends State<HomePage> {
           AppToast.showSuccess(context, 'Moved successfully!');
           await _fetchSharedFiles();
         } else {
-          AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
+          AppToast.showError(
+            context,
+            ErrorHelper.getFriendlyMessage(null, response.statusCode),
+          );
         }
       } catch (e) {
         if (!mounted) return;
@@ -1479,14 +1922,20 @@ class _HomePageState extends State<HomePage> {
         }
       });
     } else if (action == 'delete_offline' || action == 'remove_partial') {
-      debugPrint('MSNLP_DOWNLOAD | ACTION action=DELETE fileId=${file.id} fileName=${file.name}');
+      debugPrint(
+        'MSNLP_DOWNLOAD | ACTION action=DELETE fileId=${file.id} fileName=${file.name}',
+      );
       debugPrint('MSNLP_FILE | DELETE_START fileId=${file.id}');
       try {
         await DownloadService.deleteDownloadedFile(file.name);
         if (!mounted) return;
-        debugPrint('MSNLP_FILE | PHYSICAL_DELETE path=${file.name} success=true');
-        debugPrint('MSNLP_FILE | METADATA_DELETE fileId=${file.id} success=true');
-        
+        debugPrint(
+          'MSNLP_FILE | PHYSICAL_DELETE path=${file.name} success=true',
+        );
+        debugPrint(
+          'MSNLP_FILE | METADATA_DELETE fileId=${file.id} success=true',
+        );
+
         setState(() {
           final index = MockData.files.indexWhere((f) => f.id == file.id);
           if (index != -1) {
@@ -1506,17 +1955,33 @@ class _HomePageState extends State<HomePage> {
           }
         });
         if (mounted) {
-          AppToast.showInfo(context, '"${file.name}" removed from offline storage.');
+          AppToast.showInfo(
+            context,
+            '"${file.name}" removed from offline storage.',
+          );
         }
-        debugPrint('MSNLP_HOME | OFFLINE_REFRESH filesFound=${MockData.files.length}');
+        debugPrint(
+          'MSNLP_HOME | OFFLINE_REFRESH filesFound=${MockData.files.length}',
+        );
       } catch (e, stack) {
-        debugPrint('MSNLP_FILE | PHYSICAL_DELETE path=${file.name} success=false error=$e stack=$stack');
+        debugPrint(
+          'MSNLP_FILE | PHYSICAL_DELETE path=${file.name} success=false error=$e stack=$stack',
+        );
       }
     } else if (action == 'download') {
-      debugPrint('MSNLP_DOWNLOAD | REQUEST fileId=${file.id} fileName=${file.name} source=three_dot url_available=${file.previewUrl != null}');
-      AppToast.showInfo(context, 'Saving "${file.name}" to local device storage...');
+      debugPrint(
+        'MSNLP_DOWNLOAD | REQUEST fileId=${file.id} fileName=${file.name} source=three_dot url_available=${file.previewUrl != null}',
+      );
+      AppToast.showInfo(
+        context,
+        'Saving "${file.name}" to local device storage...',
+      );
       final url = file.previewUrl ?? '';
-      final ok = await DownloadService.downloadFile(url, file.name, model: file);
+      final ok = await DownloadService.downloadFile(
+        url,
+        file.name,
+        model: file,
+      );
       if (!mounted) return;
       if (ok) {
         setState(() {
@@ -1538,11 +2003,16 @@ class _HomePageState extends State<HomePage> {
           }
         });
         if (mounted) {
-          AppToast.showSuccess(context, '"${file.name}" saved locally for offline access!');
+          AppToast.showSuccess(
+            context,
+            '"${file.name}" saved locally for offline access!',
+          );
         }
       } else {
         if (mounted) {
-          final error = DownloadService.downloadErrorNotifier.value ?? 'Failed to download "${file.name}". Please check internet connection.';
+          final error =
+              DownloadService.downloadErrorNotifier.value ??
+              'Failed to download "${file.name}". Please check internet connection.';
           AppToast.showError(context, ErrorHelper.getFriendlyMessage(error));
         }
       }

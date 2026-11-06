@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../models/reminder_model.dart';
 import 'reminder_repository.dart';
@@ -7,15 +8,18 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'dart:typed_data';
 import '../main.dart';
 
 @pragma('vm:entry-point')
 void backgroundNotificationHandler(NotificationResponse response) {
-  debugPrint('MSNLP_NOTIF: backgroundNotificationHandler called, actionId: ${response.actionId}, payload: ${response.payload}');
+  debugPrint(
+    'MSNLP_NOTIF: backgroundNotificationHandler called, actionId: ${response.actionId}, payload: ${response.payload}',
+  );
   WidgetsFlutterBinding.ensureInitialized();
   if (response.actionId == 'open_link') {
-    debugPrint('MSNLP_NOTIF: open_link action triggered in background isolate, ignoring as it should be handled in foreground.');
+    debugPrint(
+      'MSNLP_NOTIF: open_link action triggered in background isolate, ignoring as it should be handled in foreground.',
+    );
     return;
   }
 
@@ -25,7 +29,7 @@ void backgroundNotificationHandler(NotificationResponse response) {
       // Schedule for 10 minutes later
       final now = DateTime.now();
       final snoozeTime = now.add(const Duration(minutes: 10));
-      
+
       int rId = 0;
       String rTitle = 'Mindspace Reminder';
       if (response.payload != null && response.payload!.isNotEmpty) {
@@ -35,9 +39,9 @@ void backgroundNotificationHandler(NotificationResponse response) {
           rTitle = data['title'] as String? ?? 'Mindspace Reminder';
         } catch (_) {}
       }
-      
+
       debugPrint('MSNLP_REMINDER: background snooze triggered for id $rId');
-      
+
       final reminder = Reminder(
         id: rId,
         title: '$rTitle (Snoozed)',
@@ -48,23 +52,34 @@ void backgroundNotificationHandler(NotificationResponse response) {
         enabled: true,
         createdAt: DateTime.now(),
       );
-      
-      NotificationService().scheduleReminderModel(reminder).then((_) {
-        debugPrint('MSNLP_REMINDER: background snooze successfully scheduled');
-      }).catchError((e) {
-        debugPrint('MSNLP_REMINDER: background isolate failed to schedule snooze: $e');
-      });
-      
+
+      NotificationService()
+          .scheduleReminderModel(reminder)
+          .then((_) {
+            debugPrint(
+              'MSNLP_REMINDER: background snooze successfully scheduled',
+            );
+          })
+          .catchError((e) {
+            debugPrint(
+              'MSNLP_REMINDER: background isolate failed to schedule snooze: $e',
+            );
+          });
+
       NotificationService().flutterLocalNotificationsPlugin.cancel(rId * 10);
     } catch (e) {
-      debugPrint('MSNLP_REMINDER: background isolate failed to schedule snooze: $e');
+      debugPrint(
+        'MSNLP_REMINDER: background isolate failed to schedule snooze: $e',
+      );
     }
   }
 }
 
 @pragma('vm:entry-point')
 void foregroundNotificationHandler(NotificationResponse response) {
-  debugPrint('MSNLP_NOTIF: foregroundNotificationHandler called, actionId: ${response.actionId}, payload: ${response.payload}');
+  debugPrint(
+    'MSNLP_NOTIF: foregroundNotificationHandler called, actionId: ${response.actionId}, payload: ${response.payload}',
+  );
   if (response.payload != null && response.payload!.isNotEmpty) {
     try {
       final Map<String, dynamic> data = json.decode(response.payload!);
@@ -82,7 +97,7 @@ void foregroundNotificationHandler(NotificationResponse response) {
     try {
       final now = DateTime.now();
       final snoozeTime = now.add(const Duration(minutes: 10));
-      
+
       int rId = 0;
       String rTitle = 'Mindspace Reminder';
       if (response.payload != null && response.payload!.isNotEmpty) {
@@ -92,9 +107,9 @@ void foregroundNotificationHandler(NotificationResponse response) {
           rTitle = data['title'] as String? ?? 'Mindspace Reminder';
         } catch (_) {}
       }
-      
+
       debugPrint('MSNLP_REMINDER: foreground snooze triggered for id $rId');
-      
+
       final reminder = Reminder(
         id: rId,
         title: '$rTitle (Snoozed)',
@@ -105,11 +120,13 @@ void foregroundNotificationHandler(NotificationResponse response) {
         enabled: true,
         createdAt: DateTime.now(),
       );
-      
+
       NotificationService().scheduleReminderModel(reminder);
       NotificationService().flutterLocalNotificationsPlugin.cancel(rId * 10);
     } catch (e) {
-      debugPrint('MSNLP_REMINDER: foreground isolate failed to schedule snooze: $e');
+      debugPrint(
+        'MSNLP_REMINDER: foreground isolate failed to schedule snooze: $e',
+      );
     }
   }
 }
@@ -128,8 +145,19 @@ class NotificationService {
 
   Future<void> init() async {
     tz.initializeTimeZones();
-    final timeZoneName = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(timeZoneName.identifier));
+    try {
+      final timeZoneName = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(timeZoneName.identifier));
+    } catch (e) {
+      debugPrint(
+        'MSNLP_NOTIF: Could not set local timezone ($e), falling back to Asia/Kolkata',
+      );
+      try {
+        tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
+      } catch (_) {
+        tz.setLocalLocation(tz.UTC);
+      }
+    }
 
     // Android initialization
     const AndroidInitializationSettings initializationSettingsAndroid =
@@ -138,15 +166,16 @@ class NotificationService {
     // iOS initialization
     const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
-      requestSoundPermission: true,
-      requestBadgePermission: true,
-      requestAlertPermission: true,
-    );
+          requestSoundPermission: true,
+          requestBadgePermission: true,
+          requestAlertPermission: true,
+        );
 
     const InitializationSettings initializationSettings =
         InitializationSettings(
-            android: initializationSettingsAndroid,
-            iOS: initializationSettingsIOS);
+          android: initializationSettingsAndroid,
+          iOS: initializationSettingsIOS,
+        );
 
     await flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
@@ -156,21 +185,34 @@ class NotificationService {
 
     // Create Android channels
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+        flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
 
     if (androidImplementation != null) {
-      await androidImplementation.deleteNotificationChannel('mindspace_messages');
-      await androidImplementation.deleteNotificationChannel('mindspace_reminders');
-      await androidImplementation.deleteNotificationChannel('mindspace_messages_v2');
-      await androidImplementation.deleteNotificationChannel('mindspace_reminders_v2');
-      await androidImplementation.deleteNotificationChannel('mindspace_reminders_v3');
+      await androidImplementation.deleteNotificationChannel(
+        'mindspace_messages',
+      );
+      await androidImplementation.deleteNotificationChannel(
+        'mindspace_reminders',
+      );
+      await androidImplementation.deleteNotificationChannel(
+        'mindspace_messages_v2',
+      );
+      await androidImplementation.deleteNotificationChannel(
+        'mindspace_reminders_v2',
+      );
+      await androidImplementation.deleteNotificationChannel(
+        'mindspace_reminders_v3',
+      );
 
       final channels = await androidImplementation.getNotificationChannels();
       if (channels != null) {
         for (final channel in channels) {
-          if (channel.id != 'mindspace_messages_v3' && channel.id != 'mindspace_reminders_v4') {
-            print('Found old/other channel id: ${channel.id}');
+          if (channel.id != 'mindspace_messages_v3' &&
+              channel.id != 'mindspace_reminders_v4') {
+            debugPrint('Found old/other channel id: ${channel.id}');
           }
         }
       }
@@ -199,6 +241,8 @@ class NotificationService {
         ),
       );
     }
+
+    startForegroundReminderTicker();
   }
 
   // Define notification details with default system sound and full-screen intent
@@ -307,15 +351,25 @@ class NotificationService {
           UILocalNotificationDateInterpretation.wallClockTime,
     );
   }
+
   // Schedule a reminder model
   Future<bool> scheduleReminderModel(Reminder reminder) async {
     bool exactPermitted = true;
-    final payload = json.encode({"type": "reminder", "id": reminder.id, "title": reminder.title});
+    final payload = json.encode({
+      "type": "reminder",
+      "id": reminder.id,
+      "title": reminder.title,
+    });
 
     try {
       if (reminder.repeat == RepeatType.once) {
-        final scheduledDate = _nextInstanceOfTime(reminder.hour, reminder.minute);
-        debugPrint('MSNLP_REMINDER: Scheduling once id ${reminder.id} at $scheduledDate');
+        final scheduledDate = _nextInstanceOfTime(
+          reminder.hour,
+          reminder.minute,
+        );
+        debugPrint(
+          'MSNLP_REMINDER: Scheduling once id ${reminder.id} at $scheduledDate',
+        );
         await flutterLocalNotificationsPlugin.zonedSchedule(
           reminder.id * 10,
           reminder.title,
@@ -323,12 +377,18 @@ class NotificationService {
           scheduledDate,
           _notificationDetails(),
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-          uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.wallClockTime,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.wallClockTime,
           payload: payload,
         );
       } else if (reminder.repeat == RepeatType.daily) {
-        final scheduledDate = _nextInstanceOfTime(reminder.hour, reminder.minute);
-        debugPrint('MSNLP_REMINDER: Scheduling daily id ${reminder.id} at $scheduledDate');
+        final scheduledDate = _nextInstanceOfTime(
+          reminder.hour,
+          reminder.minute,
+        );
+        debugPrint(
+          'MSNLP_REMINDER: Scheduling daily id ${reminder.id} at $scheduledDate',
+        );
         await flutterLocalNotificationsPlugin.zonedSchedule(
           reminder.id * 10,
           reminder.title,
@@ -336,15 +396,22 @@ class NotificationService {
           scheduledDate,
           _notificationDetails(),
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-          uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.wallClockTime,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.wallClockTime,
           matchDateTimeComponents: DateTimeComponents.time,
           payload: payload,
         );
       } else if (reminder.repeat == RepeatType.weekly) {
         for (final weekday in reminder.weekdays) {
-          final scheduledDate = _nextInstanceOfWeekdayTime(reminder.hour, reminder.minute, weekday);
+          final scheduledDate = _nextInstanceOfWeekdayTime(
+            reminder.hour,
+            reminder.minute,
+            weekday,
+          );
           final notifId = reminder.id * 10 + weekday;
-          debugPrint('MSNLP_REMINDER: Scheduling weekly id ${reminder.id} weekday $weekday at $scheduledDate');
+          debugPrint(
+            'MSNLP_REMINDER: Scheduling weekly id ${reminder.id} weekday $weekday at $scheduledDate',
+          );
           await flutterLocalNotificationsPlugin.zonedSchedule(
             notifId,
             reminder.title,
@@ -352,19 +419,25 @@ class NotificationService {
             scheduledDate,
             _notificationDetails(),
             androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-            uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.wallClockTime,
+            uiLocalNotificationDateInterpretation:
+                UILocalNotificationDateInterpretation.wallClockTime,
             matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
             payload: payload,
           );
         }
       }
     } catch (e) {
-      debugPrint('MSNLP_REMINDER: exact alarm failed for id ${reminder.id}, falling back to inexact. $e');
+      debugPrint(
+        'MSNLP_REMINDER: exact alarm failed for id ${reminder.id}, falling back to inexact. $e',
+      );
       exactPermitted = false;
       // Fallback
       try {
         if (reminder.repeat == RepeatType.once) {
-          final scheduledDate = _nextInstanceOfTime(reminder.hour, reminder.minute);
+          final scheduledDate = _nextInstanceOfTime(
+            reminder.hour,
+            reminder.minute,
+          );
           await flutterLocalNotificationsPlugin.zonedSchedule(
             reminder.id * 10,
             reminder.title,
@@ -372,11 +445,15 @@ class NotificationService {
             scheduledDate,
             _notificationDetails(),
             androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-            uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.wallClockTime,
+            uiLocalNotificationDateInterpretation:
+                UILocalNotificationDateInterpretation.wallClockTime,
             payload: payload,
           );
         } else if (reminder.repeat == RepeatType.daily) {
-          final scheduledDate = _nextInstanceOfTime(reminder.hour, reminder.minute);
+          final scheduledDate = _nextInstanceOfTime(
+            reminder.hour,
+            reminder.minute,
+          );
           await flutterLocalNotificationsPlugin.zonedSchedule(
             reminder.id * 10,
             reminder.title,
@@ -384,13 +461,18 @@ class NotificationService {
             scheduledDate,
             _notificationDetails(),
             androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-            uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.wallClockTime,
+            uiLocalNotificationDateInterpretation:
+                UILocalNotificationDateInterpretation.wallClockTime,
             matchDateTimeComponents: DateTimeComponents.time,
             payload: payload,
           );
         } else if (reminder.repeat == RepeatType.weekly) {
           for (final weekday in reminder.weekdays) {
-            final scheduledDate = _nextInstanceOfWeekdayTime(reminder.hour, reminder.minute, weekday);
+            final scheduledDate = _nextInstanceOfWeekdayTime(
+              reminder.hour,
+              reminder.minute,
+              weekday,
+            );
             final notifId = reminder.id * 10 + weekday;
             await flutterLocalNotificationsPlugin.zonedSchedule(
               notifId,
@@ -399,14 +481,15 @@ class NotificationService {
               scheduledDate,
               _notificationDetails(),
               androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-              uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.wallClockTime,
+              uiLocalNotificationDateInterpretation:
+                  UILocalNotificationDateInterpretation.wallClockTime,
               matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
               payload: payload,
             );
           }
         }
       } catch (fallbackErr) {
-         debugPrint('MSNLP_REMINDER: Fallback also failed: $fallbackErr');
+        debugPrint('MSNLP_REMINDER: Fallback also failed: $fallbackErr');
       }
     }
     return exactPermitted;
@@ -422,8 +505,14 @@ class NotificationService {
 
   tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-    tz.TZDateTime scheduledDate =
-        tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+    tz.TZDateTime scheduledDate = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      hour,
+      minute,
+    );
     if (scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
@@ -437,27 +526,31 @@ class NotificationService {
     }
     return scheduledDate;
   }
-Future<void> rescheduleAll() async {
+
+  Future<void> rescheduleAll() async {
     final repo = ReminderRepository();
     final reminders = await repo.loadReminders();
     final now = DateTime.now();
-    
+
     for (final reminder in reminders) {
       if (reminder.enabled) {
         if (reminder.repeat == RepeatType.once) {
           // Calculate when it was supposed to fire based on createdAt
           DateTime scheduledDate = DateTime(
-              reminder.createdAt.year,
-              reminder.createdAt.month,
-              reminder.createdAt.day,
-              reminder.hour,
-              reminder.minute);
+            reminder.createdAt.year,
+            reminder.createdAt.month,
+            reminder.createdAt.day,
+            reminder.hour,
+            reminder.minute,
+          );
           if (scheduledDate.isBefore(reminder.createdAt)) {
             scheduledDate = scheduledDate.add(const Duration(days: 1));
           }
           if (scheduledDate.isBefore(now)) {
             // It has fired, disable it
-            debugPrint('MSNLP_REMINDER: Disabling once reminder ${reminder.id} as it already fired');
+            debugPrint(
+              'MSNLP_REMINDER: Disabling once reminder ${reminder.id} as it already fired',
+            );
             await repo.setEnabled(reminder.id, false);
             continue;
           }
@@ -467,4 +560,94 @@ Future<void> rescheduleAll() async {
     }
   }
 
+  Timer? _foregroundTicker;
+  final Set<String> _firedMinuteKeys = <String>{};
+
+  /// Starts a periodic foreground ticker to ensure alarms/reminders fire on time
+  /// even while the user is actively using the app in foreground.
+  void startForegroundReminderTicker() {
+    _foregroundTicker?.cancel();
+    _foregroundTicker = Timer.periodic(const Duration(seconds: 15), (timer) {
+      _checkForegroundReminders();
+    });
+    // Check immediately
+    _checkForegroundReminders();
+  }
+
+  void stopForegroundReminderTicker() {
+    _foregroundTicker?.cancel();
+    _foregroundTicker = null;
+  }
+
+  Future<void> _checkForegroundReminders() async {
+    try {
+      final repo = ReminderRepository();
+      final reminders = await repo.loadReminders();
+      final now = DateTime.now();
+
+      // Avoid memory buildup
+      if (_firedMinuteKeys.length > 200) {
+        _firedMinuteKeys.clear();
+      }
+
+      for (final reminder in reminders) {
+        if (!reminder.enabled) continue;
+
+        bool shouldFire = false;
+        if (reminder.repeat == RepeatType.once) {
+          if (reminder.hour == now.hour && reminder.minute == now.minute) {
+            shouldFire = true;
+          }
+        } else if (reminder.repeat == RepeatType.daily) {
+          if (reminder.hour == now.hour && reminder.minute == now.minute) {
+            shouldFire = true;
+          }
+        } else if (reminder.repeat == RepeatType.weekly) {
+          if (reminder.weekdays.contains(now.weekday) &&
+              reminder.hour == now.hour &&
+              reminder.minute == now.minute) {
+            shouldFire = true;
+          }
+        }
+
+        if (shouldFire) {
+          final minuteKey =
+              '${reminder.id}_${now.year}_${now.month}_${now.day}_${now.hour}_${now.minute}';
+          if (!_firedMinuteKeys.contains(minuteKey)) {
+            _firedMinuteKeys.add(minuteKey);
+            debugPrint(
+              'MSNLP_REMINDER: Foreground ticker triggering reminder ${reminder.id}: ${reminder.title}',
+            );
+
+            // 1. Show high-priority heads-up notification with sound & action buttons
+            await flutterLocalNotificationsPlugin.show(
+              reminder.id * 10,
+              reminder.title,
+              'Time for your session',
+              _notificationDetails(),
+              payload: json.encode({
+                'type': 'reminder',
+                'id': reminder.id,
+                'title': reminder.title,
+              }),
+            );
+
+            // 2. Open AlarmScreen directly in foreground
+            openMessagesFromNotification({
+              'type': 'reminder',
+              'id': reminder.id,
+              'title': reminder.title,
+            });
+
+            // 3. If once, disable reminder in repo
+            if (reminder.repeat == RepeatType.once) {
+              await repo.setEnabled(reminder.id, false);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('MSNLP_REMINDER: Error checking foreground reminders: $e');
+    }
+  }
 }

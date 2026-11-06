@@ -40,14 +40,14 @@ class _CreateFolderDialogState extends State<CreateFolderDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text(
         'New Folder',
-        style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        style: theme.textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.bold,
+        ),
       ),
       content: TextField(
         controller: _controller,
         autofocus: true,
-        decoration: const InputDecoration(
-          hintText: 'Folder Name',
-        ),
+        decoration: const InputDecoration(hintText: 'Folder Name'),
       ),
       actions: [
         TextButton(
@@ -67,7 +67,9 @@ class _CreateFolderDialogState extends State<CreateFolderDialog> {
           style: ElevatedButton.styleFrom(
             backgroundColor: theme.colorScheme.primary,
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
           child: const Text('Create'),
         ),

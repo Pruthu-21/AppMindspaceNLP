@@ -41,97 +41,115 @@ class FileCard extends StatelessWidget {
       label: '${file.name}, ${file.isFolder ? 'Folder' : file.sizeString}',
       button: true,
       child: ItemFadeIn(
-      child: Material(
-        color: Colors.transparent,
-      child: Ink(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: isSelected 
-              ? theme.colorScheme.primary.withValues(alpha: 0.12)
-              : (isDark ? AppColors.surfaceDark : Colors.white),
-          border: Border.all(
-            color: isSelected 
-                ? theme.colorScheme.primary 
-                : (isDark ? AppColors.dividerDark : AppColors.dividerLight),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          onLongPress: onLongPress,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildIconWithBadge(context),
-                if (isSelectionMode)
-                  Icon(
-                    isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                    color: isSelected ? theme.colorScheme.primary : Colors.grey,
-                    size: 22,
-                  )
-                else
-                  _buildThreeDotButton(context),
-              ],
-            ),
-            const Spacer(),
-            Text(
-              file.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
+        child: Material(
+          color: Colors.transparent,
+          child: Ink(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: isSelected
+                  ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                  : (isDark ? AppColors.surfaceDark : Colors.white),
+              border: Border.all(
+                color: isSelected
+                    ? theme.colorScheme.primary
+                    : (isDark ? AppColors.dividerDark : AppColors.dividerLight),
+                width: isSelected ? 2 : 1,
               ),
             ),
-            const SizedBox(height: 4),
-            if (file.downloadStatus == 'completed') ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Text(
-                      file.isFolder ? 'Folder' : file.sizeString,
+            child: InkWell(
+              onTap: onTap,
+              onLongPress: onLongPress,
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildIconWithBadge(context),
+                        if (isSelectionMode)
+                          Icon(
+                            isSelected
+                                ? Icons.check_circle_rounded
+                                : Icons.radio_button_unchecked_rounded,
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : Colors.grey,
+                            size: 22,
+                          )
+                        else
+                          _buildThreeDotButton(context),
+                      ],
+                    ),
+                    const Spacer(),
+                    Text(
+                      file.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontSize: 11,
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  Row(
-                    children: [
-                      if (file.isPinned)
-                        Icon(Icons.push_pin_rounded, size: 10, color: theme.colorScheme.primary),
-                      if (file.isFavorite) ...[
-                        const SizedBox(width: 4),
-                        const Icon(Icons.star_rounded, size: 12, color: AppColors.warning),
-                      ],
-                      if (file.isDownloaded) ...[
-                        const SizedBox(width: 4),
-                        const Icon(Icons.offline_pin_rounded, size: 12, color: AppColors.accent),
-                      ],
+                    const SizedBox(height: 4),
+                    if (file.downloadStatus == 'completed') ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              file.isFolder ? 'Folder' : file.sizeString,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontSize: 11,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Row(
+                            children: [
+                              if (file.isPinned)
+                                Icon(
+                                  Icons.push_pin_rounded,
+                                  size: 10,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              if (file.isFavorite) ...[
+                                const SizedBox(width: 4),
+                                const Icon(
+                                  Icons.star_rounded,
+                                  size: 12,
+                                  color: AppColors.warning,
+                                ),
+                              ],
+                              if (file.isDownloaded) ...[
+                                const SizedBox(width: 4),
+                                const Icon(
+                                  Icons.offline_pin_rounded,
+                                  size: 12,
+                                  color: AppColors.accent,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    ] else ...[
+                      _buildProgressBar(context, true),
                     ],
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ] else ...[
-              _buildProgressBar(context, true),
-            ],
-          ],
+            ),
+          ),
         ),
       ),
-      ),
-      ),
-      ),
-    ),
     );
   }
 
@@ -143,126 +161,159 @@ class FileCard extends StatelessWidget {
       label: '${file.name}, ${file.isFolder ? 'Folder' : file.sizeString}',
       button: true,
       child: ItemFadeIn(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Material(
-          color: Colors.transparent,
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: isSelected 
-                ? theme.colorScheme.primary.withValues(alpha: 0.12)
-                : (isDark ? AppColors.surfaceDark : Colors.white),
-            border: Border.all(
-              color: isSelected 
-                  ? theme.colorScheme.primary 
-                  : (isDark ? AppColors.dividerDark : AppColors.dividerLight),
-              width: isSelected ? 2 : 1,
-            ),
-          ),
-          child: InkWell(
-            onTap: onTap,
-            onLongPress: onLongPress,
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              child: Row(
-          children: [
-            if (isSelectionMode)
-              Padding(
-                padding: const EdgeInsets.only(right: 12.0),
-                child: Icon(
-                  isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                  color: isSelected ? theme.colorScheme.primary : Colors.grey,
-                  size: 24,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Material(
+            color: Colors.transparent,
+            child: Ink(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: isSelected
+                    ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                    : (isDark ? AppColors.surfaceDark : Colors.white),
+                border: Border.all(
+                  color: isSelected
+                      ? theme.colorScheme.primary
+                      : (isDark
+                            ? AppColors.dividerDark
+                            : AppColors.dividerLight),
+                  width: isSelected ? 2 : 1,
                 ),
               ),
-            _buildIconWithBadge(context),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    file.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
+              child: InkWell(
+                onTap: onTap,
+                onLongPress: onLongPress,
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
                   ),
-                  const SizedBox(height: 4),
-                  if (file.downloadStatus == 'completed') ...[
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            file.isFolder ? 'Folder' : file.sizeString,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontSize: 12,
+                  child: Row(
+                    children: [
+                      if (isSelectionMode)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 12.0),
+                          child: Icon(
+                            isSelected
+                                ? Icons.check_circle_rounded
+                                : Icons.radio_button_unchecked_rounded,
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : Colors.grey,
+                            size: 24,
+                          ),
+                        ),
+                      _buildIconWithBadge(context),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              file.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
                             ),
-                          ),
+                            const SizedBox(height: 4),
+                            if (file.downloadStatus == 'completed') ...[
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      file.isFolder
+                                          ? 'Folder'
+                                          : file.sizeString,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(fontSize: 12),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    width: 3,
+                                    height: 3,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isDark
+                                          ? AppColors.textSecondaryDark
+                                          : AppColors.textSecondaryLight,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _formatDate(file.uploadDate),
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ] else ...[
+                              _buildProgressBar(context, false),
+                            ],
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Container(
-                          width: 3,
-                          height: 3,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _formatDate(file.uploadDate),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ] else ...[
-                    _buildProgressBar(context, false),
-                  ],
-                ],
+                      ),
+                      Row(
+                        children: [
+                          if (file.isPinned)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
+                              child: Icon(
+                                Icons.push_pin_rounded,
+                                size: 14,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          if (file.isFavorite)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 4),
+                              child: Icon(
+                                Icons.star_rounded,
+                                size: 16,
+                                color: AppColors.warning,
+                              ),
+                            ),
+                          if (file.isDownloaded)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 4),
+                              child: Icon(
+                                Icons.offline_pin_rounded,
+                                size: 16,
+                                color: AppColors.accent,
+                              ),
+                            ),
+                        ],
+                      ),
+                      if (!isSelectionMode) _buildThreeDotButton(context),
+                    ],
+                  ),
+                ),
               ),
             ),
-            Row(
-              children: [
-                if (file.isPinned)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Icon(Icons.push_pin_rounded, size: 14, color: theme.colorScheme.primary),
-                  ),
-                if (file.isFavorite)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4),
-                    child: Icon(Icons.star_rounded, size: 16, color: AppColors.warning),
-                  ),
-                if (file.isDownloaded)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4),
-                    child: Icon(Icons.offline_pin_rounded, size: 16, color: AppColors.accent),
-                  ),
-              ],
-            ),
-            if (!isSelectionMode) _buildThreeDotButton(context),
-          ],
+          ),
         ),
       ),
-      ),
-      ),
-      ),
-      ),
-    ),
     );
   }
 
   Widget _buildFileIcon(BuildContext context) {
-    final isImg = ['image', 'png', 'jpg', 'jpeg', 'webp', 'gif'].contains(file.format.toLowerCase());
+    final isImg = [
+      'image',
+      'png',
+      'jpg',
+      'jpeg',
+      'webp',
+      'gif',
+    ].contains(file.format.toLowerCase());
     if (isImg && file.previewUrl != null && file.previewUrl!.isNotEmpty) {
       return Hero(
         tag: 'hero-icon-${file.id}',
@@ -275,8 +326,13 @@ class FileCard extends StatelessWidget {
             fit: BoxFit.cover,
             memCacheWidth: isGrid ? 80 : 88,
             memCacheHeight: isGrid ? 80 : 88,
-            placeholder: (context, url) => _buildDefaultBox(context, Icons.image_rounded, AppColors.info),
-            errorWidget: (context, url, error) => _buildDefaultBox(context, Icons.broken_image_rounded, AppColors.info),
+            placeholder: (context, url) =>
+                _buildDefaultBox(context, Icons.image_rounded, AppColors.info),
+            errorWidget: (context, url, error) => _buildDefaultBox(
+              context,
+              Icons.broken_image_rounded,
+              AppColors.info,
+            ),
           ),
         ),
       );
@@ -325,11 +381,7 @@ class FileCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Center(
-        child: Icon(
-          icon,
-          color: color,
-          size: isGrid ? 20 : 22,
-        ),
+        child: Icon(icon, color: color, size: isGrid ? 20 : 22),
       ),
     );
   }
@@ -345,7 +397,9 @@ class FileCard extends StatelessWidget {
         child: Icon(
           Icons.more_vert_rounded,
           size: 20,
-          color: theme.brightness == Brightness.dark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+          color: theme.brightness == Brightness.dark
+              ? AppColors.textSecondaryDark
+              : AppColors.textSecondaryLight,
         ),
       ),
     );
@@ -366,15 +420,20 @@ class FileCard extends StatelessWidget {
             color: isDark ? AppColors.surfaceDark : Colors.white,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          child: Builder(builder: (context) {
-              final isDownloaded = file.isDownloaded || DownloadService.isCompletedInMemory(file.name);
-              final isActive = DownloadService.activeDownloadsNotifier.value.contains(file.name);
-              final isStopped = file.downloadStatus == 'stopped' && !isDownloaded;
-              
+          child: Builder(
+            builder: (context) {
+              final isDownloaded =
+                  file.isDownloaded ||
+                  DownloadService.isCompletedInMemory(file.name);
+              final isActive = DownloadService.activeDownloadsNotifier.value
+                  .contains(file.name);
+              final isStopped =
+                  file.downloadStatus == 'stopped' && !isDownloaded;
+
               String actionText;
               IconData actionIcon;
               Color? actionColor;
-              
+
               if (isDownloaded) {
                 actionText = 'Delete Offline File';
                 actionIcon = Icons.delete_outline_rounded;
@@ -416,14 +475,22 @@ class FileCard extends StatelessWidget {
                           children: [
                             Text(
                               file.name,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              file.isFolder ? 'Folder' : (file.customSizeString ?? file.sizeString),
-                              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                              file.isFolder
+                                  ? 'Folder'
+                                  : (file.customSizeString ?? file.sizeString),
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 12,
+                              ),
                             ),
                           ],
                         ),
@@ -445,13 +512,21 @@ class FileCard extends StatelessWidget {
                         ? null
                         : () {
                             Navigator.pop(context);
-                            onMenuSelected?.call(isDownloaded ? 'delete_offline' : 'download');
+                            onMenuSelected?.call(
+                              isDownloaded ? 'delete_offline' : 'download',
+                            );
                           },
                   ),
                   if (isActive)
                     ListTile(
-                      leading: const Icon(Icons.stop_circle_rounded, color: Colors.red),
-                      title: const Text('Stop Download', style: TextStyle(color: Colors.red)),
+                      leading: const Icon(
+                        Icons.stop_circle_rounded,
+                        color: Colors.red,
+                      ),
+                      title: const Text(
+                        'Stop Download',
+                        style: TextStyle(color: Colors.red),
+                      ),
                       onTap: () {
                         Navigator.pop(context);
                         DownloadService.cancelDownloadFor(file.name);
@@ -459,8 +534,14 @@ class FileCard extends StatelessWidget {
                     ),
                   if (isStopped)
                     ListTile(
-                      leading: const Icon(Icons.delete_outline_rounded, color: Colors.red),
-                      title: const Text('Remove from Downloads', style: TextStyle(color: Colors.red)),
+                      leading: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: Colors.red,
+                      ),
+                      title: const Text(
+                        'Remove from Downloads',
+                        style: TextStyle(color: Colors.red),
+                      ),
                       onTap: () {
                         Navigator.pop(context);
                         onMenuSelected?.call('remove_partial');
@@ -468,7 +549,10 @@ class FileCard extends StatelessWidget {
                     ),
                   if (isAdmin) ...[
                     ListTile(
-                      leading: const Icon(Icons.share_rounded, color: Colors.blue),
+                      leading: const Icon(
+                        Icons.share_rounded,
+                        color: Colors.blue,
+                      ),
                       title: const Text('Share'),
                       onTap: () {
                         Navigator.pop(context);
@@ -476,7 +560,10 @@ class FileCard extends StatelessWidget {
                       },
                     ),
                     ListTile(
-                      leading: const Icon(Icons.drive_file_move_rounded, color: Colors.amber),
+                      leading: const Icon(
+                        Icons.drive_file_move_rounded,
+                        color: Colors.amber,
+                      ),
                       title: const Text('Move'),
                       onTap: () {
                         Navigator.pop(context);
@@ -484,7 +571,10 @@ class FileCard extends StatelessWidget {
                       },
                     ),
                     ListTile(
-                      leading: const Icon(Icons.edit_rounded, color: Colors.teal),
+                      leading: const Icon(
+                        Icons.edit_rounded,
+                        color: Colors.teal,
+                      ),
                       title: const Text('Rename'),
                       onTap: () {
                         Navigator.pop(context);
@@ -492,8 +582,17 @@ class FileCard extends StatelessWidget {
                       },
                     ),
                     ListTile(
-                      leading: const Icon(Icons.delete_rounded, color: Colors.red),
-                      title: const Text('Delete', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                      leading: const Icon(
+                        Icons.delete_rounded,
+                        color: Colors.red,
+                      ),
+                      title: const Text(
+                        'Delete',
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       onTap: () {
                         Navigator.pop(context);
                         onMenuSelected?.call('delete');
@@ -502,7 +601,8 @@ class FileCard extends StatelessWidget {
                   ],
                 ],
               );
-            }),
+            },
+          ),
         );
       },
     );
@@ -526,7 +626,7 @@ class FileCard extends StatelessWidget {
   Widget _buildIconWithBadge(BuildContext context) {
     // Base icon widget
     final baseIcon = _buildFileIcon(context);
-    
+
     return ValueListenableBuilder<Set<String>>(
       valueListenable: DownloadService.activeDownloadsNotifier,
       builder: (context, activeDownloads, child) {
@@ -535,18 +635,25 @@ class FileCard extends StatelessWidget {
           return ValueListenableBuilder<double>(
             valueListenable: DownloadService.getProgressNotifierFor(file.name),
             builder: (context, progress, child) {
-              return _wrapIconWithProgressAndBadge(context, baseIcon, true, progress, false);
+              return _wrapIconWithProgressAndBadge(
+                context,
+                baseIcon,
+                true,
+                progress,
+                false,
+              );
             },
           );
         }
-        
+
         final isDownloading = file.downloadStatus == 'downloading';
-        final isDownloaded = file.isDownloaded || DownloadService.isCompletedInMemory(file.name);
+        final isDownloaded =
+            file.isDownloaded || DownloadService.isCompletedInMemory(file.name);
         return _wrapIconWithProgressAndBadge(
-          context, 
-          baseIcon, 
-          isDownloading, 
-          file.downloadProgress, 
+          context,
+          baseIcon,
+          isDownloading,
+          file.downloadProgress,
           isDownloaded,
         );
       },
@@ -554,10 +661,10 @@ class FileCard extends StatelessWidget {
   }
 
   Widget _wrapIconWithProgressAndBadge(
-    BuildContext context, 
-    Widget baseIcon, 
-    bool isDownloading, 
-    double progress, 
+    BuildContext context,
+    Widget baseIcon,
+    bool isDownloading,
+    double progress,
     bool isDownloaded,
   ) {
     return Stack(
@@ -573,7 +680,9 @@ class FileCard extends StatelessWidget {
                 value: progress,
                 strokeWidth: 3,
                 backgroundColor: Colors.black12,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppColors.primary,
+                ),
               ),
             ),
           ),
@@ -638,19 +747,33 @@ class FileCard extends StatelessWidget {
             },
           );
         }
-        
+
         final isDownloading = file.downloadStatus == 'downloading';
-        return _buildProgressBarContent(context, isGrid, isDownloading, file.downloadProgress);
+        return _buildProgressBarContent(
+          context,
+          isGrid,
+          isDownloading,
+          file.downloadProgress,
+        );
       },
     );
   }
 
-  Widget _buildProgressBarContent(BuildContext context, bool isGrid, bool isDownloading, double progress) {
-    final statusText = isDownloading ? (isGrid ? 'Saving...' : 'Downloading...') : 'Stopped';
+  Widget _buildProgressBarContent(
+    BuildContext context,
+    bool isGrid,
+    bool isDownloading,
+    double progress,
+  ) {
+    final statusText = isDownloading
+        ? (isGrid ? 'Saving...' : 'Downloading...')
+        : 'Stopped';
     final percentText = '${(progress * 100).toStringAsFixed(1)}%';
-    
+
     return Column(
-      crossAxisAlignment: isGrid ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
+      crossAxisAlignment: isGrid
+          ? CrossAxisAlignment.stretch
+          : CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

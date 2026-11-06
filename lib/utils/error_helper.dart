@@ -11,10 +11,13 @@ class ErrorHelper {
     }
 
     final str = error.toString().toLowerCase();
-    if (error is SocketException || str.contains('socket') || str.contains('timeout') || str.contains('connection')) {
+    if (error is SocketException ||
+        str.contains('socket') ||
+        str.contains('timeout') ||
+        str.contains('connection')) {
       return 'Check your connection';
     }
-    
+
     return 'An error occurred. Please try again.';
   }
 }

@@ -53,7 +53,8 @@ class _ReviewsPageState extends State<ReviewsPage> {
         id: '1',
         senderEmail: adminEmail,
         senderName: 'MindSpace Support Admin',
-        message: 'Hello $userName! Welcome to MindSpace Support. How can I assist you today?',
+        message:
+            'Hello $userName! Welcome to MindSpace Support. How can I assist you today?',
         timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
         isFromAdmin: true,
       ),
@@ -61,19 +62,24 @@ class _ReviewsPageState extends State<ReviewsPage> {
   }
 
   Future<void> _fetchChatMessages() async {
-    if (AuthManager.token == null || AuthManager.token!.startsWith('google_token_')) return;
+    if (AuthManager.token == null ||
+        AuthManager.token!.startsWith('google_token_'))
+      return;
     try {
-      final response = await http.get(
-        Uri.parse('https://mindspacenlp.com/api/chat/messages'),
-        headers: {
-          'Authorization': 'Bearer ${AuthManager.token}',
-          'Accept': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 8));
+      final response = await http
+          .get(
+            Uri.parse('https://mindspacenlp.com/api/chat/messages'),
+            headers: {
+              'Authorization': 'Bearer ${AuthManager.token}',
+              'Accept': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        final List<dynamic> data = body['data'] ?? body['messages'] ?? (body is List ? body : []);
+        final List<dynamic> data =
+            body['data'] ?? body['messages'] ?? (body is List ? body : []);
 
         final loaded = data.map((item) {
           final sender = item['sender_email'] ?? item['email'] ?? '';
@@ -82,8 +88,11 @@ class _ReviewsPageState extends State<ReviewsPage> {
             senderEmail: sender,
             senderName: item['sender_name'] ?? item['name'] ?? 'User',
             message: item['message'] ?? item['body'] ?? '',
-            timestamp: DateTime.tryParse(item['created_at'] ?? '') ?? DateTime.now(),
-            isFromAdmin: sender.toString().toLowerCase() == adminEmail.toLowerCase() || item['is_admin'] == true,
+            timestamp:
+                DateTime.tryParse(item['created_at'] ?? '') ?? DateTime.now(),
+            isFromAdmin:
+                sender.toString().toLowerCase() == adminEmail.toLowerCase() ||
+                item['is_admin'] == true,
           );
         }).toList();
 
@@ -94,7 +103,9 @@ class _ReviewsPageState extends State<ReviewsPage> {
           _scrollToBottom();
         }
       }
-    } catch (e) { debugPrint('Error: $e'); }
+    } catch (e) {
+      debugPrint('Error: $e');
+    }
   }
 
   Future<void> _sendMessage() async {
@@ -104,7 +115,9 @@ class _ReviewsPageState extends State<ReviewsPage> {
     final user = AuthManager.currentUser;
     final userEmail = user?.email ?? 'User';
     final userName = user?.name ?? 'User';
-    final isUserAdmin = userEmail.toLowerCase() == adminEmail.toLowerCase() || user?.role.name == 'admin';
+    final isUserAdmin =
+        userEmail.toLowerCase() == adminEmail.toLowerCase() ||
+        user?.role.name == 'admin';
 
     final newMessage = ChatMessage(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -122,21 +135,23 @@ class _ReviewsPageState extends State<ReviewsPage> {
     _scrollToBottom();
 
     // Call Laravel API endpoint if token available
-    if (AuthManager.token != null && !AuthManager.token!.startsWith('google_token_')) {
+    if (AuthManager.token != null &&
+        !AuthManager.token!.startsWith('google_token_')) {
       try {
-        await http.post(
-          Uri.parse('https://mindspacenlp.com/api/chat/send'),
-          headers: {
-            'Authorization': 'Bearer ${AuthManager.token}',
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: jsonEncode({
-            'recipient': adminEmail,
-            'message': text,
-          }),
-        ).timeout(const Duration(seconds: 5));
-      } catch (e) { debugPrint('Error: $e'); }
+        await http
+            .post(
+              Uri.parse('https://mindspacenlp.com/api/chat/send'),
+              headers: {
+                'Authorization': 'Bearer ${AuthManager.token}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+              body: jsonEncode({'recipient': adminEmail, 'message': text}),
+            )
+            .timeout(const Duration(seconds: 5));
+      } catch (e) {
+        debugPrint('Error: $e');
+      }
     }
   }
 
@@ -153,7 +168,7 @@ class _ReviewsPageState extends State<ReviewsPage> {
   }
 
   @override
-    @override
+  @override
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
@@ -179,7 +194,11 @@ class _ReviewsPageState extends State<ReviewsPage> {
                 ),
               ),
               child: const Center(
-                child: Icon(Icons.support_agent_rounded, color: Colors.white, size: 20),
+                child: Icon(
+                  Icons.support_agent_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -210,24 +229,34 @@ class _ReviewsPageState extends State<ReviewsPage> {
             Expanded(
               child: ListView.builder(
                 controller: _scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 itemCount: _messages.length,
                 itemBuilder: (context, index) {
                   final msg = _messages[index];
                   final isMe = !msg.isFromAdmin;
 
                   return Align(
-                    alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                    alignment: isMe
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
                     child: Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       constraints: BoxConstraints(
                         maxWidth: MediaQuery.of(context).size.width * 0.78,
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: isMe
                             ? AppColors.primary
-                            : (isDark ? AppColors.surfaceDark : Colors.grey.shade200),
+                            : (isDark
+                                  ? AppColors.surfaceDark
+                                  : Colors.grey.shade200),
                         borderRadius: BorderRadius.only(
                           topLeft: const Radius.circular(18),
                           topRight: const Radius.circular(18),
@@ -237,11 +266,15 @@ class _ReviewsPageState extends State<ReviewsPage> {
                         border: isMe
                             ? null
                             : Border.all(
-                                color: isDark ? AppColors.dividerDark : Colors.grey.shade300,
+                                color: isDark
+                                    ? AppColors.dividerDark
+                                    : Colors.grey.shade300,
                               ),
                       ),
                       child: Column(
-                        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                        crossAxisAlignment: isMe
+                            ? CrossAxisAlignment.end
+                            : CrossAxisAlignment.start,
                         children: [
                           if (!isMe)
                             Padding(
@@ -259,7 +292,9 @@ class _ReviewsPageState extends State<ReviewsPage> {
                             msg.message,
                             style: TextStyle(
                               fontSize: 14,
-                              color: isMe ? Colors.white : (isDark ? Colors.white : Colors.black87),
+                              color: isMe
+                                  ? Colors.white
+                                  : (isDark ? Colors.white : Colors.black87),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -267,7 +302,9 @@ class _ReviewsPageState extends State<ReviewsPage> {
                             '${msg.timestamp.hour.toString().padLeft(2, '0')}:${msg.timestamp.minute.toString().padLeft(2, '0')}',
                             style: TextStyle(
                               fontSize: 9,
-                              color: isMe ? Colors.white70 : (isDark ? Colors.white38 : Colors.black38),
+                              color: isMe
+                                  ? Colors.white70
+                                  : (isDark ? Colors.white38 : Colors.black38),
                             ),
                           ),
                         ],
@@ -285,7 +322,9 @@ class _ReviewsPageState extends State<ReviewsPage> {
                 color: isDark ? AppColors.surfaceDark : Colors.white,
                 border: Border(
                   top: BorderSide(
-                    color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+                    color: isDark
+                        ? AppColors.dividerDark
+                        : AppColors.dividerLight,
                   ),
                 ),
               ),
@@ -302,14 +341,22 @@ class _ReviewsPageState extends State<ReviewsPage> {
                           borderSide: BorderSide.none,
                         ),
                         filled: true,
-                        fillColor: isDark ? Colors.white10 : Colors.grey.shade100,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                        fillColor: isDark
+                            ? Colors.white10
+                            : Colors.grey.shade100,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 10,
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    icon: const Icon(Icons.send_rounded, color: AppColors.primary),
+                    icon: const Icon(
+                      Icons.send_rounded,
+                      color: AppColors.primary,
+                    ),
                     onPressed: _sendMessage,
                   ),
                 ],

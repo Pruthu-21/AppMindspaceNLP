@@ -16,7 +16,11 @@ class OfflineBanner extends StatelessWidget {
           SizedBox(width: 8),
           Text(
             'You are offline. Showing cached files.',
-            style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),

@@ -15,10 +15,7 @@ import '../utils/error_helper.dart';
 class FileDetailsPage extends StatefulWidget {
   final FileModel file;
 
-  const FileDetailsPage({
-    super.key,
-    required this.file,
-  });
+  const FileDetailsPage({super.key, required this.file});
 
   @override
   State<FileDetailsPage> createState() => _FileDetailsPageState();
@@ -46,8 +43,7 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
       setState(() {
         _isDownloaded = downloaded;
         if (downloaded && localPath != null) {
-        } else {
-        }
+        } else {}
       });
     }
   }
@@ -75,13 +71,18 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
     }
 
     // TODO: API Integration Here - Laravel REST API toggle favorite endpoint.
-    AppToast.showInfo(context, _isFavorite ? 'Added to favorites.' : 'Removed from favorites.');
+    AppToast.showInfo(
+      context,
+      _isFavorite ? 'Added to favorites.' : 'Removed from favorites.',
+    );
   }
 
   bool _isDownloadingThis = false;
 
   void _toggleDownload() async {
-    debugPrint('MSNLP_DOWNLOAD | REQUEST fileId=${widget.file.id} fileName=$_fileName source=details_page url_available=${widget.file.previewUrl != null}');
+    debugPrint(
+      'MSNLP_DOWNLOAD | REQUEST fileId=${widget.file.id} fileName=$_fileName source=details_page url_available=${widget.file.previewUrl != null}',
+    );
     final previewUrl = widget.file.previewUrl;
     if (!_isDownloaded) {
       if (previewUrl != null && previewUrl.isNotEmpty) {
@@ -89,8 +90,15 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
           _isDownloadingThis = true;
         });
 
-        AppToast.showInfo(context, 'Saving "$_fileName" offline in background...');
-        final success = await DownloadService.downloadFile(previewUrl, _fileName, model: widget.file);
+        AppToast.showInfo(
+          context,
+          'Saving "$_fileName" offline in background...',
+        );
+        final success = await DownloadService.downloadFile(
+          previewUrl,
+          _fileName,
+          model: widget.file,
+        );
         if (!mounted) return;
 
         if (mounted) {
@@ -101,7 +109,9 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
 
         if (!success) {
           if (mounted) {
-            final error = DownloadService.downloadErrorNotifier.value ?? 'Download failed. Please check internet connection.';
+            final error =
+                DownloadService.downloadErrorNotifier.value ??
+                'Download failed. Please check internet connection.';
             AppToast.showError(context, ErrorHelper.getFriendlyMessage(error));
           }
           return;
@@ -153,21 +163,26 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Rename File', style: TextStyle(fontWeight: FontWeight.bold)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Rename File',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: TextField(
             controller: renameController,
             autofocus: true,
-            decoration: const InputDecoration(
-              hintText: 'New Name',
-            ),
+            decoration: const InputDecoration(hintText: 'New Name'),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text(
                 'Cancel',
-                style: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
+                style: TextStyle(
+                  color: isDark ? Colors.white60 : Colors.black54,
+                ),
               ),
             ),
             TextButton(
@@ -177,7 +192,9 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
                   setState(() {
                     _fileName = newName;
                   });
-                  final idx = MockData.files.indexWhere((f) => f.id == widget.file.id);
+                  final idx = MockData.files.indexWhere(
+                    (f) => f.id == widget.file.id,
+                  );
                   if (idx != -1) {
                     MockData.files[idx] = FileModel(
                       id: widget.file.id,
@@ -196,7 +213,10 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
                 }
                 Navigator.pop(context);
               },
-              child: const Text('Save', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Save',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );
@@ -214,15 +234,24 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Delete File', style: TextStyle(fontWeight: FontWeight.bold)),
-          content: Text('Are you sure you want to permanently delete "$_fileName"?'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Delete File',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            'Are you sure you want to permanently delete "$_fileName"?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text(
                 'Cancel',
-                style: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
+                style: TextStyle(
+                  color: isDark ? Colors.white60 : Colors.black54,
+                ),
               ),
             ),
             TextButton(
@@ -237,7 +266,10 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
               },
               child: const Text(
                 'Delete',
-                style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -259,13 +291,17 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
         ),
         title: Text(
           widget.file.isFolder ? 'Folder Details' : 'File Details',
-          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           IconButton(
             icon: Icon(
               _isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
-              color: _isFavorite ? AppColors.warning : (isDark ? Colors.white70 : Colors.black54),
+              color: _isFavorite
+                  ? AppColors.warning
+                  : (isDark ? Colors.white70 : Colors.black54),
             ),
             onPressed: _toggleFavorite,
           ),
@@ -275,7 +311,10 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
               onPressed: _handleRename,
             ),
             IconButton(
-              icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
+              icon: const Icon(
+                Icons.delete_outline_rounded,
+                color: AppColors.error,
+              ),
               onPressed: _handleDelete,
             ),
           ],
@@ -307,9 +346,13 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                widget.file.isFolder ? 'Directory Folder' : '${widget.file.format.toUpperCase()} Document',
+                widget.file.isFolder
+                    ? 'Directory Folder'
+                    : '${widget.file.format.toUpperCase()} Document',
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -320,12 +363,20 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   PrimaryButton(
-                    text: widget.file.isFolder ? 'Open Folder' : 'Open / View File',
-                    icon: widget.file.isFolder ? Icons.folder_open_rounded : Icons.visibility_rounded,
+                    text: widget.file.isFolder
+                        ? 'Open Folder'
+                        : 'Open / View File',
+                    icon: widget.file.isFolder
+                        ? Icons.folder_open_rounded
+                        : Icons.visibility_rounded,
                     onPressed: () async {
                       if (widget.file.isFolder) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Folder navigation triggered (UI only)')),
+                          const SnackBar(
+                            content: Text(
+                              'Folder navigation triggered (UI only)',
+                            ),
+                          ),
                         );
                       } else {
                         await Navigator.push<Map<String, dynamic>>(
@@ -350,7 +401,9 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
                             onPressed: _toggleDownload,
                           )
                         : SecondaryButton(
-                            text: _isDownloadingThis ? 'Saving Offline...' : 'Save Offline',
+                            text: _isDownloadingThis
+                                ? 'Saving Offline...'
+                                : 'Save Offline',
                             icon: Icons.download_rounded,
                             isLoading: _isDownloadingThis,
                             onPressed: _toggleDownload,
@@ -374,12 +427,18 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
                   color: isDark ? AppColors.surfaceDark : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+                    color: isDark
+                        ? AppColors.dividerDark
+                        : AppColors.dividerLight,
                   ),
                 ),
                 child: Column(
                   children: [
-                    _buildInfoRow('Owner', widget.file.ownerName, Icons.person_outline_rounded),
+                    _buildInfoRow(
+                      'Owner',
+                      widget.file.ownerName,
+                      Icons.person_outline_rounded,
+                    ),
                     const Divider(height: 24),
                     _buildInfoRow(
                       'Created Date',
@@ -395,7 +454,9 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
                     const Divider(height: 24),
                     _buildInfoRow(
                       'Location',
-                      widget.file.isFolder ? 'My Drive' : 'My Drive > ${_fileName.split('.').last.toUpperCase()}s',
+                      widget.file.isFolder
+                          ? 'My Drive'
+                          : 'My Drive > ${_fileName.split('.').last.toUpperCase()}s',
                       Icons.folder_open_rounded,
                     ),
                   ],
@@ -412,7 +473,8 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
   Widget _buildLargePreview(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final hasUrl = widget.file.previewUrl != null && widget.file.previewUrl!.isNotEmpty;
+    final hasUrl =
+        widget.file.previewUrl != null && widget.file.previewUrl!.isNotEmpty;
     final useHero = !hasUrl || widget.file.isFolder;
 
     final previewBox = Container(
@@ -442,10 +504,7 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
     if (useHero) {
       return Hero(
         tag: 'hero-icon-${widget.file.id}',
-        child: Material(
-          color: Colors.transparent,
-          child: previewBox,
-        ),
+        child: Material(color: Colors.transparent, child: previewBox),
       );
     }
 
@@ -453,7 +512,6 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
   }
 
   Widget _buildPreviewContent(BuildContext context) {
-
     if (widget.file.format == 'folder') {
       return _buildPreviewIcon(Icons.folder_rounded, Colors.amber.shade600);
     }
@@ -476,10 +534,7 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
             SizedBox(height: 12),
             Text(
               'Audio Track',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: Colors.grey, fontSize: 12),
             ),
           ],
         ),
@@ -526,11 +581,7 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
           color: color.withValues(alpha: 0.08),
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          icon,
-          color: color,
-          size: 64,
-        ),
+        child: Icon(icon, color: color, size: 64),
       ),
     );
   }
@@ -543,14 +594,18 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
         Icon(
           icon,
           size: 20,
-          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+          color: isDark
+              ? AppColors.textSecondaryDark
+              : AppColors.textSecondaryLight,
         ),
         const SizedBox(width: 12),
         Text(
           title,
           style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.w500,
-            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            color: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondaryLight,
           ),
         ),
         const Spacer(),
@@ -578,16 +633,17 @@ class _FileDetailsPageState extends State<FileDetailsPage> {
       'Sep',
       'Oct',
       'Nov',
-      'Dec'
+      'Dec',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}, ${_formatTime(date)}';
   }
 
   String _formatTime(DateTime date) {
-    final hour = date.hour > 12 ? date.hour - 12 : (date.hour == 0 ? 12 : date.hour);
+    final hour = date.hour > 12
+        ? date.hour - 12
+        : (date.hour == 0 ? 12 : date.hour);
     final ampm = date.hour >= 12 ? 'PM' : 'AM';
     final minuteStr = date.minute < 10 ? '0${date.minute}' : '${date.minute}';
     return '$hour:$minuteStr $ampm';
   }
 }
-

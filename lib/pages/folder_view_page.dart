@@ -21,8 +21,9 @@ import '../utils/error_helper.dart';
 import 'file_details_page.dart';
 import '../services/download_service.dart';
 
-
-Map<String, List<Map<String, dynamic>>> parseFolderContentsResponse(String responseBody) {
+Map<String, List<Map<String, dynamic>>> parseFolderContentsResponse(
+  String responseBody,
+) {
   try {
     final decoded = jsonDecode(responseBody);
     List<dynamic> rawFiles = [];
@@ -112,26 +113,35 @@ class _FolderViewPageState extends State<FolderViewPage> {
     });
 
     try {
-      final response = await http.get(
-        Uri.parse('https://mindspacenlp.com/api/drive/folder/${widget.folder.id}/contents'),
-        headers: {
-          'Authorization': 'Bearer ${AuthManager.token}',
-          'Accept': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            Uri.parse(
+              'https://mindspacenlp.com/api/drive/folder/${widget.folder.id}/contents',
+            ),
+            headers: {
+              'Authorization': 'Bearer ${AuthManager.token}',
+              'Accept': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final parsedData = await compute(parseFolderContentsResponse, response.body);
+        final parsedData = await compute(
+          parseFolderContentsResponse,
+          response.body,
+        );
         List<Map<String, dynamic>> rawFiles = parsedData['rawFiles'] ?? [];
         List<Map<String, dynamic>> rawFolders = parsedData['rawFolders'] ?? [];
 
         final parsedFolders = rawFolders.map((item) {
           return FileModel(
-            id: (item['id'] ?? DateTime.now().millisecondsSinceEpoch).toString(),
+            id: (item['id'] ?? DateTime.now().millisecondsSinceEpoch)
+                .toString(),
             name: (item['name'] ?? 'Untitled Folder').toString(),
             format: 'folder',
             sizeBytes: 0,
-            uploadDate: DateTime.tryParse(item['created_at'] ?? '') ?? DateTime.now(),
+            uploadDate:
+                DateTime.tryParse(item['created_at'] ?? '') ?? DateTime.now(),
             ownerName: item['owner'] ?? 'Admin',
           );
         }).toList();
@@ -153,7 +163,11 @@ class _FolderViewPageState extends State<FolderViewPage> {
           }
 
           final customSize = item['size']?.toString();
-          final rawBytes = item['size_bytes'] ?? item['bytes'] ?? item['file_size_bytes'] ?? item['size_in_bytes'];
+          final rawBytes =
+              item['size_bytes'] ??
+              item['bytes'] ??
+              item['file_size_bytes'] ??
+              item['size_in_bytes'];
           int parsedBytes = 0;
           if (rawBytes != null) {
             parsedBytes = int.tryParse(rawBytes.toString()) ?? 0;
@@ -163,12 +177,14 @@ class _FolderViewPageState extends State<FolderViewPage> {
           }
 
           return FileModel(
-            id: (item['id'] ?? DateTime.now().millisecondsSinceEpoch).toString(),
+            id: (item['id'] ?? DateTime.now().millisecondsSinceEpoch)
+                .toString(),
             name: name,
             format: format,
             sizeBytes: parsedBytes,
             customSizeString: customSize,
-            uploadDate: DateTime.tryParse(item['created_at'] ?? '') ?? DateTime.now(),
+            uploadDate:
+                DateTime.tryParse(item['created_at'] ?? '') ?? DateTime.now(),
             ownerName: item['owner'] ?? 'Admin',
             previewUrl: url,
           );
@@ -179,19 +195,21 @@ class _FolderViewPageState extends State<FolderViewPage> {
           final isDl = await DownloadService.isFileDownloaded(file.name);
           if (isDl) {
             final localPath = await DownloadService.getLocalFilePath(file.name);
-            updatedFiles.add(FileModel(
-              id: file.id,
-              name: file.name,
-              format: file.format,
-              sizeBytes: file.sizeBytes,
-              customSizeString: file.customSizeString,
-              uploadDate: file.uploadDate,
-              ownerName: file.ownerName,
-              isPinned: file.isPinned,
-              isFavorite: file.isFavorite,
-              isDownloaded: true,
-              previewUrl: localPath ?? file.previewUrl,
-            ));
+            updatedFiles.add(
+              FileModel(
+                id: file.id,
+                name: file.name,
+                format: file.format,
+                sizeBytes: file.sizeBytes,
+                customSizeString: file.customSizeString,
+                uploadDate: file.uploadDate,
+                ownerName: file.ownerName,
+                isPinned: file.isPinned,
+                isFavorite: file.isFavorite,
+                isDownloaded: true,
+                previewUrl: localPath ?? file.previewUrl,
+              ),
+            );
           } else {
             updatedFiles.add(file);
           }
@@ -224,7 +242,9 @@ class _FolderViewPageState extends State<FolderViewPage> {
     setState(() {
       _filteredItems = q.isEmpty
           ? List<FileModel>.from(_allSubItems)
-          : _allSubItems.where((f) => f.name.toLowerCase().contains(q)).toList();
+          : _allSubItems
+                .where((f) => f.name.toLowerCase().contains(q))
+                .toList();
     });
   }
 
@@ -237,9 +257,15 @@ class _FolderViewPageState extends State<FolderViewPage> {
       );
 
       if (result != null && result.files.isNotEmpty) {
-        if (mounted) AppToast.showInfo(context, 'Uploading file(s) into "${widget.folder.name}"...');
+        if (mounted)
+          AppToast.showInfo(
+            context,
+            'Uploading file(s) into "${widget.folder.name}"...',
+          );
 
-        final uri = Uri.parse('https://mindspacenlp.com/api/admin/drive/upload');
+        final uri = Uri.parse(
+          'https://mindspacenlp.com/api/admin/drive/upload',
+        );
         final request = http.MultipartRequest('POST', uri);
         request.headers['Authorization'] = 'Bearer ${AuthManager.token}';
         request.headers['Accept'] = 'application/json';
@@ -247,9 +273,17 @@ class _FolderViewPageState extends State<FolderViewPage> {
 
         for (var picked in result.files) {
           if (picked.path != null) {
-            request.files.add(await http.MultipartFile.fromPath('files[]', picked.path!));
+            request.files.add(
+              await http.MultipartFile.fromPath('files[]', picked.path!),
+            );
           } else if (picked.bytes != null) {
-            request.files.add(http.MultipartFile.fromBytes('files[]', picked.bytes!, filename: picked.name));
+            request.files.add(
+              http.MultipartFile.fromBytes(
+                'files[]',
+                picked.bytes!,
+                filename: picked.name,
+              ),
+            );
           }
         }
 
@@ -260,11 +294,16 @@ class _FolderViewPageState extends State<FolderViewPage> {
           if (mounted) AppToast.showSuccess(context, 'Uploaded successfully!');
           await _fetchFolderContents();
         } else {
-          if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
+          if (mounted)
+            AppToast.showError(
+              context,
+              ErrorHelper.getFriendlyMessage(null, response.statusCode),
+            );
         }
       }
     } catch (e) {
-      if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
+      if (mounted)
+        AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
     }
   }
 
@@ -285,102 +324,129 @@ class _FolderViewPageState extends State<FolderViewPage> {
         }
       },
       child: Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Row(
-          children: [
-            Icon(Icons.folder_rounded, color: Colors.amber.shade600, size: 24),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                widget.folder.name,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(_isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded),
-            onPressed: () {
-              setState(() {
-                _isGridView = !_isGridView;
-              });
-            },
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+            onPressed: () => Navigator.pop(context),
           ),
-        ],
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Column(
+          title: Row(
             children: [
-              const SizedBox(height: 8),
-              SearchBarWidget(
-                hintText: 'Search inside ${widget.folder.name}',
-                onChanged: (val) {
-                  _searchQuery = val;
-                  _filterItems();
-                },
+              Icon(
+                Icons.folder_rounded,
+                color: Colors.amber.shade600,
+                size: 24,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(width: 8),
               Expanded(
-                child: RefreshIndicator(
-                  onRefresh: _fetchFolderContents,
-                  child: _isLoading
-                      ? (_isGridView ? const FileGridSkeleton() : const FileListSkeleton())
-                      : (_filteredItems.isEmpty
-                          ? const EmptyWidget(
-                              icon: Icons.folder_open_rounded,
-                              title: 'Folder is Empty',
-                              description: 'No files or subfolders found inside this folder.',
-                            )
-                          : ListView(
-                              physics: const BouncingScrollPhysics(),
-                              children: [
-                                if (subFolders.isNotEmpty) ...[
-                                  Text(
-                                    'Folders (${subFolders.length})',
-                                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  _buildItemGridOrList(subFolders),
-                                  const SizedBox(height: 16),
-                                ],
-                                if (subFiles.isNotEmpty) ...[
-                                  Text(
-                                    'Files (${subFiles.length})',
-                                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  _buildItemGridOrList(subFiles),
-                                ],
-                              ],
-                            )),
+                child: Text(
+                  widget.folder.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
+          actions: [
+            IconButton(
+              icon: Icon(
+                _isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
+              ),
+              onPressed: () {
+                setState(() {
+                  _isGridView = !_isGridView;
+                });
+              },
+            ),
+          ],
+          backgroundColor: Colors.transparent,
+          elevation: 0,
         ),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              children: [
+                const SizedBox(height: 8),
+                SearchBarWidget(
+                  hintText: 'Search inside ${widget.folder.name}',
+                  onChanged: (val) {
+                    _searchQuery = val;
+                    _filterItems();
+                  },
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _fetchFolderContents,
+                    child: _isLoading
+                        ? (_isGridView
+                              ? const FileGridSkeleton()
+                              : const FileListSkeleton())
+                        : (_filteredItems.isEmpty
+                              ? const EmptyWidget(
+                                  icon: Icons.folder_open_rounded,
+                                  title: 'Folder is Empty',
+                                  description:
+                                      'No files or subfolders found inside this folder.',
+                                )
+                              : ListView(
+                                  physics: const BouncingScrollPhysics(),
+                                  children: [
+                                    if (subFolders.isNotEmpty) ...[
+                                      Text(
+                                        'Folders (${subFolders.length})',
+                                        style: theme.textTheme.titleSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      _buildItemGridOrList(subFolders),
+                                      const SizedBox(height: 16),
+                                    ],
+                                    if (subFiles.isNotEmpty) ...[
+                                      Text(
+                                        'Files (${subFiles.length})',
+                                        style: theme.textTheme.titleSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      _buildItemGridOrList(subFiles),
+                                    ],
+                                  ],
+                                )),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        floatingActionButton: (isAdmin && !_isSelectionMode)
+            ? FloatingActionButton.extended(
+                onPressed: _handleUploadToFolder,
+                backgroundColor: theme.colorScheme.primary,
+                icon: const Icon(
+                  Icons.upload_file_rounded,
+                  color: Colors.white,
+                ),
+                label: const Text(
+                  'Add File',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              )
+            : null,
+        bottomNavigationBar: _isSelectionMode
+            ? _buildMultiSelectBottomBar(context, theme, isDark)
+            : null,
       ),
-      floatingActionButton: (isAdmin && !_isSelectionMode)
-          ? FloatingActionButton.extended(
-              onPressed: _handleUploadToFolder,
-              backgroundColor: theme.colorScheme.primary,
-              icon: const Icon(Icons.upload_file_rounded, color: Colors.white),
-              label: const Text('Add File', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            )
-          : null,
-      bottomNavigationBar: _isSelectionMode
-          ? _buildMultiSelectBottomBar(context, theme, isDark)
-          : null,
-    ),
     );
   }
 
@@ -412,7 +478,14 @@ class _FolderViewPageState extends State<FolderViewPage> {
     for (var id in ids) {
       final match = _allSubItems.firstWhere(
         (f) => f.id == id,
-        orElse: () => FileModel(id: id, name: '', format: '', sizeBytes: 0, uploadDate: DateTime.now(), ownerName: ''),
+        orElse: () => FileModel(
+          id: id,
+          name: '',
+          format: '',
+          sizeBytes: 0,
+          uploadDate: DateTime.now(),
+          ownerName: '',
+        ),
       );
       if (match.isFolder) {
         folderIds.add(id);
@@ -427,12 +500,20 @@ class _FolderViewPageState extends State<FolderViewPage> {
       builder: (dialogCtx) => AlertDialog(
         backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Items', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Text('Are you sure you want to permanently delete these ${ids.length} item(s)?'),
+        title: const Text(
+          'Delete Items',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Are you sure you want to permanently delete these ${ids.length} item(s)?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
-            child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white60 : Colors.black54)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
+            ),
           ),
           TextButton(
             onPressed: () async {
@@ -454,16 +535,34 @@ class _FolderViewPageState extends State<FolderViewPage> {
                 );
 
                 if (response.statusCode == 200) {
-                  if (mounted) AppToast.showSuccess(context, 'Items deleted successfully.');
+                  if (mounted)
+                    AppToast.showSuccess(
+                      context,
+                      'Items deleted successfully.',
+                    );
                   await _fetchFolderContents();
                 } else {
-                  if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
+                  if (mounted)
+                    AppToast.showError(
+                      context,
+                      ErrorHelper.getFriendlyMessage(null, response.statusCode),
+                    );
                 }
               } catch (e) {
-                if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
+                if (mounted)
+                  AppToast.showError(
+                    context,
+                    ErrorHelper.getFriendlyMessage(e),
+                  );
               }
             },
-            child: const Text('Delete', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(
+                color: AppColors.error,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -477,12 +576,20 @@ class _FolderViewPageState extends State<FolderViewPage> {
       builder: (dialogCtx) => AlertDialog(
         backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Delete ${item.isFolder ? "Folder" : "File"}', style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: Text('Are you sure you want to permanently delete "${item.name}"?'),
+        title: Text(
+          'Delete ${item.isFolder ? "Folder" : "File"}',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Are you sure you want to permanently delete "${item.name}"?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
-            child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white60 : Colors.black54)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
+            ),
           ),
           TextButton(
             onPressed: () async {
@@ -502,16 +609,34 @@ class _FolderViewPageState extends State<FolderViewPage> {
                 );
 
                 if (response.statusCode == 200) {
-                  if (mounted) AppToast.showSuccess(context, '"${item.name}" deleted successfully.');
+                  if (mounted)
+                    AppToast.showSuccess(
+                      context,
+                      '"${item.name}" deleted successfully.',
+                    );
                   await _fetchFolderContents();
                 } else {
-                  if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
+                  if (mounted)
+                    AppToast.showError(
+                      context,
+                      ErrorHelper.getFriendlyMessage(null, response.statusCode),
+                    );
                 }
               } catch (e) {
-                if (mounted) AppToast.showError(context, ErrorHelper.getFriendlyMessage(e));
+                if (mounted)
+                  AppToast.showError(
+                    context,
+                    ErrorHelper.getFriendlyMessage(e),
+                  );
               }
             },
-            child: const Text('Delete', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(
+                color: AppColors.error,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -530,17 +655,17 @@ class _FolderViewPageState extends State<FolderViewPage> {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
           },
-          body: jsonEncode({
-            'file_ids': fileIds,
-            'user_ids': selectedUserIds,
-          }),
+          body: jsonEncode({'file_ids': fileIds, 'user_ids': selectedUserIds}),
         );
         if (!mounted) return;
         if (response.statusCode == 200) {
           AppToast.showSuccess(context, 'Shared successfully!');
           _fetchFolderContents();
         } else {
-          AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
+          AppToast.showError(
+            context,
+            ErrorHelper.getFriendlyMessage(null, response.statusCode),
+          );
         }
       } catch (e) {
         if (!mounted) return;
@@ -558,7 +683,14 @@ class _FolderViewPageState extends State<FolderViewPage> {
     for (var id in selectedIds) {
       final match = _allSubItems.firstWhere(
         (f) => f.id == id,
-        orElse: () => FileModel(id: id, name: '', format: '', sizeBytes: 0, uploadDate: DateTime.now(), ownerName: ''),
+        orElse: () => FileModel(
+          id: id,
+          name: '',
+          format: '',
+          sizeBytes: 0,
+          uploadDate: DateTime.now(),
+          ownerName: '',
+        ),
       );
       if (match.isFolder) {
         folderIdsToMove.add(id);
@@ -567,10 +699,16 @@ class _FolderViewPageState extends State<FolderViewPage> {
       }
     }
 
-    final availableFolders = _allSubItems.where((f) => f.isFolder && !folderIdsToMove.contains(f.id)).toList();
+    final availableFolders = _allSubItems
+        .where((f) => f.isFolder && !folderIdsToMove.contains(f.id))
+        .toList();
 
-    final targetFolderId = await MoveDialog.show(context, selectedIds.length, availableFolders);
-    
+    final targetFolderId = await MoveDialog.show(
+      context,
+      selectedIds.length,
+      availableFolders,
+    );
+
     if (targetFolderId != null) {
       _clearSelection();
       try {
@@ -593,7 +731,10 @@ class _FolderViewPageState extends State<FolderViewPage> {
           AppToast.showSuccess(context, 'Moved successfully!');
           _fetchFolderContents();
         } else {
-          AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
+          AppToast.showError(
+            context,
+            ErrorHelper.getFriendlyMessage(null, response.statusCode),
+          );
         }
       } catch (e) {
         if (!mounted) return;
@@ -604,41 +745,62 @@ class _FolderViewPageState extends State<FolderViewPage> {
 
   void _handleDeleteOfflineAction(FileModel file) async {
     if (file.isFolder) return;
-    debugPrint('MSNLP_DOWNLOAD | ACTION action=DELETE fileId=${file.id} fileName=${file.name}');
+    debugPrint(
+      'MSNLP_DOWNLOAD | ACTION action=DELETE fileId=${file.id} fileName=${file.name}',
+    );
     debugPrint('MSNLP_FILE | DELETE_START fileId=${file.id}');
     try {
       await DownloadService.deleteDownloadedFile(file.name);
       debugPrint('MSNLP_FILE | PHYSICAL_DELETE path=${file.name} success=true');
       debugPrint('MSNLP_FILE | METADATA_DELETE fileId=${file.id} success=true');
       if (mounted) {
-        AppToast.showInfo(context, '"${file.name}" removed from offline storage.');
+        AppToast.showInfo(
+          context,
+          '"${file.name}" removed from offline storage.',
+        );
         await _fetchFolderContents();
       }
     } catch (e, stack) {
-      debugPrint('MSNLP_FILE | PHYSICAL_DELETE path=${file.name} success=false error=$e stack=$stack');
+      debugPrint(
+        'MSNLP_FILE | PHYSICAL_DELETE path=${file.name} success=false error=$e stack=$stack',
+      );
     }
   }
 
   void _handleDownloadAction(FileModel file) async {
-    debugPrint('MSNLP_DOWNLOAD | REQUEST fileId=${file.id} fileName=${file.name} source=three_dot url_available=${file.previewUrl != null}');
+    debugPrint(
+      'MSNLP_DOWNLOAD | REQUEST fileId=${file.id} fileName=${file.name} source=three_dot url_available=${file.previewUrl != null}',
+    );
     if (file.isFolder) return;
-    AppToast.showInfo(context, 'Saving "${file.name}" to local device storage...');
+    AppToast.showInfo(
+      context,
+      'Saving "${file.name}" to local device storage...',
+    );
     final url = file.previewUrl ?? '';
     final ok = await DownloadService.downloadFile(url, file.name, model: file);
     if (ok) {
       if (mounted) {
-        AppToast.showSuccess(context, '"${file.name}" saved locally for offline access!');
+        AppToast.showSuccess(
+          context,
+          '"${file.name}" saved locally for offline access!',
+        );
         await _fetchFolderContents();
       }
     } else {
       if (mounted) {
-        final error = DownloadService.downloadErrorNotifier.value ?? 'Failed to download "${file.name}". Please check internet connection.';
+        final error =
+            DownloadService.downloadErrorNotifier.value ??
+            'Failed to download "${file.name}". Please check internet connection.';
         AppToast.showError(context, ErrorHelper.getFriendlyMessage(error));
       }
     }
   }
 
-  Widget _buildMultiSelectBottomBar(BuildContext context, ThemeData theme, bool isDark) {
+  Widget _buildMultiSelectBottomBar(
+    BuildContext context,
+    ThemeData theme,
+    bool isDark,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -672,7 +834,10 @@ class _FolderViewPageState extends State<FolderViewPage> {
               onPressed: _batchShare,
             ),
             IconButton(
-              icon: const Icon(Icons.drive_file_move_rounded, color: Colors.amber),
+              icon: const Icon(
+                Icons.drive_file_move_rounded,
+                color: Colors.amber,
+              ),
               tooltip: 'Move',
               onPressed: _batchMove,
             ),
@@ -708,7 +873,10 @@ class _FolderViewPageState extends State<FolderViewPage> {
           AppToast.showSuccess(context, 'Renamed to "$newName"');
           _fetchFolderContents();
         } else {
-          AppToast.showError(context, ErrorHelper.getFriendlyMessage(null, response.statusCode));
+          AppToast.showError(
+            context,
+            ErrorHelper.getFriendlyMessage(null, response.statusCode),
+          );
         }
       } catch (e) {
         if (!mounted) return;
@@ -726,95 +894,103 @@ class _FolderViewPageState extends State<FolderViewPage> {
           mainAxisSpacing: 12,
           childAspectRatio: 1.3,
         ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
+        delegate: SliverChildBuilderDelegate((context, index) {
           final item = items[index];
-          return RepaintBoundary(child: FileCard(
-            file: item,
-            isGrid: true,
-            isSelectionMode: _isSelectionMode,
-            isSelected: _selectedFileIds.contains(item.id),
-            onLongPress: () => _enterSelectionMode(item),
-            onMenuSelected: (action) {
-              if (action == 'rename') {
-                _showRenameDialog(item);
-              } else if (action == 'delete') {
-                _showDeleteConfirmationDialog(item);
-              } else if (action == 'share') {
-                _showShareDialog([item.id]);
-              } else if (action == 'move') {
-                _showMoveDialog([item.id]);
-              } else if (action == 'download') {
-                _handleDownloadAction(item);
-              } else if (action == 'delete_offline' || action == 'remove_partial') {
-                _handleDeleteOfflineAction(item);
-              }
-            },
-            onTap: () {
-              if (_isSelectionMode) {
-                _toggleSelection(item);
-              } else if (item.isFolder) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => FolderViewPage(folder: item)),
-                );
-              } else {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => FileDetailsPage(file: item)),
-                );
-              }
-            },
-          ));
-          },
-          childCount: items.length,
-        ),
+          return RepaintBoundary(
+            child: FileCard(
+              file: item,
+              isGrid: true,
+              isSelectionMode: _isSelectionMode,
+              isSelected: _selectedFileIds.contains(item.id),
+              onLongPress: () => _enterSelectionMode(item),
+              onMenuSelected: (action) {
+                if (action == 'rename') {
+                  _showRenameDialog(item);
+                } else if (action == 'delete') {
+                  _showDeleteConfirmationDialog(item);
+                } else if (action == 'share') {
+                  _showShareDialog([item.id]);
+                } else if (action == 'move') {
+                  _showMoveDialog([item.id]);
+                } else if (action == 'download') {
+                  _handleDownloadAction(item);
+                } else if (action == 'delete_offline' ||
+                    action == 'remove_partial') {
+                  _handleDeleteOfflineAction(item);
+                }
+              },
+              onTap: () {
+                if (_isSelectionMode) {
+                  _toggleSelection(item);
+                } else if (item.isFolder) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FolderViewPage(folder: item),
+                    ),
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FileDetailsPage(file: item),
+                    ),
+                  );
+                }
+              },
+            ),
+          );
+        }, childCount: items.length),
       );
     } else {
       return SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
+        delegate: SliverChildBuilderDelegate((context, index) {
           final item = items[index];
-          return RepaintBoundary(child: FileCard(
-            file: item,
-            isGrid: false,
-            isSelectionMode: _isSelectionMode,
-            isSelected: _selectedFileIds.contains(item.id),
-            onLongPress: () => _enterSelectionMode(item),
-            onMenuSelected: (action) {
-              if (action == 'rename') {
-                _showRenameDialog(item);
-              } else if (action == 'delete') {
-                _showDeleteConfirmationDialog(item);
-              } else if (action == 'share') {
-                _showShareDialog([item.id]);
-              } else if (action == 'move') {
-                _showMoveDialog([item.id]);
-              } else if (action == 'download') {
-                _handleDownloadAction(item);
-              } else if (action == 'delete_offline' || action == 'remove_partial') {
-                _handleDeleteOfflineAction(item);
-              }
-            },
-            onTap: () {
-              if (_isSelectionMode) {
-                _toggleSelection(item);
-              } else if (item.isFolder) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => FolderViewPage(folder: item)),
-                );
-              } else {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => FileDetailsPage(file: item)),
-                );
-              }
-            },
-          ));
-          },
-          childCount: items.length,
-        ),
+          return RepaintBoundary(
+            child: FileCard(
+              file: item,
+              isGrid: false,
+              isSelectionMode: _isSelectionMode,
+              isSelected: _selectedFileIds.contains(item.id),
+              onLongPress: () => _enterSelectionMode(item),
+              onMenuSelected: (action) {
+                if (action == 'rename') {
+                  _showRenameDialog(item);
+                } else if (action == 'delete') {
+                  _showDeleteConfirmationDialog(item);
+                } else if (action == 'share') {
+                  _showShareDialog([item.id]);
+                } else if (action == 'move') {
+                  _showMoveDialog([item.id]);
+                } else if (action == 'download') {
+                  _handleDownloadAction(item);
+                } else if (action == 'delete_offline' ||
+                    action == 'remove_partial') {
+                  _handleDeleteOfflineAction(item);
+                }
+              },
+              onTap: () {
+                if (_isSelectionMode) {
+                  _toggleSelection(item);
+                } else if (item.isFolder) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FolderViewPage(folder: item),
+                    ),
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FileDetailsPage(file: item),
+                    ),
+                  );
+                }
+              },
+            ),
+          );
+        }, childCount: items.length),
       );
     }
   }

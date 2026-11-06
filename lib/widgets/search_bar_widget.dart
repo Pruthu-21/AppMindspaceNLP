@@ -38,17 +38,23 @@ class SearchBarWidget extends StatelessWidget {
       child: TextField(
         onChanged: onChanged,
         style: theme.textTheme.bodyMedium?.copyWith(
-          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+          color: isDark
+              ? AppColors.textPrimaryDark
+              : AppColors.textPrimaryLight,
         ),
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyle(
-            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            color: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondaryLight,
             fontSize: 14,
           ),
           prefixIcon: Icon(
             Icons.search_rounded,
-            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            color: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondaryLight,
             size: 20,
           ),
           suffixIcon: onFilterPressed != null

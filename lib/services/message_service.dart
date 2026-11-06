@@ -29,7 +29,6 @@ class AppMessage {
   }
 }
 
-
 List<Map<String, dynamic>> parseMessagesResponse(String responseBody) {
   try {
     final dynamic decoded = json.decode(responseBody);
@@ -53,7 +52,7 @@ List<Map<String, dynamic>> parseMessagesResponse(String responseBody) {
 class MessageService {
   // Replace with your actual API endpoint URL
   final String baseUrl = 'https://mindspacenlp.com/api';
-  
+
   static final ValueNotifier<bool> hasUnreadMessages = ValueNotifier(false);
 
   Future<void> checkUnreadMessages(String userToken) async {
@@ -74,9 +73,10 @@ class MessageService {
         } else if (decoded is Map) {
           if (decoded['data'] is List) {
             data = decoded['data'];
-          } else if (decoded['messages'] is List) data = decoded['messages'];
+          } else if (decoded['messages'] is List)
+            data = decoded['messages'];
         }
-        
+
         if (data.isNotEmpty) {
           final firstId = data.first['id'].toString();
           final prefs = await SharedPreferences.getInstance();
@@ -104,10 +104,15 @@ class MessageService {
       );
 
       if (response.statusCode == 200) {
-        final List<Map<String, dynamic>> parsedData = await compute(parseMessagesResponse, response.body);
-        final fetchedMessages = parsedData.map((json) => AppMessage.fromJson(json)).toList();
+        final List<Map<String, dynamic>> parsedData = await compute(
+          parseMessagesResponse,
+          response.body,
+        );
+        final fetchedMessages = parsedData
+            .map((json) => AppMessage.fromJson(json))
+            .toList();
         messages.addAll(fetchedMessages);
-        
+
         // Mark as read
         if (messages.isNotEmpty) {
           final prefs = await SharedPreferences.getInstance();
@@ -139,17 +144,18 @@ class MessageService {
         body: json.encode({
           'title': title,
           'body': body,
-          if (attachmentUrl != null && attachmentUrl.isNotEmpty) 'attachment_url': attachmentUrl,
+          if (attachmentUrl != null && attachmentUrl.isNotEmpty)
+            'attachment_url': attachmentUrl,
         }),
       );
-      
+
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       debugPrint('Error sending message: $e');
       return false;
     }
   }
-  
+
   Future<void> updateOnlineStatus(String userToken, bool isOnline) async {
     try {
       await http.post(
@@ -159,9 +165,7 @@ class MessageService {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: json.encode({
-          'is_online': isOnline,
-        }),
+        body: json.encode({'is_online': isOnline}),
       );
     } catch (e) {
       debugPrint('Error updating online status: $e');
@@ -177,9 +181,7 @@ class MessageService {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: json.encode({
-          'token': fcmToken,
-        }),
+        body: json.encode({'token': fcmToken}),
       );
     } catch (e) {
       debugPrint('Error updating FCM token: $e');
@@ -199,12 +201,9 @@ class MessageService {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: json.encode({
-          'subject': subject,
-          'message': message,
-        }),
+        body: json.encode({'subject': subject, 'message': message}),
       );
-      
+
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       debugPrint('Error sending issue report: $e');

@@ -35,29 +35,41 @@ class _RecentPageState extends State<RecentPage> {
   Future<void> _filterRecentFiles() async {
     List<FileModel> items = [];
     try {
-      if (AuthManager.token != null && !AuthManager.token!.startsWith('google_token_')) {
-        final response = await http.get(
-          Uri.parse('https://mindspacenlp.com/api/drive/shared-with-me'),
-          headers: {
-            'Authorization': 'Bearer ${AuthManager.token}',
-            'Accept': 'application/json',
-          },
-        ).timeout(const Duration(seconds: 10));
+      if (AuthManager.token != null &&
+          !AuthManager.token!.startsWith('google_token_')) {
+        final response = await http
+            .get(
+              Uri.parse('https://mindspacenlp.com/api/drive/shared-with-me'),
+              headers: {
+                'Authorization': 'Bearer ${AuthManager.token}',
+                'Accept': 'application/json',
+              },
+            )
+            .timeout(const Duration(seconds: 10));
 
         if (response.statusCode == 200) {
           final decoded = jsonDecode(response.body);
-          final List<dynamic> data = decoded['data'] ?? decoded['files'] ?? (decoded is List ? decoded : []);
+          final List<dynamic> data =
+              decoded['data'] ??
+              decoded['files'] ??
+              (decoded is List ? decoded : []);
           items = data.map((item) {
-            final isFolder = item['is_folder'] == true || item['mime_type'] == 'folder';
+            final isFolder =
+                item['is_folder'] == true || item['mime_type'] == 'folder';
             final name = (item['name'] ?? 'Untitled').toString();
             final mime = (item['mime_type'] ?? '').toString();
             final format = FileModel.detectFormat(name, mime, isFolder);
 
             String? url = (item['url'] ?? item['path'])?.toString();
-            if (url != null && !url.startsWith('http')) url = 'https://mindspacenlp.com/$url';
+            if (url != null && !url.startsWith('http'))
+              url = 'https://mindspacenlp.com/$url';
 
             final customSize = item['size']?.toString();
-            final rawBytes = item['size_bytes'] ?? item['bytes'] ?? item['file_size_bytes'] ?? item['size_in_bytes'];
+            final rawBytes =
+                item['size_bytes'] ??
+                item['bytes'] ??
+                item['file_size_bytes'] ??
+                item['size_in_bytes'];
             int parsedBytes = 0;
             if (rawBytes != null) {
               parsedBytes = int.tryParse(rawBytes.toString()) ?? 0;
@@ -67,19 +79,23 @@ class _RecentPageState extends State<RecentPage> {
             }
 
             return FileModel(
-              id: (item['id'] ?? DateTime.now().millisecondsSinceEpoch).toString(),
+              id: (item['id'] ?? DateTime.now().millisecondsSinceEpoch)
+                  .toString(),
               name: name,
               format: format,
               sizeBytes: parsedBytes,
               customSizeString: customSize,
-              uploadDate: DateTime.tryParse(item['created_at'] ?? '') ?? DateTime.now(),
+              uploadDate:
+                  DateTime.tryParse(item['created_at'] ?? '') ?? DateTime.now(),
               ownerName: item['owner'] ?? 'Shared',
               previewUrl: url,
             );
           }).toList();
         }
       }
-    } catch (e) { debugPrint('Error: $e'); }
+    } catch (e) {
+      debugPrint('Error: $e');
+    }
 
     if (items.isEmpty) {
       items = await RecentService.getRecentFiles();
@@ -90,19 +106,21 @@ class _RecentPageState extends State<RecentPage> {
       final isDl = await DownloadService.isFileDownloaded(file.name);
       if (isDl) {
         final localPath = await DownloadService.getLocalFilePath(file.name);
-        updatedItems.add(FileModel(
-          id: file.id,
-          name: file.name,
-          format: file.format,
-          sizeBytes: file.sizeBytes,
-          customSizeString: file.customSizeString,
-          uploadDate: file.uploadDate,
-          ownerName: file.ownerName,
-          isPinned: file.isPinned,
-          isFavorite: file.isFavorite,
-          isDownloaded: true,
-          previewUrl: localPath ?? file.previewUrl,
-        ));
+        updatedItems.add(
+          FileModel(
+            id: file.id,
+            name: file.name,
+            format: file.format,
+            sizeBytes: file.sizeBytes,
+            customSizeString: file.customSizeString,
+            uploadDate: file.uploadDate,
+            ownerName: file.ownerName,
+            isPinned: file.isPinned,
+            isFavorite: file.isFavorite,
+            isDownloaded: true,
+            previewUrl: localPath ?? file.previewUrl,
+          ),
+        );
       } else {
         updatedItems.add(file);
       }
@@ -111,7 +129,11 @@ class _RecentPageState extends State<RecentPage> {
 
     // Search filter
     if (_searchQuery.trim().isNotEmpty) {
-      items = items.where((f) => f.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+      items = items
+          .where(
+            (f) => f.name.toLowerCase().contains(_searchQuery.toLowerCase()),
+          )
+          .toList();
     }
 
     // Category filter
@@ -119,11 +141,37 @@ class _RecentPageState extends State<RecentPage> {
       if (_activeFilter == 'PDFs') {
         items = items.where((f) => f.format.toLowerCase() == 'pdf').toList();
       } else if (_activeFilter == 'Images') {
-        items = items.where((f) => ['png', 'jpg', 'jpeg', 'gif', 'webp', 'image'].contains(f.format.toLowerCase())).toList();
+        items = items
+            .where(
+              (f) => [
+                'png',
+                'jpg',
+                'jpeg',
+                'gif',
+                'webp',
+                'image',
+              ].contains(f.format.toLowerCase()),
+            )
+            .toList();
       } else if (_activeFilter == 'Videos') {
-        items = items.where((f) => ['mp4', 'video', 'mov'].contains(f.format.toLowerCase())).toList();
+        items = items
+            .where(
+              (f) => ['mp4', 'video', 'mov'].contains(f.format.toLowerCase()),
+            )
+            .toList();
       } else if (_activeFilter == 'Docs') {
-        items = items.where((f) => ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].contains(f.format.toLowerCase())).toList();
+        items = items
+            .where(
+              (f) => [
+                'doc',
+                'docx',
+                'ppt',
+                'pptx',
+                'xls',
+                'xlsx',
+              ].contains(f.format.toLowerCase()),
+            )
+            .toList();
       }
     }
 
@@ -146,8 +194,12 @@ class _RecentPageState extends State<RecentPage> {
     final theme = Theme.of(context);
 
     // Grouping
-    final todayFiles = _recentFilesList.where((f) => _isToday(f.uploadDate)).toList();
-    final yesterdayFiles = _recentFilesList.where((f) => _isYesterday(f.uploadDate)).toList();
+    final todayFiles = _recentFilesList
+        .where((f) => _isToday(f.uploadDate))
+        .toList();
+    final yesterdayFiles = _recentFilesList
+        .where((f) => _isYesterday(f.uploadDate))
+        .toList();
     final lastWeekFiles = _recentFilesList
         .where((f) => !_isToday(f.uploadDate) && !_isYesterday(f.uploadDate))
         .toList();
@@ -172,7 +224,9 @@ class _RecentPageState extends State<RecentPage> {
                   ),
                   IconButton(
                     icon: Icon(
-                      _isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
+                      _isGridView
+                          ? Icons.view_list_rounded
+                          : Icons.grid_view_rounded,
                       color: theme.colorScheme.primary,
                     ),
                     onPressed: () {
@@ -224,7 +278,8 @@ class _RecentPageState extends State<RecentPage> {
                       ? const EmptyWidget(
                           icon: Icons.history_rounded,
                           title: 'No Recent Files',
-                          description: 'You haven\'t uploaded or viewed any files recently. Start uploading now!',
+                          description:
+                              'You haven\'t uploaded or viewed any files recently. Start uploading now!',
                         )
                       : SingleChildScrollView(
                           physics: const BouncingScrollPhysics(),
@@ -272,7 +327,9 @@ class _RecentPageState extends State<RecentPage> {
           style: TextStyle(
             color: isSelected
                 ? Colors.white
-                : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
+                : (isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimaryLight),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             fontSize: 12,
           ),
@@ -308,9 +365,9 @@ class _RecentPageState extends State<RecentPage> {
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+        ),
       ),
     );
   }
@@ -404,13 +461,21 @@ class _RecentPageState extends State<RecentPage> {
               const SizedBox(height: 24),
               Text(
                 'Sort Files',
-                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 16),
               ListTile(
                 leading: const Icon(Icons.date_range_rounded),
-                title: const Text('Date Modified (Newest First)', style: TextStyle(fontSize: 14)),
-                trailing: Icon(Icons.check_rounded, color: theme.colorScheme.primary),
+                title: const Text(
+                  'Date Modified (Newest First)',
+                  style: TextStyle(fontSize: 14),
+                ),
+                trailing: Icon(
+                  Icons.check_rounded,
+                  color: theme.colorScheme.primary,
+                ),
                 onTap: () => Navigator.pop(context),
               ),
               ListTile(
@@ -425,11 +490,16 @@ class _RecentPageState extends State<RecentPage> {
               ),
               ListTile(
                 leading: const Icon(Icons.line_weight_rounded),
-                title: const Text('Size (Largest First)', style: TextStyle(fontSize: 14)),
+                title: const Text(
+                  'Size (Largest First)',
+                  style: TextStyle(fontSize: 14),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   setState(() {
-                    _recentFilesList.sort((a, b) => b.sizeBytes.compareTo(a.sizeBytes));
+                    _recentFilesList.sort(
+                      (a, b) => b.sizeBytes.compareTo(a.sizeBytes),
+                    );
                   });
                 },
               ),
@@ -443,12 +513,16 @@ class _RecentPageState extends State<RecentPage> {
 
   bool _isToday(DateTime date) {
     final now = DateTime.now();
-    return date.year == now.year && date.month == now.month && date.day == now.day;
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 
   bool _isYesterday(DateTime date) {
     final yesterday = DateTime.now().subtract(const Duration(days: 1));
-    return date.year == yesterday.year && date.month == yesterday.month && date.day == yesterday.day;
+    return date.year == yesterday.year &&
+        date.month == yesterday.month &&
+        date.day == yesterday.day;
   }
 
   void _handleFileAction(FileModel file, String action) async {
@@ -461,23 +535,38 @@ class _RecentPageState extends State<RecentPage> {
           _filterRecentFiles();
         });
         if (mounted) {
-          AppToast.showInfo(context, '"${file.name}" removed from offline storage.');
+          AppToast.showInfo(
+            context,
+            '"${file.name}" removed from offline storage.',
+          );
         }
       } else {
-        AppToast.showInfo(context, 'Saving "${file.name}" to local device storage...');
+        AppToast.showInfo(
+          context,
+          'Saving "${file.name}" to local device storage...',
+        );
         final url = file.previewUrl ?? '';
-        final ok = await DownloadService.downloadFile(url, file.name, model: file);
+        final ok = await DownloadService.downloadFile(
+          url,
+          file.name,
+          model: file,
+        );
         if (!mounted) return;
         if (ok) {
           setState(() {
             _filterRecentFiles();
           });
           if (mounted) {
-            AppToast.showSuccess(context, '"${file.name}" saved locally for offline access!');
+            AppToast.showSuccess(
+              context,
+              '"${file.name}" saved locally for offline access!',
+            );
           }
         } else {
           if (mounted) {
-            final error = DownloadService.downloadErrorNotifier.value ?? 'Failed to download "${file.name}". Please check internet connection.';
+            final error =
+                DownloadService.downloadErrorNotifier.value ??
+                'Failed to download "${file.name}". Please check internet connection.';
             AppToast.showError(context, ErrorHelper.getFriendlyMessage(error));
           }
         }

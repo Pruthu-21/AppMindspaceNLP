@@ -17,7 +17,9 @@ class NavigationShell extends StatefulWidget {
   const NavigationShell({super.key});
 
   static final ValueNotifier<int> navigationNotifier = ValueNotifier<int>(0);
-  static final ValueNotifier<bool> hideBottomNavNotifier = ValueNotifier<bool>(false);
+  static final ValueNotifier<bool> hideBottomNavNotifier = ValueNotifier<bool>(
+    false,
+  );
 
   @override
   State<NavigationShell> createState() => _NavigationShellState();
@@ -130,7 +132,7 @@ class _NavigationShellState extends State<NavigationShell> {
       valueListenable: RoleManager.roleNotifier,
       builder: (context, currentRole, child) {
         final pages = _getPages(currentRole);
-        
+
         // Safety check to prevent index out of bounds if page count changes
         if (_currentIndex >= pages.length) {
           _currentIndex = 0;
@@ -140,63 +142,67 @@ class _NavigationShellState extends State<NavigationShell> {
           canPop: false,
           onPopInvokedWithResult: (didPop, _) => _handleBackButton(didPop),
           child: Scaffold(
-          body: Stack(
-            children: [
-              // Screen contents
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                transitionBuilder: (Widget child, Animation<double> animation) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: child,
-                  );
-                },
-                child: KeyedSubtree(
-                  key: ValueKey('page-${currentRole.name}-$_currentIndex'),
-                  child: pages[_currentIndex],
+            body: Stack(
+              children: [
+                // Screen contents
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  transitionBuilder:
+                      (Widget child, Animation<double> animation) {
+                        return FadeTransition(opacity: animation, child: child);
+                      },
+                  child: KeyedSubtree(
+                    key: ValueKey('page-${currentRole.name}-$_currentIndex'),
+                    child: pages[_currentIndex],
+                  ),
                 ),
-              ),
-              
-              // Floating Premium Bottom Navigation
-              ValueListenableBuilder<bool>(
-                valueListenable: NavigationShell.hideBottomNavNotifier,
-                builder: (context, isHidden, child) {
-                  if (isHidden) return const SizedBox.shrink();
-                  final bottomInset = MediaQuery.of(context).padding.bottom;
-                  return Positioned(
-                    bottom: 16 + (bottomInset > 0 ? bottomInset : 8),
-                    left: 16,
-                    right: 16,
-                    child: Container(
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.surfaceDark.withValues(alpha: 0.95) : Colors.white.withValues(alpha: 0.95),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.06),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
+
+                // Floating Premium Bottom Navigation
+                ValueListenableBuilder<bool>(
+                  valueListenable: NavigationShell.hideBottomNavNotifier,
+                  builder: (context, isHidden, child) {
+                    if (isHidden) return const SizedBox.shrink();
+                    final bottomInset = MediaQuery.of(context).padding.bottom;
+                    return Positioned(
+                      bottom: 16 + (bottomInset > 0 ? bottomInset : 8),
+                      left: 16,
+                      right: 16,
+                      child: Container(
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? AppColors.surfaceDark.withValues(alpha: 0.95)
+                              : Colors.white.withValues(alpha: 0.95),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: isDark
+                                ? AppColors.dividerDark
+                                : AppColors.dividerLight,
                           ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: _buildNavItems(currentRole),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(
+                                alpha: isDark ? 0.25 : 0.06,
+                              ),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: _buildNavItems(currentRole),
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
-            ],
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
-        ),
         );
       },
     );
@@ -205,19 +211,55 @@ class _NavigationShellState extends State<NavigationShell> {
   List<Widget> _buildNavItems(AppRole role) {
     if (role == AppRole.admin) {
       return [
-        _buildNavItem(0, Icons.home_rounded, LanguageNotifier.translate('home')),
-        _buildNavItem(1, Icons.schedule_rounded, LanguageNotifier.translate('recent')),
-        _buildNavItem(2, Icons.analytics_rounded, LanguageNotifier.translate('admin_panel')),
-        _buildNavItem(3, Icons.download_done_rounded, LanguageNotifier.translate('downloads')),
-        _buildNavItem(4, Icons.person_rounded, LanguageNotifier.translate('profile')),
+        _buildNavItem(
+          0,
+          Icons.home_rounded,
+          LanguageNotifier.translate('home'),
+        ),
+        _buildNavItem(
+          1,
+          Icons.schedule_rounded,
+          LanguageNotifier.translate('recent'),
+        ),
+        _buildNavItem(
+          2,
+          Icons.analytics_rounded,
+          LanguageNotifier.translate('admin_panel'),
+        ),
+        _buildNavItem(
+          3,
+          Icons.download_done_rounded,
+          LanguageNotifier.translate('downloads'),
+        ),
+        _buildNavItem(
+          4,
+          Icons.person_rounded,
+          LanguageNotifier.translate('profile'),
+        ),
       ];
     } else {
       return [
-        _buildNavItem(0, Icons.home_rounded, LanguageNotifier.translate('home')),
-        _buildNavItem(1, Icons.schedule_rounded, LanguageNotifier.translate('recent')),
-        _buildNavItem(2, Icons.download_done_rounded, LanguageNotifier.translate('downloads')),
+        _buildNavItem(
+          0,
+          Icons.home_rounded,
+          LanguageNotifier.translate('home'),
+        ),
+        _buildNavItem(
+          1,
+          Icons.schedule_rounded,
+          LanguageNotifier.translate('recent'),
+        ),
+        _buildNavItem(
+          2,
+          Icons.download_done_rounded,
+          LanguageNotifier.translate('downloads'),
+        ),
         _buildNavItem(3, Icons.alarm_rounded, 'Reminders'),
-        _buildNavItem(4, Icons.person_rounded, LanguageNotifier.translate('profile')),
+        _buildNavItem(
+          4,
+          Icons.person_rounded,
+          LanguageNotifier.translate('profile'),
+        ),
       ];
     }
   }
@@ -248,7 +290,9 @@ class _NavigationShellState extends State<NavigationShell> {
               icon,
               color: isSelected
                   ? theme.colorScheme.primary
-                  : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                  : (isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight),
               size: 22,
             ),
           ),
@@ -260,7 +304,9 @@ class _NavigationShellState extends State<NavigationShell> {
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               color: isSelected
                   ? theme.colorScheme.primary
-                  : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                  : (isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight),
             ),
             child: Text(label),
           ),

@@ -31,32 +31,44 @@ class _NotificationsPageState extends State<NotificationsPage>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-    _headerFade = CurvedAnimation(parent: _headerAnimCtrl, curve: Curves.easeOut);
+    _headerFade = CurvedAnimation(
+      parent: _headerAnimCtrl,
+      curve: Curves.easeOut,
+    );
     _headerSlide = Tween<Offset>(begin: const Offset(0, -0.3), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _headerAnimCtrl, curve: Curves.easeOutCubic));
+        .animate(
+          CurvedAnimation(parent: _headerAnimCtrl, curve: Curves.easeOutCubic),
+        );
     _headerAnimCtrl.forward();
   }
 
   Future<void> _fetchNotifications() async {
-    if (AuthManager.token == null || AuthManager.token!.startsWith('google_token_')) return;
+    if (AuthManager.token == null ||
+        AuthManager.token!.startsWith('google_token_'))
+      return;
     try {
-      final response = await http.get(
-        Uri.parse('https://mindspacenlp.com/api/notifications'),
-        headers: {
-          'Authorization': 'Bearer ${AuthManager.token}',
-          'Accept': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            Uri.parse('https://mindspacenlp.com/api/notifications'),
+            headers: {
+              'Authorization': 'Bearer ${AuthManager.token}',
+              'Accept': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        final List<dynamic> data = body['data'] ?? body['notifications'] ?? (body is List ? body : []);
+        final List<dynamic> data =
+            body['data'] ?? body['notifications'] ?? (body is List ? body : []);
         final List<NotificationModel> loaded = data.map((item) {
           return NotificationModel(
             id: item['id']?.toString() ?? DateTime.now().toString(),
             title: item['title'] ?? item['subject'] ?? 'Notification',
             message: item['message'] ?? item['body'] ?? '',
-            timestamp: DateTime.tryParse(item['created_at'] ?? item['time'] ?? '') ?? DateTime.now(),
+            timestamp:
+                DateTime.tryParse(item['created_at'] ?? item['time'] ?? '') ??
+                DateTime.now(),
             type: item['type'] ?? 'system',
             isRead: item['is_read'] == true || item['read'] == true,
           );
@@ -106,8 +118,13 @@ class _NotificationsPageState extends State<NotificationsPage>
         final isDark = Theme.of(context).brightness == Brightness.dark;
         return AlertDialog(
           backgroundColor: isDark ? const Color(0xFF1A1A2E) : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Clear All?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Clear All?',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+          ),
           content: const Text(
             'All notifications will be removed. This cannot be undone.',
             style: TextStyle(fontSize: 13, height: 1.5),
@@ -115,7 +132,12 @@ class _NotificationsPageState extends State<NotificationsPage>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white54 : Colors.black45)),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: isDark ? Colors.white54 : Colors.black45,
+                ),
+              ),
             ),
             TextButton(
               onPressed: () {
@@ -125,7 +147,10 @@ class _NotificationsPageState extends State<NotificationsPage>
               },
               child: const Text(
                 'Clear All',
-                style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Color(0xFFEF4444),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -153,14 +178,24 @@ class _NotificationsPageState extends State<NotificationsPage>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final todayAlerts = _alerts.where((n) => _isWithinHours(n.timestamp, 24)).toList();
-    final yesterdayAlerts = _alerts
-        .where((n) => _isWithinHours(n.timestamp, 48) && !_isWithinHours(n.timestamp, 24))
+    final todayAlerts = _alerts
+        .where((n) => _isWithinHours(n.timestamp, 24))
         .toList();
-    final olderAlerts = _alerts.where((n) => !_isWithinHours(n.timestamp, 48)).toList();
+    final yesterdayAlerts = _alerts
+        .where(
+          (n) =>
+              _isWithinHours(n.timestamp, 48) &&
+              !_isWithinHours(n.timestamp, 24),
+        )
+        .toList();
+    final olderAlerts = _alerts
+        .where((n) => !_isWithinHours(n.timestamp, 48))
+        .toList();
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF070711) : const Color(0xFFF3F4F8),
+      backgroundColor: isDark
+          ? const Color(0xFF070711)
+          : const Color(0xFFF3F4F8),
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -186,7 +221,11 @@ class _NotificationsPageState extends State<NotificationsPage>
             )
           else ...[
             if (todayAlerts.isNotEmpty) ...[
-              _buildSectionHeader('Today', _unreadCount > 0 ? '$_unreadCount new' : null, isDark),
+              _buildSectionHeader(
+                'Today',
+                _unreadCount > 0 ? '$_unreadCount new' : null,
+                isDark,
+              ),
               _buildAlertList(todayAlerts),
             ],
             if (yesterdayAlerts.isNotEmpty) ...[
@@ -232,7 +271,10 @@ class _NotificationsPageState extends State<NotificationsPage>
                         if (_unreadCount > 0) ...[
                           const SizedBox(width: 10),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
                                 colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
@@ -277,10 +319,14 @@ class _NotificationsPageState extends State<NotificationsPage>
                 Container(
                   margin: const EdgeInsets.only(top: 4),
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(5),
+                    color: isDark
+                        ? Colors.white.withAlpha(10)
+                        : Colors.black.withAlpha(5),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isDark ? Colors.white.withAlpha(15) : Colors.black.withAlpha(10),
+                      color: isDark
+                          ? Colors.white.withAlpha(15)
+                          : Colors.black.withAlpha(10),
                     ),
                   ),
                   child: PopupMenuButton<String>(
@@ -288,7 +334,9 @@ class _NotificationsPageState extends State<NotificationsPage>
                       Icons.more_horiz_rounded,
                       color: isDark ? Colors.white70 : Colors.black54,
                     ),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     color: isDark ? const Color(0xFF1A1A2E) : Colors.white,
                     elevation: 8,
                     offset: const Offset(0, 44),
@@ -307,11 +355,17 @@ class _NotificationsPageState extends State<NotificationsPage>
                                 color: const Color(0xFF10B981).withAlpha(20),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(Icons.done_all_rounded,
-                                  color: Color(0xFF10B981), size: 16),
+                              child: const Icon(
+                                Icons.done_all_rounded,
+                                color: Color(0xFF10B981),
+                                size: 16,
+                              ),
                             ),
                             const SizedBox(width: 12),
-                            const Text('Mark all as read', style: TextStyle(fontSize: 13)),
+                            const Text(
+                              'Mark all as read',
+                              style: TextStyle(fontSize: 13),
+                            ),
                           ],
                         ),
                       ),
@@ -325,13 +379,21 @@ class _NotificationsPageState extends State<NotificationsPage>
                                 color: const Color(0xFFEF4444).withAlpha(20),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(Icons.delete_sweep_rounded,
-                                  color: Color(0xFFEF4444), size: 16),
+                              child: const Icon(
+                                Icons.delete_sweep_rounded,
+                                color: Color(0xFFEF4444),
+                                size: 16,
+                              ),
                             ),
                             const SizedBox(width: 12),
-                            const Text('Clear all',
-                                style: TextStyle(
-                                    color: Color(0xFFEF4444), fontSize: 13, fontWeight: FontWeight.bold)),
+                            const Text(
+                              'Clear all',
+                              style: TextStyle(
+                                color: Color(0xFFEF4444),
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -345,7 +407,11 @@ class _NotificationsPageState extends State<NotificationsPage>
     );
   }
 
-  SliverToBoxAdapter _buildSectionHeader(String title, String? badge, bool isDark) {
+  SliverToBoxAdapter _buildSectionHeader(
+    String title,
+    String? badge,
+    bool isDark,
+  ) {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 6),
@@ -387,7 +453,9 @@ class _NotificationsPageState extends State<NotificationsPage>
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      (isDark ? Colors.white : Colors.black).withAlpha(isDark ? 25 : 15),
+                      (isDark ? Colors.white : Colors.black).withAlpha(
+                        isDark ? 25 : 15,
+                      ),
                       Colors.transparent,
                     ],
                   ),
@@ -402,17 +470,14 @@ class _NotificationsPageState extends State<NotificationsPage>
 
   SliverList _buildAlertList(List<NotificationModel> items) {
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final n = items[index];
-          final globalIdx = _alerts.indexWhere((alert) => alert.id == n.id);
-          return NotificationTile(
-            notification: n,
-            onTap: () => _markAsRead(globalIdx),
-          );
-        },
-        childCount: items.length,
-      ),
+      delegate: SliverChildBuilderDelegate((context, index) {
+        final n = items[index];
+        final globalIdx = _alerts.indexWhere((alert) => alert.id == n.id);
+        return NotificationTile(
+          notification: n,
+          onTap: () => _markAsRead(globalIdx),
+        );
+      }, childCount: items.length),
     );
   }
 

@@ -10,9 +10,8 @@ class OfflineAccessTracker {
   static Timer? _syncTimer;
   static final Map<String, int> _sessionTimes = {};
 
-  
   static int getSessionTime(String fileId) => _sessionTimes[fileId] ?? 0;
-  
+
   static int addSessionTime(String fileId, int incrementSeconds) {
     final current = _sessionTimes[fileId] ?? 0;
     _sessionTimes[fileId] = current + incrementSeconds;
@@ -37,7 +36,7 @@ class OfflineAccessTracker {
         }
         await syncPendingLogs();
       } catch (e) {
-      debugPrint('Error: $e');
+        debugPrint('Error: $e');
 
         // Keep retrying on next timer tick
       }
@@ -59,27 +58,31 @@ class OfflineAccessTracker {
 
     if (token != null && !token.startsWith('google_token_')) {
       try {
-        final response = await http.post(
-          Uri.parse('https://mindspacenlp.com/api/drive/file/$fileId/access'),
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: jsonEncode({
-            'file_name': fileName,
-            'accessed_at': DateTime.now().toIso8601String(),
-            'increment_open': incrementOpen,
-            'view_duration_increment': ?viewDurationIncrement,
-            'media_duration': ?mediaDuration,
-          }),
-        ).timeout(const Duration(seconds: 4));
+        final response = await http
+            .post(
+              Uri.parse(
+                'https://mindspacenlp.com/api/drive/file/$fileId/access',
+              ),
+              headers: {
+                'Authorization': 'Bearer $token',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+              },
+              body: jsonEncode({
+                'file_name': fileName,
+                'accessed_at': DateTime.now().toIso8601String(),
+                'increment_open': incrementOpen,
+                'view_duration_increment': ?viewDurationIncrement,
+                'media_duration': ?mediaDuration,
+              }),
+            )
+            .timeout(const Duration(seconds: 4));
 
         if (response.statusCode == 200 || response.statusCode == 201) {
           synced = true;
         }
       } catch (e) {
-      debugPrint('Error: $e');
+        debugPrint('Error: $e');
 
         synced = false;
       }
@@ -161,7 +164,9 @@ class OfflineAccessTracker {
 
       await AppStorage.write(_storageKey, jsonEncode(logs));
       _startSyncTimer();
-    } catch (e) { debugPrint('Error: $e'); }
+    } catch (e) {
+      debugPrint('Error: $e');
+    }
   }
 
   /// Silently upload all locally stored offline file access logs to the server when connected.
@@ -184,7 +189,8 @@ class OfflineAccessTracker {
 
       for (var log in logs) {
         final String fileId = log['file_id'].toString();
-        final String accessedAtStr = log['accessed_at'] ?? now.toIso8601String();
+        final String accessedAtStr =
+            log['accessed_at'] ?? now.toIso8601String();
         final DateTime accessedAt = DateTime.tryParse(accessedAtStr) ?? now;
 
         // Discard log if it's older than 15 days
@@ -193,28 +199,34 @@ class OfflineAccessTracker {
         }
 
         try {
-          final response = await http.post(
-            Uri.parse('https://mindspacenlp.com/api/drive/file/$fileId/access'),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
-              'file_name': log['file_name'],
-              'accessed_at': log['accessed_at'],
-              'offline_synced': true,
-              'increment_open': log['increment_open'] ?? true,
-              if (log['view_duration_increment'] != null) 'view_duration_increment': log['view_duration_increment'],
-              if (log['media_duration'] != null) 'media_duration': log['media_duration'],
-            }),
-          ).timeout(const Duration(seconds: 4));
+          final response = await http
+              .post(
+                Uri.parse(
+                  'https://mindspacenlp.com/api/drive/file/$fileId/access',
+                ),
+                headers: {
+                  'Authorization': 'Bearer $token',
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json',
+                },
+                body: jsonEncode({
+                  'file_name': log['file_name'],
+                  'accessed_at': log['accessed_at'],
+                  'offline_synced': true,
+                  'increment_open': log['increment_open'] ?? true,
+                  if (log['view_duration_increment'] != null)
+                    'view_duration_increment': log['view_duration_increment'],
+                  if (log['media_duration'] != null)
+                    'media_duration': log['media_duration'],
+                }),
+              )
+              .timeout(const Duration(seconds: 4));
 
           if (response.statusCode != 200 && response.statusCode != 201) {
             remaining.add(log);
           }
         } catch (e) {
-      debugPrint('Error: $e');
+          debugPrint('Error: $e');
 
           remaining.add(log);
         }

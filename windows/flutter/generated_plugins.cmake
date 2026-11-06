@@ -6,6 +6,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_windows
   firebase_core
   flutter_timezone
+  geolocator_windows
   pdfx
   permission_handler_windows
   url_launcher_windows

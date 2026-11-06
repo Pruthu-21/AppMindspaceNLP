@@ -55,7 +55,11 @@ class _LoginPageState extends State<LoginPage> {
             (route) => false,
           );
         } else {
-          AppToast.showError(context, AuthManager.lastLoginError ?? 'Login failed. Please check your credentials.');
+          AppToast.showError(
+            context,
+            AuthManager.lastLoginError ??
+                'Login failed. Please check your credentials.',
+          );
         }
       }
     }
@@ -81,26 +85,38 @@ class _LoginPageState extends State<LoginPage> {
           (route) => false,
         );
       } else {
-        AppToast.showError(context, AuthManager.lastGoogleError ?? 'Google Sign-In failed.');
+        AppToast.showError(
+          context,
+          AuthManager.lastGoogleError ?? 'Google Sign-In failed.',
+        );
       }
     }
   }
 
   void _handleForgotPassword() async {
     if (_emailController.text.trim().isEmpty) {
-      AppToast.showInfo(context, 'Please enter your email first to reset password.');
+      AppToast.showInfo(
+        context,
+        'Please enter your email first to reset password.',
+      );
       return;
     }
-    
+
     setState(() => _isLoading = true);
     final success = await AuthManager.sendResetLink(_emailController.text);
     setState(() => _isLoading = false);
-    
+
     if (mounted) {
       if (success) {
-        AppToast.showSuccess(context, 'Password reset link sent to your email!');
+        AppToast.showSuccess(
+          context,
+          'Password reset link sent to your email!',
+        );
       } else {
-        AppToast.showError(context, AuthManager.lastForgotError ?? 'Failed to send reset link.');
+        AppToast.showError(
+          context,
+          AuthManager.lastForgotError ?? 'Failed to send reset link.',
+        );
       }
     }
   }
@@ -115,7 +131,10 @@ class _LoginPageState extends State<LoginPage> {
         child: Center(
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 8.0,
+            ),
             child: Form(
               key: _formKey,
               child: Column(
@@ -145,7 +164,9 @@ class _LoginPageState extends State<LoginPage> {
                   Text(
                     'Sign in to access your secure storage',
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -193,10 +214,15 @@ class _LoginPageState extends State<LoginPage> {
                     },
                     decoration: InputDecoration(
                       hintText: 'Enter your password',
-                      prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline_rounded,
+                        size: 20,
+                      ),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
                           size: 20,
                         ),
                         onPressed: () {
@@ -207,7 +233,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-                  
+
                   // Forgot Password
                   Align(
                     alignment: Alignment.centerRight,
@@ -232,19 +258,29 @@ class _LoginPageState extends State<LoginPage> {
                   // Or Divider
                   Row(
                     children: [
-                      Expanded(child: Divider(color: isDark ? Colors.white24 : Colors.black12)),
+                      Expanded(
+                        child: Divider(
+                          color: isDark ? Colors.white24 : Colors.black12,
+                        ),
+                      ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
                         child: Text(
                           'OR',
                           style: TextStyle(
-                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight,
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
                           ),
                         ),
                       ),
-                      Expanded(child: Divider(color: isDark ? Colors.white24 : Colors.black12)),
+                      Expanded(
+                        child: Divider(
+                          color: isDark ? Colors.white24 : Colors.black12,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -255,7 +291,9 @@ class _LoginPageState extends State<LoginPage> {
                       : OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            side: BorderSide(color: isDark ? Colors.white24 : Colors.black12),
+                            side: BorderSide(
+                              color: isDark ? Colors.white24 : Colors.black12,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -268,13 +306,13 @@ class _LoginPageState extends State<LoginPage> {
                           label: Text(
                             'Sign In with Google',
                             style: TextStyle(
-                              fontWeight: FontWeight.w600, 
+                              fontWeight: FontWeight.w600,
                               fontSize: 16,
                               color: isDark ? Colors.white : Colors.black87,
                             ),
                           ),
                         ),
-                  
+
                   const SizedBox(height: 32),
 
                   // Don't have account
@@ -284,14 +322,18 @@ class _LoginPageState extends State<LoginPage> {
                       Text(
                         'Don\'t have an account? ',
                         style: TextStyle(
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                       GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const RegisterPage())
+                            MaterialPageRoute(
+                              builder: (context) => const RegisterPage(),
+                            ),
                           );
                         },
                         child: Text(
